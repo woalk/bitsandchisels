@@ -62,6 +62,8 @@ public class BitsAndChisels implements ModInitializer {
 		Registry.register(Registry.ITEM, new Identifier(MODID, "bit_item"), BIT_ITEM);
 		Registry.register(Registry.ITEM, new Identifier(MODID, "wrench"), WRENCH_ITEM);
 		Registry.register(Registry.ITEM, new Identifier(MODID, "blueprint"), BLUEPRINT);
+
+		BitsAndChiselsMod.INSTANCE.onInitialize();
 	}
 	
 }
