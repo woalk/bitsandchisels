@@ -30,7 +30,6 @@ dependencies {
     val fabricKotlinVersion: String by project
     modImplementation("net.fabricmc", "fabric-language-kotlin", fabricKotlinVersion)
 
-    modRuntimeOnly("net.devtech", "Stacc", "1.3.4")
 	modImplementation("io.vram", "frex-fabric-mc119", "6.0.279")
 	modRuntimeOnly("io.vram", "frex-fabric-mc119", "6.0.279")
 }
