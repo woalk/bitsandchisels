@@ -2,6 +2,8 @@
     "itemGroup.bitsandchisels.bitsandchisels": "Bits And Chisels",
     "item.bitsandchisels.bit_item": "%s Bit",
     "item.bitsandchisels.diamond_chisel": "Simple Diamond Chisel",
+    "item.bitsandchisels.ender_chisel": "Ender Chisel",
+    "item.bitsandchisels.ender_chisel.desc": "Hold bit in off-hand to replace",
     "item.bitsandchisels.iron_chisel": "Simple Iron Chisel",
     "item.bitsandchisels.smart_chisel": "Smart Chisel",
     "item.bitsandchisels.wrench": "Wrench (Bits And Chisels)",

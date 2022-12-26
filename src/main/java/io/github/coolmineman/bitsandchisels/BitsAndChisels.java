@@ -1,5 +1,6 @@
 package io.github.coolmineman.bitsandchisels;
 
+import io.github.coolmineman.bitsandchisels.chisel.EnderChisel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -35,6 +36,7 @@ public class BitsAndChisels implements ModInitializer {
 	public static final BitsBlock BITS_BLOCK = new BitsBlock(FabricBlockSettings.of(Material.METAL).nonOpaque().dynamicBounds().hardness(4.0f).luminance(s -> s.get(BitsBlock.LIGHT_LEVEL)));
 	public static final BlockItem BITS_BLOCK_ITEM = new BlockItem(BITS_BLOCK, new Item.Settings());
 	public static final DiamondChisel DIAMOND_CHISEL = new DiamondChisel(new Item.Settings().group(ITEM_GROUP));
+	public static final EnderChisel ENDER_CHISEL = new EnderChisel(new Item.Settings().group(ITEM_GROUP));
 	public static final IronChisel IRON_CHISEL = new IronChisel(new Item.Settings().group(ITEM_GROUP));
 	public static final SmartChisel SMART_CHISEL = new SmartChisel(new Item.Settings().group(ITEM_GROUP));
 	public static final WrenchItem WRENCH_ITEM = new WrenchItem(new Item.Settings().group(ITEM_GROUP));
@@ -57,6 +59,7 @@ public class BitsAndChisels implements ModInitializer {
 		BITS_BLOCK_ENTITY = Registry.register(Registry.BLOCK_ENTITY_TYPE, "bitsandchisels:bits_block_entity", FabricBlockEntityTypeBuilder.create(BitsBlockEntity::new, BITS_BLOCK).build(null));
 		Registry.register(Registry.ITEM, new Identifier(MODID, "bits_block"), BITS_BLOCK_ITEM);
 		Registry.register(Registry.ITEM, new Identifier(MODID, "diamond_chisel"), DIAMOND_CHISEL);
+		Registry.register(Registry.ITEM, new Identifier(MODID, "ender_chisel"), ENDER_CHISEL);
 		Registry.register(Registry.ITEM, new Identifier(MODID, "iron_chisel"), IRON_CHISEL);
 		Registry.register(Registry.ITEM, new Identifier(MODID, "smart_chisel"), SMART_CHISEL);
 		Registry.register(Registry.ITEM, new Identifier(MODID, "bit_item"), BIT_ITEM);
