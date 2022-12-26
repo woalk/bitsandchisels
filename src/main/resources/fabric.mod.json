@@ -20,20 +20,11 @@
     ],
     "client": [
       "io.github.coolmineman.bitsandchisels.BitsBlockClient"
-    ],
-    "rei_client": [
-      "io.github.coolmineman.bitsandchisels.tellreistopbad.TellReiStopBad"
     ]
   },
   "mixins": [
     "bitsandchisels.mixins.json"
   ],
-  "custom": {
-    "dashloader:customobject": [
-      "io.github.coolmineman.bitsandchisels.dashloader.DashBitsBlockModel",
-      "io.github.coolmineman.bitsandchisels.dashloader.DashBitItemModel"
-    ]
-  },
   "depends": {
     "fabricloader": ">=0.7.4",
     "minecraft": "*"
