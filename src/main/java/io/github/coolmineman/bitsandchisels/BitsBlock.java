@@ -26,10 +26,11 @@ import net.minecraft.world.WorldAccess;
 public class BitsBlock extends Block implements BlockEntityProvider, Waterloggable {
 
     public static final IntProperty LIGHT_LEVEL = IntProperty.of("light_level", 0, 16);
+    public static final IntProperty SHADER_TYPE = IntProperty.of("shader_type", 0, 16);
 
     public BitsBlock(Settings settings) {
         super(settings);
-        this.setDefaultState(stateManager.getDefaultState().with(LIGHT_LEVEL, 0).with(Properties.WATERLOGGED, false));
+        this.setDefaultState(stateManager.getDefaultState().with(LIGHT_LEVEL, 0).with(Properties.WATERLOGGED, false).with(SHADER_TYPE, 0));
     }
 
     @Override
@@ -52,7 +53,7 @@ public class BitsBlock extends Block implements BlockEntityProvider, Waterloggab
 
     @Override
     protected void appendProperties(Builder<Block, BlockState> builder) {
-        builder.add(LIGHT_LEVEL, Properties.WATERLOGGED);
+        builder.add(LIGHT_LEVEL, Properties.WATERLOGGED, SHADER_TYPE);
     }
 
     @Override
