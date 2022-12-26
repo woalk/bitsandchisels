@@ -13,17 +13,40 @@ import net.minecraft.server.command.CommandManager.argument
 import net.minecraft.server.command.CommandManager.literal
 import net.minecraft.server.command.ServerCommandSource
 import net.minecraft.server.network.ServerPlayerEntity
+import net.minecraft.text.Text
+import net.minecraft.util.Formatting
 
 object ModCommands : IModRegister {
     private fun giveBit(
         ctx: CommandContext<ServerCommandSource>,
         player: ServerPlayerEntity?,
-        block: BlockState?
+        block: BlockState?,
+        count: Int = 1
     ): Int {
-        if (player == null || block == null) {
+        if (player == null) {
+            ctx.source.sendFeedback(
+                Text.literal("No target player given").formatted(Formatting.RED),
+                false
+            )
             return -1
         }
-        player.giveItemStack(BitUtils.getBitItemStack(block))
+        if (block == null) {
+            ctx.source.sendFeedback(
+                Text.literal("No block given").formatted(Formatting.RED),
+                false
+            )
+            return -2
+        }
+        val bit = BitUtils.getBitItemStack(block)
+        bit.count = count
+        player.giveItemStack(bit)
+        ctx.source.sendFeedback(
+            Text.literal("Gave $count ")
+                .append(block.block.name)
+                .append(Text.literal(" bit to "))
+                .append(player.displayName),
+            true
+        )
         return SINGLE_SUCCESS
     }
 
