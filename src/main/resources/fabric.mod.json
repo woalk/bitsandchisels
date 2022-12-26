@@ -1,17 +1,18 @@
 {
   "schemaVersion": 1,
   "id": "bitsandchisels",
-  "version": "2.7.0",
+  "version": "woalk-0.2",
   "name": "BitsAndChisels",
   "description": "Turn Blocks Into Small Bits With Chisels; Build All The Things",
   "authors": [
-    "cool_mineman"
+    "cool_mineman",
+    "woalk"
   ],
   "contact": {
     "homepage": "https://github.com/CoolMineman/BitsAndChisels",
     "sources": "https://github.com/CoolMineman/BitsAndChisels"
   },
-  "license": "CC0-1.0",
+  "license": "All rights reserved.",
   "icon": "assets/bitsandchisels/icon.png",
   "environment": "*",
   "entrypoints": {
