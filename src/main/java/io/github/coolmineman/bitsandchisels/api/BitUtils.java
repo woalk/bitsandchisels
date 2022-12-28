@@ -110,7 +110,7 @@ public class BitUtils {
             BlockState oldstate = BitUtils.getBit(world, pos, x, y, z);
             if (BitUtils.exists(oldstate) && BitUtils.setBit(world, pos, x, y, z, Blocks.AIR.getDefaultState())) {
                 BitUtils.update(world, pos);
-                if (!player.isCreativeLevelTwoOp()) {
+                if (!player.isCreative()) {
                     player.getInventory().offerOrDrop(BitUtils.getBitItemStack(oldstate));
                 }
             }
@@ -151,7 +151,7 @@ public class BitUtils {
                 }
             }
         }
-        if (!player.isCreativeLevelTwoOp()) {
+        if (!player.isCreative()) {
             for (Object2IntMap.Entry<BlockState> e : drops.object2IntEntrySet()) {
                 ItemStack stack = BitUtils.getBitItemStack(e.getKey());
                 stack.setCount(e.getIntValue());
