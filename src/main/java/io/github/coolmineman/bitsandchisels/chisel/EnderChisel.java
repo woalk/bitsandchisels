@@ -42,8 +42,7 @@ public class EnderChisel extends ToolItem implements ServerPlayNetworking.PlayCh
         ServerPlayNetworking.registerGlobalReceiver(PACKET_ID, this);
         AttackBlockCallback.EVENT.register((player, world, hand, pos, direction) -> {
             Item i = player.getMainHandStack().getItem();
-            Item o = player.getOffHandStack().getItem();
-            if (i instanceof EnderChisel && o instanceof BitItem) {
+            if (i instanceof EnderChisel) {
                 if (!world.isClient) return ActionResult.FAIL;
                 return ((EnderChisel) i).interactBreakBlockClient(player, world, pos);
             }
