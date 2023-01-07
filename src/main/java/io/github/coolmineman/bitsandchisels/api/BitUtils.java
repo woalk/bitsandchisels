@@ -49,9 +49,13 @@ public class BitUtils {
     }
 
     public static boolean canPlace(PlayerEntity player, BlockPos block, int x, int y, int z) {
+        return canPlace(player, block, x, y, z, true);
+    }
+
+    public static boolean canPlace(PlayerEntity player, BlockPos block, int x, int y, int z, boolean checkPermission) {
         World world = player.getEntityWorld();
         if (!world.canPlayerModifyAt(player, block)) return false;
-        if (!Permissions.check(player, ModPermissions.USE_BIT, true)) return false;
+        if (checkPermission && !Permissions.check(player, ModPermissions.USE_BIT, true)) return false;
         if (world.getBlockState(block).isAir()) {
             return true;
         }
