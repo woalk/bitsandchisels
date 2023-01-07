@@ -4,6 +4,7 @@ import com.mojang.brigadier.Command.SINGLE_SUCCESS
 import com.mojang.brigadier.context.CommandContext
 import com.woalk.mods.roleplay.registry.IModRegister
 import io.github.coolmineman.bitsandchisels.api.BitUtils
+import me.lucko.fabric.api.permissions.v0.Permissions
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback
 import net.minecraft.block.BlockState
 import net.minecraft.command.argument.BlockStateArgumentType
@@ -54,9 +55,7 @@ object ModCommands : IModRegister {
         CommandRegistrationCallback.EVENT.register { dispatcher, commandRegistryAccess, _ ->
             dispatcher.register(
                 literal("bit")
-                    .requires {
-                        it.hasPermissionLevel(2)
-                    }
+                    .requires(Permissions.require(ModPermissions.COMMAND_BIT, 2))
                     .executes { ctx ->
                         return@executes giveBit(
                             ctx,

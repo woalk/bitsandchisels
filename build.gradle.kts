@@ -17,6 +17,7 @@ repositories {
     maven("https://maven.vram.io/") {
     	name = "vram"
     }
+    maven("https://oss.sonatype.org/content/repositories/snapshots") { name = "LuckPerms maven" }
 }
 dependencies {
     val minecraftVersion: String by project
@@ -33,6 +34,9 @@ dependencies {
     val frexVersion: String by project
     modImplementation("io.vram", "frex-fabric-mc119", frexVersion)
     modRuntimeOnly("io.vram", "frex-fabric-mc119", frexVersion)
+
+    val fabricPermissionsApiVersion: String by project
+    include(modImplementation("me.lucko", "fabric-permissions-api", fabricPermissionsApiVersion))
 }
 tasks {
     val javaVersion = JavaVersion.VERSION_17
