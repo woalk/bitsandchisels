@@ -4,7 +4,9 @@ import io.github.coolmineman.bitsandchisels.BitItem;
 import io.github.coolmineman.bitsandchisels.BitsAndChisels;
 import io.github.coolmineman.bitsandchisels.api.BitUtils;
 import io.github.coolmineman.bitsandchisels.api.client.RedBoxCallback;
+import io.github.coolmineman.bitsandchisels.registry.ModPermissions;
 import io.netty.buffer.Unpooled;
+import me.lucko.fabric.api.permissions.v0.Permissions;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.event.player.AttackBlockCallback;
 import net.fabricmc.fabric.api.networking.v1.PacketSender;
@@ -67,12 +69,14 @@ public class EnderChisel extends ToolItem implements ServerPlayNetworking.PlayCh
 
     @Override
     public void receive(MinecraftServer server, ServerPlayerEntity player, ServerPlayNetworkHandler handler, PacketByteBuf buf, PacketSender responseSender) {
+        if (!Permissions.check(player, ModPermissions.USE_CHISEL_ENDER, true)) return;
         BlockPos pos = buf.readBlockPos();
         final int x = buf.readInt();
         final int y = buf.readInt();
         final int z = buf.readInt();
         server.execute(() -> {
             // Execute on the main thread
+            BitsAndChisels.LOGGER.warn("Ender Chisel used");
             ItemStack stack = player.getMainHandStack();
             ItemStack bit = player.getOffHandStack();
             if (player.world.canSetBlock(pos) && player.getBlockPos().getSquaredDistance(pos) < 81) {

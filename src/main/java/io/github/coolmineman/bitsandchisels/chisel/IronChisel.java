@@ -3,7 +3,9 @@ package io.github.coolmineman.bitsandchisels.chisel;
 import io.github.coolmineman.bitsandchisels.BitsAndChisels;
 import io.github.coolmineman.bitsandchisels.api.BitUtils;
 import io.github.coolmineman.bitsandchisels.api.client.RedBoxCallback;
+import io.github.coolmineman.bitsandchisels.registry.ModPermissions;
 import io.netty.buffer.Unpooled;
+import me.lucko.fabric.api.permissions.v0.Permissions;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.event.player.AttackBlockCallback;
 import net.fabricmc.fabric.api.networking.v1.PacketSender;
@@ -46,6 +48,7 @@ public class IronChisel extends ToolItem implements ServerPlayNetworking.PlayCha
 
     @Override
     public void receive(MinecraftServer server, ServerPlayerEntity player, ServerPlayNetworkHandler handler, PacketByteBuf buf, PacketSender responseSender) {
+        if (!Permissions.check(player, ModPermissions.USE_CHISEL_IRON, true)) return;
         BlockPos pos = buf.readBlockPos();
         int x = buf.readInt();
         int y = buf.readInt();

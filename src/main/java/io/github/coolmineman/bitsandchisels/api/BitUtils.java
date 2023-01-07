@@ -1,5 +1,7 @@
 package io.github.coolmineman.bitsandchisels.api;
 
+import io.github.coolmineman.bitsandchisels.registry.ModPermissions;
+import me.lucko.fabric.api.permissions.v0.Permissions;
 import org.jetbrains.annotations.Nullable;
 
 import io.github.coolmineman.bitsandchisels.BitNbtUtil;
@@ -49,6 +51,7 @@ public class BitUtils {
     public static boolean canPlace(PlayerEntity player, BlockPos block, int x, int y, int z) {
         World world = player.getEntityWorld();
         if (!world.canPlayerModifyAt(player, block)) return false;
+        if (!Permissions.check(player, ModPermissions.USE_BIT, true)) return false;
         if (world.getBlockState(block).isAir()) {
             return true;
         }
@@ -63,6 +66,7 @@ public class BitUtils {
         World world = player.getEntityWorld();
         if (!world.canSetBlock(block)) return false;
         if (!world.canPlayerModifyAt(player, block)) return false;
+        if (!Permissions.check(player, ModPermissions.USE_CHISEL, true)) return false;
         return true;
     }
 

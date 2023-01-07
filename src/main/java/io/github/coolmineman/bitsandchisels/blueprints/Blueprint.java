@@ -2,12 +2,15 @@ package io.github.coolmineman.bitsandchisels.blueprints;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
 import io.github.coolmineman.bitsandchisels.BitNbtUtil;
 import io.github.coolmineman.bitsandchisels.BitsAndChisels;
 import io.github.coolmineman.bitsandchisels.api.BitUtils;
+import io.github.coolmineman.bitsandchisels.registry.ModPermissions;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntList;
+import me.lucko.fabric.api.permissions.v0.Permissions;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.cauldron.CauldronBehavior;
 import net.minecraft.entity.player.PlayerEntity;
@@ -33,6 +36,10 @@ public class Blueprint extends Item implements CauldronBehavior {
     public ActionResult useOnBlock(ItemUsageContext context) {
         World world = context.getWorld();
         if (!world.isClient) {
+            if (!Permissions.check(Objects.requireNonNull(context.getPlayer()),
+                    ModPermissions.USE_BLUEPRINT, true)) {
+                return ActionResult.PASS;
+            }
             if (context.getStack().getSubNbt(BLUEPRINT_STRING) == null) {
                 BlockState[][][] target = BitUtils.getBitArray(world, context.getBlockPos());
                 if (target != null) {

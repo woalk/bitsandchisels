@@ -2,7 +2,9 @@ package io.github.coolmineman.bitsandchisels;
 
 import io.github.coolmineman.bitsandchisels.api.BitUtils;
 import io.github.coolmineman.bitsandchisels.api.client.RedBoxCallback;
+import io.github.coolmineman.bitsandchisels.registry.ModPermissions;
 import io.netty.buffer.Unpooled;
+import me.lucko.fabric.api.permissions.v0.Permissions;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.networking.v1.PacketSender;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
@@ -45,6 +47,7 @@ public class BitItem extends Item implements ServerPlayNetworking.PlayChannelHan
 
     @Override
     public void receive(MinecraftServer server, ServerPlayerEntity player, ServerPlayNetworkHandler handler, PacketByteBuf buf, PacketSender responseSender) {
+        if (!Permissions.check(player, ModPermissions.USE_BIT, true)) return;
         BlockPos pos = buf.readBlockPos();
         int x1 = buf.readInt();
         int y1 = buf.readInt();

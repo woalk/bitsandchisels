@@ -2,12 +2,16 @@ package io.github.coolmineman.bitsandchisels.wrench;
 
 import io.github.coolmineman.bitsandchisels.BitsAndChisels;
 import io.github.coolmineman.bitsandchisels.BitsBlockEntity;
+import io.github.coolmineman.bitsandchisels.registry.ModPermissions;
+import me.lucko.fabric.api.permissions.v0.Permissions;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemUsageContext;
 import net.minecraft.util.ActionResult;
 import net.minecraft.util.math.Direction.Axis;
+
+import java.util.Objects;
 
 public class WrenchItem extends Item {
 
@@ -17,7 +21,10 @@ public class WrenchItem extends Item {
 
     @Override
     public ActionResult useOnBlock(ItemUsageContext context) {
-        if (!context.getWorld().isClient && context.getWorld().getBlockState(context.getBlockPos()).isOf(BitsAndChisels.BITS_BLOCK)) {
+        if (!context.getWorld().isClient &&
+                context.getWorld().getBlockState(context.getBlockPos()).isOf(BitsAndChisels.BITS_BLOCK) &&
+                Permissions.check(Objects.requireNonNull(context.getPlayer()),
+                        ModPermissions.USE_WRENCH, true)) {
             BlockEntity e1 = context.getWorld().getBlockEntity(context.getBlockPos());
             if (e1 instanceof BitsBlockEntity) {
                 BitsBlockEntity e = (BitsBlockEntity) e1;

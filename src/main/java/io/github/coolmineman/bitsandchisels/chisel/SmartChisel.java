@@ -4,7 +4,9 @@ import io.github.coolmineman.bitsandchisels.BitsAndChisels;
 import io.github.coolmineman.bitsandchisels.api.BitUtils;
 import io.github.coolmineman.bitsandchisels.api.client.AirSwingItem;
 import io.github.coolmineman.bitsandchisels.api.client.RedBoxCallback;
+import io.github.coolmineman.bitsandchisels.registry.ModPermissions;
 import io.netty.buffer.Unpooled;
+import me.lucko.fabric.api.permissions.v0.Permissions;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.event.player.AttackBlockCallback;
 import net.fabricmc.fabric.api.networking.v1.PacketSender;
@@ -99,6 +101,7 @@ public class SmartChisel extends ToolItem implements ServerPlayNetworking.PlayCh
 
     @Override
     public void receive(MinecraftServer server, ServerPlayerEntity player, ServerPlayNetworkHandler handler, PacketByteBuf buf, PacketSender responseSender) {
+        if (!Permissions.check(player, ModPermissions.USE_CHISEL_SMART, true)) return;
         BlockPos pos = buf.readBlockPos();
         int x1 = buf.readInt();
         int y1 = buf.readInt();
