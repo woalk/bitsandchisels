@@ -1,6 +1,7 @@
 package io.github.coolmineman.bitsandchisels.registry
 
 import com.mojang.brigadier.Command.SINGLE_SUCCESS
+import com.mojang.brigadier.arguments.IntegerArgumentType
 import com.mojang.brigadier.arguments.StringArgumentType
 import com.mojang.brigadier.context.CommandContext
 import com.woalk.mods.roleplay.registry.IModRegister
@@ -73,6 +74,7 @@ object ModCommands : IModRegister {
             )
             return -1
         }
+        val zMax1 = if (zMax in 1 until zMin) maxOf(zMin + zMax - 1, zMin) else zMax
         try {
             val chiseledImage = ChiseledImage(image)
 
@@ -82,7 +84,7 @@ object ModCommands : IModRegister {
             if (!chiseledImage.canPlace(ctx.source.playerOrThrow, blockPos, direction)) {
                 throw IllegalArgumentException("You cannot modify blocks in the target area")
             }
-            chiseledImage.place(ctx.source.world, blockPos, zMin..zMax, direction, palette)
+            chiseledImage.place(ctx.source.world, blockPos, zMin..zMax1, direction, palette)
 
             ctx.source.sendFeedback(Text.literal(
                 "image2chisel: Placed $image at (${blockPos.toShortString()})"),
@@ -146,6 +148,20 @@ object ModCommands : IModRegister {
                                     StringArgumentType.getString(ctx, "image")
                                 )
                             }
+                            .then(
+                                argument("z_min", IntegerArgumentType.integer(0, 15))
+                                    .then(
+                                        argument("z_max", IntegerArgumentType.integer(0, 15))
+                                            .executes { ctx ->
+                                                return@executes image2chisel(
+                                                    ctx,
+                                                    StringArgumentType.getString(ctx, "image"),
+                                                    IntegerArgumentType.getInteger(ctx, "z_min"),
+                                                    IntegerArgumentType.getInteger(ctx, "z_max")
+                                                )
+                                            }
+                                    )
+                            )
                     )
             )
         }
