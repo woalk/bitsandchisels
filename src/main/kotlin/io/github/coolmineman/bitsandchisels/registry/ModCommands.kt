@@ -65,7 +65,7 @@ object ModCommands : IModRegister {
         zMin: Int = 0,
         zMax: Int = 15,
         direction: Direction = Direction.SOUTH,
-        palette: PaletteIdentifier = PaletteIdentifier()
+        paletteWildcard: String? = null
     ): Int {
         if (zMin !in 0 until 16 || zMax !in 0 until 16) {
             ctx.source.sendFeedback(
@@ -83,6 +83,11 @@ object ModCommands : IModRegister {
             val blockPos = BlockPos(ctx.source.position)
             if (!chiseledImage.canPlace(ctx.source.playerOrThrow, blockPos, direction)) {
                 throw IllegalArgumentException("You cannot modify blocks in the target area")
+            }
+            val palette = if (paletteWildcard != null) {
+                PaletteIdentifier.fromString(paletteWildcard)
+            } else {
+                PaletteIdentifier()
             }
             chiseledImage.place(ctx.source.world, blockPos, zMin..zMax1, direction, palette)
 
@@ -160,6 +165,21 @@ object ModCommands : IModRegister {
                                                     IntegerArgumentType.getInteger(ctx, "z_max")
                                                 )
                                             }
+                                            .then(
+                                                argument("palette", StringArgumentType.string())
+                                                    .executes { ctx ->
+                                                        return@executes image2chisel(
+                                                            ctx,
+                                                            StringArgumentType.getString(ctx, "image"),
+                                                            IntegerArgumentType.getInteger(ctx, "z_min"),
+                                                            IntegerArgumentType.getInteger(ctx, "z_max"),
+                                                            paletteWildcard = StringArgumentType.getString(
+                                                                ctx,
+                                                                "palette"
+                                                            )
+                                                        )
+                                                    }
+                                            )
                                     )
                             )
                     )
