@@ -11,7 +11,7 @@ import javax.imageio.ImageIO
 class ChiseledImage(imageFilePath: String) {
     companion object {
         private const val IMAGES_DIR = "images"
-        private const val MAX_PIXELS = (8 * 16) * (8 * 16)
+        private const val MAX_PIXELS = (16 * 16) * (16 * 16) // 256x256
 
         private val imagesDir = File(FabricLoader.getInstance().gameDir.toFile(), IMAGES_DIR)
         private val enabled = if (!imagesDir.exists()) {
