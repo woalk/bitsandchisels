@@ -1,0 +1,40 @@
+package io.github.coolmineman.bitsandchisels.image
+
+import net.minecraft.block.Block
+import net.minecraft.util.registry.Registry
+import java.awt.image.IndexColorModel
+
+@OptIn(ExperimentalUnsignedTypes::class)
+class ConcreteColorModel : IndexColorModel(
+    4,
+    16,
+    /*r*/
+    ubyteArrayOf(0U, 45U, 97U, 21U, 55U, 74U, 36U, 125U, 94U, 169U, 225U, 213U, 101U, 142U, 208U, 242U).toByteArray(),
+    /*g*/
+    ubyteArrayOf(0U, 47U, 60U, 118U, 58U, 92U, 138U, 125U, 169U, 48U, 99U, 100U, 33U, 32U, 214U, 177U).toByteArray(),
+    /*b*/
+    ubyteArrayOf(0U, 144U, 32U, 135U, 62U, 38U, 200U, 115U, 24U, 159U, 3U, 132U, 157U, 32U, 215U, 23U).toByteArray()
+) {
+    enum class Color {
+        BLACK,
+        BLUE,
+        BROWN,
+        CYAN,
+        GRAY,
+        GREEN,
+        LIGHT_BLUE,
+        LIGHT_GRAY,
+        LIME,
+        MAGENTA,
+        ORANGE,
+        PINK,
+        PURPLE,
+        RED,
+        WHITE,
+        YELLOW;
+
+        fun toBlock(palette: PaletteIdentifier = PaletteIdentifier()): Block {
+            return Registry.BLOCK.get(palette.toIdentifier(name.lowercase()))
+        }
+    }
+}
