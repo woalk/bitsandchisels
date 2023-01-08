@@ -3,9 +3,10 @@ package io.github.coolmineman.bitsandchisels.image
 import io.github.coolmineman.bitsandchisels.api.BitUtils
 import net.minecraft.entity.player.PlayerEntity
 import net.minecraft.util.math.BlockPos
+import net.minecraft.util.math.Direction
 import net.minecraft.world.World
 
-fun ChiseledImage.canPlace(player: PlayerEntity, startingPos: BlockPos): Boolean {
+fun ChiseledImage.canPlace(player: PlayerEntity, startingPos: BlockPos, direction: Direction): Boolean {
     for (x in 0 until blockWidth) {
         for (y in 0 until blockHeight) {
             if (!player.world.canSetBlock(startingPos.add(x, y, 0))) return false
@@ -14,7 +15,13 @@ fun ChiseledImage.canPlace(player: PlayerEntity, startingPos: BlockPos): Boolean
     return true
 }
 
-fun ChiseledImage.place(world: World, startingPos: BlockPos, zRange: IntRange, palette: PaletteIdentifier) {
+fun ChiseledImage.place(
+    world: World,
+    startingPos: BlockPos,
+    zRange: IntRange,
+    direction: Direction,
+    palette: PaletteIdentifier
+) {
     for (blockXOffset in 0 until blockWidth) {
         for (blockYOffset in 0 until blockHeight) {
             placeInBlock(
@@ -23,6 +30,7 @@ fun ChiseledImage.place(world: World, startingPos: BlockPos, zRange: IntRange, p
                 blockXOffset * 16,
                 blockYOffset * 16,
                 zRange,
+                direction,
                 palette
             )
         }
@@ -35,6 +43,7 @@ private fun ChiseledImage.placeInBlock(
     xOffset: Int,
     yOffset: Int,
     zRange: IntRange,
+    direction: Direction,
     palette: PaletteIdentifier
 ) {
     for (z in zRange) {

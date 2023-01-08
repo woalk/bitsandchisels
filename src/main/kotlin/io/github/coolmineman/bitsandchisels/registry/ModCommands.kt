@@ -22,6 +22,7 @@ import net.minecraft.server.network.ServerPlayerEntity
 import net.minecraft.text.Text
 import net.minecraft.util.Formatting
 import net.minecraft.util.math.BlockPos
+import net.minecraft.util.math.Direction
 
 object ModCommands : IModRegister {
     private fun giveBit(
@@ -62,6 +63,7 @@ object ModCommands : IModRegister {
         image: String,
         zMin: Int = 0,
         zMax: Int = 15,
+        direction: Direction = Direction.SOUTH,
         palette: PaletteIdentifier = PaletteIdentifier()
     ): Int {
         if (zMin !in 0 until 16 || zMax !in 0 until 16) {
@@ -77,10 +79,10 @@ object ModCommands : IModRegister {
             ctx.source.sendFeedback(Text.literal("image2chisel: Loaded $image"), true)
 
             val blockPos = BlockPos(ctx.source.position)
-            if (!chiseledImage.canPlace(ctx.source.playerOrThrow, blockPos)) {
+            if (!chiseledImage.canPlace(ctx.source.playerOrThrow, blockPos, direction)) {
                 throw IllegalArgumentException("You cannot modify blocks in the target area")
             }
-            chiseledImage.place(ctx.source.world, blockPos, zMin..zMax, palette)
+            chiseledImage.place(ctx.source.world, blockPos, zMin..zMax, direction, palette)
 
             ctx.source.sendFeedback(Text.literal(
                 "image2chisel: Placed $image at (${blockPos.toShortString()})"),
