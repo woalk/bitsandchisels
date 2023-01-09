@@ -4,6 +4,7 @@ import net.fabricmc.loader.api.FabricLoader
 import net.minecraft.block.Block
 import java.awt.image.BufferedImage
 import java.awt.image.DataBufferByte
+import java.awt.image.Raster
 import java.io.File
 import java.io.IOException
 import javax.imageio.ImageIO
@@ -39,7 +40,13 @@ class ChiseledImage(imageFilePath: String) {
         if (image.width * image.height > MAX_PIXELS) {
             throw IllegalArgumentException("Image is too large, maximum is ${MAX_PIXELS}px")
         }
-        ditheredImage = BufferedImage(image.width, image.height, BufferedImage.TYPE_BYTE_INDEXED, ConcreteColorModel())
+        val icm = ConcreteColorModel()
+        ditheredImage = if (image.hasTransparentPixel()) {
+            val raster = Raster.createWritableRaster(icm.createCompatibleSampleModel(image.width, image.height), null)
+            BufferedImage(icm, raster, false, null)
+        } else {
+            BufferedImage(image.width, image.height, BufferedImage.TYPE_BYTE_INDEXED, icm)
+        }
         val g2d = ditheredImage.createGraphics()
         g2d.drawImage(image, 0, 0, null)
         g2d.dispose()

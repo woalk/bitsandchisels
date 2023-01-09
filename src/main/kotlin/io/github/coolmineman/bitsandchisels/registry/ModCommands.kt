@@ -1,6 +1,7 @@
 package io.github.coolmineman.bitsandchisels.registry
 
 import com.mojang.brigadier.Command.SINGLE_SUCCESS
+import com.mojang.brigadier.arguments.BoolArgumentType
 import com.mojang.brigadier.arguments.IntegerArgumentType
 import com.mojang.brigadier.arguments.StringArgumentType
 import com.mojang.brigadier.context.CommandContext
@@ -65,7 +66,8 @@ object ModCommands : IModRegister {
         zMin: Int = 0,
         zMax: Int = 15,
         directionName: String = "south",
-        paletteWildcard: String? = null
+        paletteWildcard: String? = null,
+        replaceAir: Boolean = true
     ): Int {
         if (zMin !in 0 until 16 || zMax !in 0 until 16) {
             ctx.source.sendFeedback(
@@ -94,7 +96,7 @@ object ModCommands : IModRegister {
             } else {
                 PaletteIdentifier()
             }
-            chiseledImage.place(ctx.source.world, blockPos, zMin..zMax1, direction, palette)
+            chiseledImage.place(ctx.source.world, blockPos, zMin..zMax1, direction, palette, replaceAir)
 
             ctx.source.sendFeedback(Text.literal(
                 "image2chisel: Placed $image at (${blockPos.toShortString()})"),
@@ -154,7 +156,10 @@ object ModCommands : IModRegister {
                         literal("help")
                             .executes { ctx ->
                                 ctx.source.sendFeedback(Text.literal(
-                                    "Usage: /image2chisel <file name, must end with .png> [z_min] [z_max or thickness] [north, south, east, west, up, down] [palette, default \"minecraft:*_concrete\"]"
+                                    "Usage: /image2chisel <file name, must end with .png> " +
+                                            "[z_min] [z_max or thickness] [north, south, east, west, up, down] " +
+                                            "[palette, default \"minecraft:*_concrete\"] " +
+                                            "[set_air, false to not change bits that are just air]"
                                 ), false)
                                 return@executes SINGLE_SUCCESS
                             }
@@ -202,6 +207,20 @@ object ModCommands : IModRegister {
                                                                     StringArgumentType.getString(ctx, "palette")
                                                                 )
                                                             }
+                                                            .then(
+                                                                argument("set_air", BoolArgumentType.bool())
+                                                                    .executes { ctx ->
+                                                                        return@executes image2chisel(
+                                                                            ctx,
+                                                                            StringArgumentType.getString(ctx, "image"),
+                                                                            IntegerArgumentType.getInteger(ctx, "z_min"),
+                                                                            IntegerArgumentType.getInteger(ctx, "z_max"),
+                                                                            StringArgumentType.getString(ctx, "direction"),
+                                                                            StringArgumentType.getString(ctx, "palette"),
+                                                                            BoolArgumentType.getBool(ctx, "set_air")
+                                                                        )
+                                                                    }
+                                                            )
                                                     )
                                             )
                                     )
