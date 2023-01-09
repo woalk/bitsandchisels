@@ -6,10 +6,24 @@ import net.minecraft.util.math.BlockPos
 import net.minecraft.util.math.Direction
 import net.minecraft.world.World
 
-fun ChiseledImage.canPlace(player: PlayerEntity, startingPos: BlockPos, direction: Direction): Boolean {
-    for (x in 0 until blockWidth) {
-        for (y in 0 until blockHeight) {
-            if (!player.world.canSetBlock(startingPos.add(x, y, 0))) return false
+fun ChiseledImage.canPlace(player: PlayerEntity, startingPosInput: BlockPos, direction: Direction): Boolean {
+    val startingPos = when (direction) {
+        Direction.SOUTH, Direction.WEST, Direction.DOWN -> startingPosInput
+        Direction.NORTH -> startingPosInput.add(blockWidth - 1, 0, 0)
+        Direction.EAST -> startingPosInput.add(0, 0, blockWidth - 1)
+        Direction.UP -> startingPosInput.add(blockWidth - 1, 0, 0)
+    }
+    for (blockXOffset in 0 until blockWidth) {
+        for (blockYOffset in 0 until blockHeight) {
+            val offsetPos = when (direction) {
+                Direction.SOUTH -> startingPos.add(blockXOffset, blockYOffset, 0)
+                Direction.NORTH -> startingPos.add(-blockXOffset, blockYOffset, 0)
+                Direction.WEST  -> startingPos.add(0, blockYOffset, blockXOffset)
+                Direction.EAST  -> startingPos.add(0, blockYOffset, -blockXOffset)
+                Direction.DOWN  -> startingPos.add(blockXOffset, 0, blockYOffset)
+                Direction.UP    -> startingPos.add(-blockXOffset, 0, blockYOffset)
+            }
+            if (!player.world.canSetBlock(offsetPos)) return false
         }
     }
     return true
@@ -17,16 +31,30 @@ fun ChiseledImage.canPlace(player: PlayerEntity, startingPos: BlockPos, directio
 
 fun ChiseledImage.place(
     world: World,
-    startingPos: BlockPos,
+    startingPosInput: BlockPos,
     zRange: IntRange,
     direction: Direction,
     palette: PaletteIdentifier
 ) {
+    val startingPos = when (direction) {
+        Direction.SOUTH, Direction.WEST, Direction.DOWN -> startingPosInput
+        Direction.NORTH -> startingPosInput.add(blockWidth - 1, 0, 0)
+        Direction.EAST -> startingPosInput.add(0, 0, blockWidth - 1)
+        Direction.UP -> startingPosInput.add(blockWidth - 1, 0, 0)
+    }
     for (blockXOffset in 0 until blockWidth) {
         for (blockYOffset in 0 until blockHeight) {
+            val offsetPos = when (direction) {
+                Direction.SOUTH -> startingPos.add(blockXOffset, blockYOffset, 0)
+                Direction.NORTH -> startingPos.add(-blockXOffset, blockYOffset, 0)
+                Direction.WEST  -> startingPos.add(0, blockYOffset, blockXOffset)
+                Direction.EAST  -> startingPos.add(0, blockYOffset, -blockXOffset)
+                Direction.DOWN  -> startingPos.add(blockXOffset, 0, blockYOffset)
+                Direction.UP    -> startingPos.add(-blockXOffset, 0, blockYOffset)
+            }
             placeInBlock(
                 world,
-                startingPos.add(blockXOffset, blockYOffset, 0),
+                offsetPos,
                 blockXOffset * 16,
                 blockYOffset * 16,
                 zRange,
@@ -49,10 +77,18 @@ private fun ChiseledImage.placeInBlock(
     for (z in zRange) {
         for (x in 0 until 16) {
             for (y in 0 until 16) {
+                val (bx, by, bz) = when(direction) {
+                    Direction.SOUTH -> Triple(x, y, z)
+                    Direction.NORTH -> Triple(15 - x, y, 15 - z)
+                    Direction.WEST -> Triple(z, y, x)
+                    Direction.EAST -> Triple(15 - z, y, 15 - x)
+                    Direction.DOWN -> Triple(x, z, y)
+                    Direction.UP -> Triple(15 - x, 15 - z, y)
+                }
                 BitUtils.setBit(
                     world,
                     blockPos,
-                    x, y, z,
+                    bx, by, bz,
                     getBlockForPixel(x + xOffset, y + yOffset, palette).defaultState
                 )
             }

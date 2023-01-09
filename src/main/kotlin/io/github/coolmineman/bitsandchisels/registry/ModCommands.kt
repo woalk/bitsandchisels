@@ -64,7 +64,7 @@ object ModCommands : IModRegister {
         image: String,
         zMin: Int = 0,
         zMax: Int = 15,
-        direction: Direction = Direction.SOUTH,
+        directionName: String = "south",
         paletteWildcard: String? = null
     ): Int {
         if (zMin !in 0 until 16 || zMax !in 0 until 16) {
@@ -81,6 +81,11 @@ object ModCommands : IModRegister {
             ctx.source.sendFeedback(Text.literal("image2chisel: Loaded $image"), true)
 
             val blockPos = BlockPos(ctx.source.position)
+            val direction = try {
+                Direction.valueOf(directionName.uppercase())
+            } catch (e: Exception) {
+                Direction.SOUTH
+            }
             if (!chiseledImage.canPlace(ctx.source.playerOrThrow, blockPos, direction)) {
                 throw IllegalArgumentException("You cannot modify blocks in the target area")
             }
@@ -166,19 +171,29 @@ object ModCommands : IModRegister {
                                                 )
                                             }
                                             .then(
-                                                argument("palette", StringArgumentType.string())
+                                                argument("direction", StringArgumentType.string())
                                                     .executes { ctx ->
                                                         return@executes image2chisel(
                                                             ctx,
                                                             StringArgumentType.getString(ctx, "image"),
                                                             IntegerArgumentType.getInteger(ctx, "z_min"),
                                                             IntegerArgumentType.getInteger(ctx, "z_max"),
-                                                            paletteWildcard = StringArgumentType.getString(
-                                                                ctx,
-                                                                "palette"
-                                                            )
+                                                            StringArgumentType.getString(ctx, "direction")
                                                         )
                                                     }
+                                                    .then(
+                                                        argument("palette", StringArgumentType.string())
+                                                            .executes { ctx ->
+                                                                return@executes image2chisel(
+                                                                    ctx,
+                                                                    StringArgumentType.getString(ctx, "image"),
+                                                                    IntegerArgumentType.getInteger(ctx, "z_min"),
+                                                                    IntegerArgumentType.getInteger(ctx, "z_max"),
+                                                                    StringArgumentType.getString(ctx, "direction"),
+                                                                    StringArgumentType.getString(ctx, "palette")
+                                                                )
+                                                            }
+                                                    )
                                             )
                                     )
                             )
