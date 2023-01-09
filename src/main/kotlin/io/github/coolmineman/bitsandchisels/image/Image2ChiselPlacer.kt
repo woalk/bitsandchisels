@@ -42,8 +42,8 @@ fun ChiseledImage.place(
         Direction.EAST -> startingPosInput.add(0, 0, blockWidth - 1)
         Direction.UP -> startingPosInput.add(blockWidth - 1, 0, 0)
     }
-    for (blockXOffset in 0 until blockWidth) {
-        for (blockYOffset in 0 until blockHeight) {
+    for (blockYOffset in 0 until blockHeight) {
+        for (blockXOffset in 0 until blockWidth) {
             val offsetPos = when (direction) {
                 Direction.SOUTH -> startingPos.add(blockXOffset, blockYOffset, 0)
                 Direction.NORTH -> startingPos.add(-blockXOffset, blockYOffset, 0)
@@ -75,8 +75,8 @@ private fun ChiseledImage.placeInBlock(
     palette: PaletteIdentifier
 ) {
     for (z in zRange) {
-        for (x in 0 until 16) {
-            for (y in 0 until 16) {
+        for (y in 0 until minOf(16, height - yOffset)) {
+            for (x in 0 until minOf(16, width - xOffset)) {
                 val (bx, by, bz) = when(direction) {
                     Direction.SOUTH -> Triple(x, y, z)
                     Direction.NORTH -> Triple(15 - x, y, 15 - z)

@@ -53,7 +53,7 @@ class ChiseledImage(imageFilePath: String) {
 
     private val dataBuffer = ditheredImage.data.dataBuffer as DataBufferByte
 
-    private fun dataIndex(x: Int, y: Int) = dataBuffer.size - (x + y * width) - 1
+    private fun dataIndex(x: Int, y: Int) = dataBuffer.data.size - (x + y * width) - 1
 
     fun getColorForPixel(x: Int, y: Int): ConcreteColorModel.Color {
         return ConcreteColorModel.Color.values()[
