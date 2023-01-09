@@ -58,4 +58,5 @@ private fun ChiseledImage.placeInBlock(
             }
         }
     }
+    BitUtils.update(world, blockPos)
 }
