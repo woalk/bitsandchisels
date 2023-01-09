@@ -151,6 +151,15 @@ object ModCommands : IModRegister {
                 literal("image2chisel")
                     .requires(Permissions.require(ModPermissions.COMMAND_IMAGE2CHISEL, 2))
                     .then(
+                        literal("help")
+                            .executes { ctx ->
+                                ctx.source.sendFeedback(Text.literal(
+                                    "Usage: /image2chisel <file name, must end with .png> [z_min] [z_max or thickness] [north, south, east, west, up, down] [palette, default \"minecraft:*_concrete\"]"
+                                ), false)
+                                return@executes SINGLE_SUCCESS
+                            }
+                    )
+                    .then(
                         argument("image", StringArgumentType.string())
                             .executes { ctx ->
                                 return@executes image2chisel(
