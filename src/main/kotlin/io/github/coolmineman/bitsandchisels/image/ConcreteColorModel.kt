@@ -39,9 +39,13 @@ class ConcreteColorModel : IndexColorModel(
         WHITE,
         YELLOW;
 
-        fun toBlock(palette: PaletteIdentifier = PaletteIdentifier()): Block =
+        fun toBlock(palette: PaletteIdentifier = PaletteIdentifier(), transparent: Boolean = false): Block =
             if (this == TRANSPARENT) {
-                Blocks.AIR
+                if (transparent) {
+                    Blocks.AIR
+                } else {
+                    Registry.BLOCK.get(palette.toIdentifier(WHITE.name.lowercase()))
+                }
             } else {
                 Registry.BLOCK.get(palette.toIdentifier(name.lowercase()))
             }

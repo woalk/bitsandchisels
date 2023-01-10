@@ -27,6 +27,7 @@ class ChiseledImage(imageFilePath: String) {
         private fun isFileAllowed(name: String): Boolean = !name.contains("../") && name.endsWith(".png")
     }
 
+    private val hasTransparency: Boolean
     private val ditheredImage: BufferedImage
 
     init {
@@ -40,8 +41,9 @@ class ChiseledImage(imageFilePath: String) {
         if (image.width * image.height > MAX_PIXELS) {
             throw IllegalArgumentException("Image is too large, maximum is ${MAX_PIXELS}px")
         }
+        hasTransparency = image.hasTransparentPixel()
         val icm = ConcreteColorModel()
-        ditheredImage = if (image.hasTransparentPixel()) {
+        ditheredImage = if (hasTransparency) {
             val raster = Raster.createWritableRaster(icm.createCompatibleSampleModel(image.width, image.height), null)
             BufferedImage(icm, raster, false, null)
         } else {
@@ -69,6 +71,6 @@ class ChiseledImage(imageFilePath: String) {
     }
 
     fun getBlockForPixel(x: Int, y: Int, palette: PaletteIdentifier = PaletteIdentifier()): Block {
-        return getColorForPixel(x, y).toBlock(palette)
+        return getColorForPixel(x, y).toBlock(palette, hasTransparency)
     }
 }
