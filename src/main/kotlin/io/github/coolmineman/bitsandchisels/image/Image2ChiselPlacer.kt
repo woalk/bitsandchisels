@@ -96,7 +96,8 @@ private fun ChiseledImage.placeInBlock(
                     world,
                     blockPos,
                     bx, by, bz,
-                    block
+                    block,
+                    palette.bitBlockState
                 )
             }
         }

@@ -22,12 +22,17 @@ public class BitUtils {
     private BitUtils(){}
 
     public static boolean setBit(World world, BlockPos block, int x, int y, int z, BlockState state) {
+        return setBit(world, block, x, y, z, state, BitsAndChisels.BITS_BLOCK.getDefaultState());
+    }
+
+    public static boolean setBit(World world, BlockPos block, int x, int y, int z, BlockState state,
+                                 BlockState bitBlockState) {
         BlockState target_state = world.getBlockState(block);
         BlockEntity e1 = world.getBlockEntity(block);
         if (target_state.isAir()) {
-            world.setBlockState(block, BitsAndChisels.BITS_BLOCK.getDefaultState());
+            world.setBlockState(block, bitBlockState);
         } else if (!target_state.isOf(BitsAndChisels.BITS_BLOCK) && target_state.isFullCube(world, block) && e1 == null) {
-            world.setBlockState(block, BitsAndChisels.BITS_BLOCK.getDefaultState(), 0);
+            world.setBlockState(block, bitBlockState, 0);
             world.addBlockEntity(new BitsBlockEntity(target_state, block, BitsAndChisels.BITS_BLOCK.getDefaultState(), true));
         }
         e1 = world.getBlockEntity(block);

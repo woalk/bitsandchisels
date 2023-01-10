@@ -1,5 +1,8 @@
 package io.github.coolmineman.bitsandchisels.image
 
+import io.github.coolmineman.bitsandchisels.BitsAndChisels
+import io.github.coolmineman.bitsandchisels.BitsBlock
+import net.minecraft.block.BlockState
 import net.minecraft.util.Identifier
 import java.lang.IllegalArgumentException
 
@@ -23,6 +26,10 @@ data class PaletteIdentifier(
             throw IllegalArgumentException("blockWildcard must contain *")
         }
     }
+
+    val bitBlockState: BlockState = if (blockWildcard.contains("glass")) {
+        BitsAndChisels.BITS_BLOCK.defaultState.with(BitsBlock.SHADER_TYPE, 3)
+    } else BitsAndChisels.BITS_BLOCK.defaultState
 
     fun toIdentifier(wildcardInsert: String) = Identifier(
         namespace,
