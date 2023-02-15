@@ -16,7 +16,7 @@ object WorldEditCompat : IModRegister {
     @Suppress("unused")
     @Subscribe
     fun onEditSessionEvent(event: EditSessionEvent) {
-        if (event.stage == EditSession.Stage.BEFORE_CHANGE) try {
+        if (event.stage == EditSession.Stage.BEFORE_CHANGE && event.actor != null) try {
             val sessionManager = WorldEdit.getInstance().sessionManager.get(event.actor)
             val transform = sessionManager.clipboard.transform
             if (!transform.isIdentity) {
