@@ -18,6 +18,7 @@ repositories {
     	name = "vram"
     }
     maven("https://oss.sonatype.org/content/repositories/snapshots") { name = "LuckPerms maven" }
+    maven("https://maven.enginehub.org/repo/")
 }
 dependencies {
     val minecraftVersion: String by project
@@ -37,6 +38,9 @@ dependencies {
 
     val fabricPermissionsApiVersion: String by project
     include(modImplementation("me.lucko", "fabric-permissions-api", fabricPermissionsApiVersion))
+
+    val worldEditVersion: String by project
+    modImplementation("com.sk89q.worldedit", "worldedit-fabric-mc1.19.2", worldEditVersion)
 }
 tasks {
     val javaVersion = JavaVersion.VERSION_17
