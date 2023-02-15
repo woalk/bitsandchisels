@@ -7,9 +7,10 @@ import com.sk89q.worldedit.event.extent.EditSessionEvent
 import com.sk89q.worldedit.util.eventbus.Subscribe
 import com.woalk.mods.roleplay.registry.IModRegister
 
-object WorldEditCompat: IModRegister {
+object WorldEditCompat : IModRegister {
     override fun registerAll() {
         WorldEdit.getInstance().eventBus.register(this)
+        WorldEditCommands.registerAll()
     }
 
     @Suppress("unused")

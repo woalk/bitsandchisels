@@ -18,6 +18,7 @@ object ModPermissions {
     const val USE_WRENCH = "${BASE}.use_wrench"
     const val COMMAND_BIT = "${BASE}.bit_command"
     const val COMMAND_IMAGE2CHISEL = "${BASE}.image2chisel_command"
+    const val COMMAND_WORLDEDIT_MINIFY = "${BASE}.worldedit.minify"
 
     const val USE_DEBUG_STICK = "minecraft.use_debug_stick"
 }
