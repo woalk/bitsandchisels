@@ -1,6 +1,7 @@
 package io.github.coolmineman.bitsandchisels.compat
 
 import com.mojang.brigadier.Command.SINGLE_SUCCESS
+import com.mojang.brigadier.arguments.IntegerArgumentType
 import com.mojang.brigadier.context.CommandContext
 import com.sk89q.worldedit.EmptyClipboardException
 import com.sk89q.worldedit.IncompleteRegionException
@@ -11,9 +12,7 @@ import com.sk89q.worldedit.math.BlockVector3
 import com.sk89q.worldedit.regions.CuboidRegion
 import com.sk89q.worldedit.session.ClipboardHolder
 import com.woalk.mods.roleplay.registry.IModRegister
-import io.github.coolmineman.bitsandchisels.BitNbtUtil
 import io.github.coolmineman.bitsandchisels.BitsAndChisels
-import io.github.coolmineman.bitsandchisels.BitsBlock
 import io.github.coolmineman.bitsandchisels.BitsBlockEntity
 import io.github.coolmineman.bitsandchisels.registry.ModPermissions
 import me.lucko.fabric.api.permissions.v0.Permissions
@@ -24,6 +23,9 @@ import net.minecraft.server.command.CommandManager.argument
 import net.minecraft.server.command.CommandManager.literal
 import net.minecraft.server.command.ServerCommandSource
 import net.minecraft.util.math.BlockPos
+import net.minecraft.util.math.Direction
+import net.minecraft.util.math.Vec3d
+import net.minecraft.util.math.Vec3i
 import kotlin.math.ceil
 
 object WorldEditCommands : IModRegister {
@@ -136,6 +138,83 @@ object WorldEditCommands : IModRegister {
         -2
     }
 
+    private fun shift(
+        ctx: CommandContext<ServerCommandSource>,
+        direction: Direction,
+        amount: Int = 1,
+    ): Int = try {
+        val actor = FabricAdapter.adaptPlayer(ctx.source.player)
+        val world = FabricAdapter.adapt(ctx.source.world)
+        val localSession = WorldEdit.getInstance().sessionManager.get(actor)
+
+        val directionVectorInverted = direction.vector.multiply(-1)
+        val translateBy = direction.vector.multiply(amount)
+        val translateByInverted = translateBy.multiply(-1)
+        val selection = localSession.getSelection(world)
+        val changes = localSession.createEditSession(actor).use { editSession ->
+            val (from, to) = if (direction.vector.x < 0 || direction.vector.y < 0 || direction.vector.z < 0) {
+                Pair(direction.vector, Vec3i(selection.width, selection.height, selection.length))
+            } else Pair(Vec3i.ZERO, direction.vector.add(selection.width, selection.height, selection.length))
+            for (x in from.x until to.x) {
+                for (y in from.y until to.y) {
+                    for (z in from.z until to.z) {
+                        val vec = selection.minimumPoint.add(BlockVector3.at(x, y, z))
+                        val newBlock = FabricAdapter.adapt(BitsAndChisels.BITS_BLOCK.defaultState).toBaseBlock()
+                        val bits = BitCompoundUtil.Block3D()
+                        var hasChanged = false
+                        for (i in 0..15) {
+                            for (j in 0..15) {
+                                for (k in 0..15) {
+                                    val targetBit = translateByInverted.add(i, j, k)
+                                    val bit = if (targetBit.x < 0 || targetBit.x > 15 ||
+                                        targetBit.y < 0 || targetBit.y > 15 ||
+                                        targetBit.z < 0 || targetBit.z > 15
+                                    ) {
+                                        val neighborPos = directionVectorInverted.add(vec.x, vec.y, vec.z)
+                                        if (!selection.contains(BlockVector3.at(neighborPos.x, neighborPos.y, neighborPos.z))) {
+                                            null
+                                        } else if (ctx.source.world.getBlockState(BlockPos(neighborPos)).block == BitsAndChisels.BITS_BLOCK) {
+                                            val entity = ctx.source.world.getBlockEntity(BlockPos(neighborPos)) as? BitsBlockEntity
+                                            val oldBits = entity?.states
+                                            val oldBitPos = targetBit.add(direction.vector.multiply(16))
+                                            oldBits?.get(oldBitPos.x)?.get(oldBitPos.y)?.get(oldBitPos.z)
+                                        } else null
+                                    } else {
+                                        val blockPos = BlockPos(vec.x, vec.y, vec.z)
+                                        if (!selection.contains(BlockVector3.at(blockPos.x, blockPos.y, blockPos.z))) {
+                                            null
+                                        } else if (ctx.source.world.getBlockState(blockPos).block == BitsAndChisels.BITS_BLOCK) {
+                                            val entity = ctx.source.world.getBlockEntity(blockPos) as? BitsBlockEntity
+                                            val oldBits = entity?.states
+                                            oldBits?.get(targetBit.x)?.get(targetBit.y)?.get(targetBit.z)
+                                        } else null
+                                    }
+                                    bits[i][j][k] = if (bit != null) {
+                                        hasChanged = true
+                                        bit
+                                    } else Blocks.AIR.defaultState
+                                }
+                            }
+                        }
+                        if (hasChanged) {
+                            editSession.setBlock(vec, newBlock.toBaseBlock(BitCompoundUtil.write3DBitArray(bits)))
+                        }
+                    }
+                }
+            }
+            localSession.remember(editSession)
+            editSession.blockChangeCount
+        }
+
+        actor.print("Changed $changes blocks.")
+        SINGLE_SUCCESS
+    } catch (e: IncompleteRegionException) {
+        -1
+    } catch (e: Exception) {
+        e.printStackTrace()
+        -2
+    }
+
     override fun registerAll() {
         CommandRegistrationCallback.EVENT.register { dispatcher, commandRegistryAccess, _ ->
             dispatcher.register(
@@ -161,6 +240,29 @@ object WorldEditCommands : IModRegister {
                                             ctx,
                                             BlockStateArgumentType.getBlockState(ctx, "from").blockState,
                                             BlockStateArgumentType.getBlockState(ctx, "to").blockState
+                                        )
+                                    }
+                            )
+                    )
+            )
+            dispatcher.register(
+                literal("/bitshift")
+                    .requires(Permissions.require(ModPermissions.COMMAND_WORLDEDIT_SHIFT, 4))
+                    .then(
+                        argument("direction", DirectionArgumentType.direction())
+                            .executes { ctx ->
+                                shift(
+                                    ctx,
+                                    DirectionArgumentType.getDirection(ctx, "direction")
+                                )
+                            }
+                            .then(
+                                argument("amount", IntegerArgumentType.integer(1, 15))
+                                    .executes { ctx ->
+                                        shift(
+                                            ctx,
+                                            DirectionArgumentType.getDirection(ctx, "direction"),
+                                            IntegerArgumentType.getInteger(ctx, "amount")
                                         )
                                     }
                             )

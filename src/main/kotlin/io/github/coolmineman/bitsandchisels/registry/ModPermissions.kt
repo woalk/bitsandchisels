@@ -23,6 +23,7 @@ object ModPermissions {
     private const val COMMAND_WORLDEDIT = "${BASE}.worldedit"
     const val COMMAND_WORLDEDIT_MINIFY = "${COMMAND_WORLDEDIT}.minify"
     const val COMMAND_WORLDEDIT_REPLACE = "${COMMAND_WORLDEDIT}.bitreplace"
+    const val COMMAND_WORLDEDIT_SHIFT = "${COMMAND_WORLDEDIT}.bitshift"
 
     const val USE_DEBUG_STICK = "minecraft.use_debug_stick"
 }
