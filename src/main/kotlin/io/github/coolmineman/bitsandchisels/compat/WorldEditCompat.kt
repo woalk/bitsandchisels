@@ -20,7 +20,12 @@ object WorldEditCompat : IModRegister {
             val sessionManager = WorldEdit.getInstance().sessionManager.get(event.actor)
             val transform = sessionManager.clipboard.transform
             if (!transform.isIdentity) {
-                event.extent = ChiselExtent(event.extent, transform)
+                val isPasting = Thread.currentThread().stackTrace.find {
+                    it.methodName == "cmd\$_paste"
+                } != null
+                if (isPasting) {
+                    event.extent = ChiselExtent(event.extent, transform)
+                }
             }
         } catch (_: EmptyClipboardException) {
         }
