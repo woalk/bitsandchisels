@@ -15,6 +15,7 @@ import com.woalk.mods.roleplay.registry.IModRegister
 import io.github.coolmineman.bitsandchisels.BitsAndChisels
 import io.github.coolmineman.bitsandchisels.BitsBlockEntity
 import io.github.coolmineman.bitsandchisels.registry.ModPermissions
+import io.github.coolmineman.bitsandchisels.utils.DirectionArgumentType
 import me.lucko.fabric.api.permissions.v0.Permissions
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback
 import net.minecraft.block.*
@@ -24,7 +25,6 @@ import net.minecraft.server.command.CommandManager.literal
 import net.minecraft.server.command.ServerCommandSource
 import net.minecraft.util.math.BlockPos
 import net.minecraft.util.math.Direction
-import net.minecraft.util.math.Vec3d
 import net.minecraft.util.math.Vec3i
 import kotlin.math.ceil
 

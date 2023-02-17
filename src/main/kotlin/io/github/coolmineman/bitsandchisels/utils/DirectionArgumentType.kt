@@ -1,4 +1,4 @@
-package io.github.coolmineman.bitsandchisels.compat
+package io.github.coolmineman.bitsandchisels.utils
 
 import com.mojang.brigadier.context.CommandContext
 import io.github.coolmineman.bitsandchisels.BitsAndChisels
@@ -25,7 +25,7 @@ class DirectionArgumentType private constructor() : EnumArgumentType<Direction>(
         fun registerDirectionArgumentType() {
             ArgumentTypeRegistry.registerArgumentType(
                 Identifier(BitsAndChisels.MODID, "direction"),
-                DirectionArgumentType::class.java, ConstantArgumentSerializer.of(::direction)
+                DirectionArgumentType::class.java, ConstantArgumentSerializer.of(Companion::direction)
             )
         }
     }
