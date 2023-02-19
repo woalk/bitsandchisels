@@ -1,26 +1,26 @@
 {
   "schemaVersion": 1,
   "id": "bitsandchisels",
-  "version": "woalk-0.4",
-  "name": "BitsAndChisels",
+  "version": "0.4",
+  "name": "Woalk's BitsAndChisels",
   "description": "Turn Blocks Into Small Bits With Chisels; Build All The Things",
   "authors": [
     "cool_mineman",
     "woalk"
   ],
   "contact": {
-    "homepage": "https://github.com/CoolMineman/BitsAndChisels",
-    "sources": "https://github.com/CoolMineman/BitsAndChisels"
+    "homepage": "https://mods.iramesia.com/docs/bitsandchisels/",
+    "sources": "https://git.woalk.com/mc-mods/bitsandchisels"
   },
   "license": "All rights reserved.",
   "icon": "assets/bitsandchisels/icon.png",
   "environment": "*",
   "entrypoints": {
     "main": [
-      "io.github.coolmineman.bitsandchisels.BitsAndChisels"
+      "com.woalk.mods.bitsandchisels.BitsAndChisels"
     ],
     "client": [
-      "io.github.coolmineman.bitsandchisels.BitsBlockClient"
+      "com.woalk.mods.bitsandchisels.BitsBlockClient"
     ]
   },
   "mixins": [
