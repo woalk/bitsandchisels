@@ -1,13 +1,11 @@
-# Bits And Chisels
-![Java CI with Brachyura](https://github.com/CoolMineman/BitsAndChisels/workflows/Java%20CI%20with%20Brachyura/badge.svg)
-[https://github.com/CoolMineman/BitsAndChisels](https://github.com/CoolMineman/BitsAndChisels)
+# Woalk's Bits And Chisels
 
-Bits and Chisels is a Fabric mod for modern Minecraft that lets you remove small bits from blocks using chisels. You can use these bits to build detailed decorations or whatever else you want. Requires Fabric API. Has Canvas Renderer support for shaders. Uses greedy meshing and the Fabric Renderer API to achieve high FPS post-1.13 rendering changes. This mod was inspired by Chisel and Bits.
-
-## Setup
-
-For setup instructions please see the [fabric wiki page](https://fabricmc.net/wiki/tutorial:setup) that relates to the IDE that you are using.
+[Documentation](https://mods.iramesia.com/docs/bitsandchisels)
 
 ## License
 
-This mod is available under the CC0 license. Feel free to learn from it and incorporate it in your own projects.
+All rights reserved.
+
+All previous versions of this mod in this repository created by woalk,
+even if the `LICENSE` file containing the CC0 text is still present,
+are not licensed (all rights reserved).
