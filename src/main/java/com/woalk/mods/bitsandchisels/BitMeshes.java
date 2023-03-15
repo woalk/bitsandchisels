@@ -223,7 +223,6 @@ public class BitMeshes {
         Sprite sprite = SpriteFinder.get(MinecraftClient.getInstance().getBakedModelManager().getAtlas(SpriteAtlasTexture.BLOCK_ATLAS_TEXTURE)).find(quad, 0);
         transform0(minx * ONE_PIXEL, (maxx + 1) * ONE_PIXEL, miny * ONE_PIXEL, (maxy + 1) * ONE_PIXEL, minz * ONE_PIXEL, (maxz + 1) * ONE_PIXEL, quad, tmp);
         int bake_flags = MutableQuadView.BAKE_LOCK_UV;
-        if (direction == Direction.UP) bake_flags = bake_flags | MutableQuadView.BAKE_FLIP_V;
         quad.spriteBake(0, sprite, bake_flags);
     }
 
