@@ -5,7 +5,7 @@ import com.sk89q.worldedit.EmptyClipboardException
 import com.sk89q.worldedit.WorldEdit
 import com.sk89q.worldedit.event.extent.EditSessionEvent
 import com.sk89q.worldedit.util.eventbus.Subscribe
-import com.woalk.mods.roleplay.registry.IModRegister
+import com.woalk.mods.bitsandchisels.registry.IModRegister
 
 object WorldEditCompat : IModRegister {
     override fun registerAll() {

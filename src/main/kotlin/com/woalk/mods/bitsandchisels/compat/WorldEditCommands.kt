@@ -11,7 +11,7 @@ import com.sk89q.worldedit.fabric.FabricAdapter
 import com.sk89q.worldedit.math.BlockVector3
 import com.sk89q.worldedit.regions.CuboidRegion
 import com.sk89q.worldedit.session.ClipboardHolder
-import com.woalk.mods.roleplay.registry.IModRegister
+import com.woalk.mods.bitsandchisels.registry.IModRegister
 import com.woalk.mods.bitsandchisels.BitsAndChisels
 import com.woalk.mods.bitsandchisels.BitsBlockEntity
 import com.woalk.mods.bitsandchisels.registry.ModPermissions

@@ -1,4 +1,4 @@
-package com.woalk.mods.roleplay.registry
+package com.woalk.mods.bitsandchisels.registry
 
 interface IModRegister {
     fun registerAll()

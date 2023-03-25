@@ -1,9 +1,6 @@
 package com.woalk.mods.bitsandchisels.registry
 
-import com.woalk.mods.roleplay.registry.IModRegister
 import com.woalk.mods.bitsandchisels.BitsAndChisels
-import me.lucko.fabric.api.permissions.v0.Permissions
-import java.util.*
 
 object ModPermissions {
     private const val BASE = BitsAndChisels.MODID

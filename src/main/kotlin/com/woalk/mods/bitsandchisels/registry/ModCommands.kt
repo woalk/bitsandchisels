@@ -5,7 +5,6 @@ import com.mojang.brigadier.arguments.BoolArgumentType
 import com.mojang.brigadier.arguments.IntegerArgumentType
 import com.mojang.brigadier.arguments.StringArgumentType
 import com.mojang.brigadier.context.CommandContext
-import com.woalk.mods.roleplay.registry.IModRegister
 import com.woalk.mods.bitsandchisels.api.BitUtils
 import com.woalk.mods.bitsandchisels.image.ChiseledImage
 import com.woalk.mods.bitsandchisels.image.PaletteIdentifier
