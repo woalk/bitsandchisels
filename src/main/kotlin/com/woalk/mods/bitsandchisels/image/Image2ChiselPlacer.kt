@@ -6,7 +6,7 @@ import net.minecraft.util.math.BlockPos
 import net.minecraft.util.math.Direction
 import net.minecraft.world.World
 
-fun ChiseledImage.canPlace(player: PlayerEntity, startingPosInput: BlockPos, direction: Direction): Boolean {
+fun IChiseledImage.canPlace(player: PlayerEntity, startingPosInput: BlockPos, direction: Direction): Boolean {
     val startingPos = when (direction) {
         Direction.SOUTH, Direction.WEST, Direction.DOWN -> startingPosInput
         Direction.NORTH -> startingPosInput.add(blockWidth - 1, 0, 0)
@@ -29,7 +29,7 @@ fun ChiseledImage.canPlace(player: PlayerEntity, startingPosInput: BlockPos, dir
     return true
 }
 
-fun ChiseledImage.place(
+fun IChiseledImage.place(
     world: World,
     startingPosInput: BlockPos,
     zRange: IntRange,
@@ -67,7 +67,7 @@ fun ChiseledImage.place(
     }
 }
 
-private fun ChiseledImage.placeInBlock(
+private fun IChiseledImage.placeInBlock(
     world: World,
     blockPos: BlockPos,
     xOffset: Int,
@@ -80,7 +80,7 @@ private fun ChiseledImage.placeInBlock(
     for (z in zRange) {
         for (y in 0 until minOf(16, height - yOffset)) {
             for (x in 0 until minOf(16, width - xOffset)) {
-                val block = getBlockForPixel(x + xOffset, y + yOffset, palette).defaultState
+                val block = getStateForPixel(x + xOffset, y + yOffset, palette)
                 if (!setAir && block.isAir) {
                     continue
                 }

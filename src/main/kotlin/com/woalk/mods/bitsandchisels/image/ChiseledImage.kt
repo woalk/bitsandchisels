@@ -2,6 +2,7 @@ package com.woalk.mods.bitsandchisels.image
 
 import net.fabricmc.loader.api.FabricLoader
 import net.minecraft.block.Block
+import net.minecraft.block.BlockState
 import java.awt.image.BufferedImage
 import java.awt.image.DataBufferByte
 import java.awt.image.Raster
@@ -9,7 +10,7 @@ import java.io.File
 import java.io.IOException
 import javax.imageio.ImageIO
 
-class ChiseledImage(imageFilePath: String) {
+class ChiseledImage(imageFilePath: String): IChiseledImage {
     companion object {
         private const val IMAGES_DIR = "images"
         private const val MAX_PIXELS = (16 * 16) * (16 * 16) // 256x256
@@ -54,11 +55,11 @@ class ChiseledImage(imageFilePath: String) {
         g2d.dispose()
     }
 
-    val width by ditheredImage::width
-    val height by ditheredImage::height
+    override val width by ditheredImage::width
+    override val height by ditheredImage::height
 
-    val blockWidth = width.ceilDiv(16)
-    val blockHeight = height.ceilDiv(16)
+    override val blockWidth = width.ceilDiv(16)
+    override val blockHeight = height.ceilDiv(16)
 
     private val dataBuffer = ditheredImage.data.dataBuffer as DataBufferByte
 
@@ -70,7 +71,10 @@ class ChiseledImage(imageFilePath: String) {
                 ].toUByte().toInt()]
     }
 
-    fun getBlockForPixel(x: Int, y: Int, palette: PaletteIdentifier = PaletteIdentifier()): Block {
+    private fun getBlockForPixel(x: Int, y: Int, palette: PaletteIdentifier = PaletteIdentifier()): Block {
         return getColorForPixel(x, y).toBlock(palette, hasTransparency)
     }
+
+    override fun getStateForPixel(x: Int, y: Int, palette: PaletteIdentifier?): BlockState =
+        getBlockForPixel(x, y, palette!!).defaultState
 }

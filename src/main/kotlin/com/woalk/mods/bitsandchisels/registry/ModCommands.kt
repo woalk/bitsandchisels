@@ -5,13 +5,9 @@ import com.mojang.brigadier.arguments.BoolArgumentType
 import com.mojang.brigadier.arguments.IntegerArgumentType
 import com.mojang.brigadier.arguments.StringArgumentType
 import com.mojang.brigadier.context.CommandContext
-import com.woalk.mods.bitsandchisels.BitItem
 import com.woalk.mods.bitsandchisels.api.BitUtils
 import com.woalk.mods.bitsandchisels.blocks.ColoredBlockState
-import com.woalk.mods.bitsandchisels.image.ChiseledImage
-import com.woalk.mods.bitsandchisels.image.PaletteIdentifier
-import com.woalk.mods.bitsandchisels.image.canPlace
-import com.woalk.mods.bitsandchisels.image.place
+import com.woalk.mods.bitsandchisels.image.*
 import com.woalk.mods.bitsandchisels.utils.DirectionArgumentType
 import com.woalk.mods.bitsandchisels.utils.toColor
 import me.lucko.fabric.api.permissions.v0.Permissions
@@ -20,7 +16,6 @@ import net.minecraft.block.BlockState
 import net.minecraft.command.argument.BlockStateArgumentType
 import net.minecraft.command.argument.EntityArgumentType
 import net.minecraft.item.BlockItem
-import net.minecraft.item.DyeableItem
 import net.minecraft.server.command.CommandManager.argument
 import net.minecraft.server.command.CommandManager.literal
 import net.minecraft.server.command.ServerCommandSource
@@ -115,20 +110,28 @@ object ModCommands : IModRegister {
         }
         val zMax1 = if (zMax in 1 until zMin) maxOf(zMin + zMax - 1, zMin) else zMax
         try {
-            val chiseledImage = ChiseledImage(image)
-
-            ctx.source.sendFeedback(Text.literal("image2chisel: Loaded $image"), true)
-
             val blockPos = BlockPos(ctx.source.position)
-            if (!chiseledImage.canPlace(ctx.source.playerOrThrow, blockPos, direction)) {
-                throw IllegalArgumentException("You cannot modify blocks in the target area")
-            }
-            val palette = if (paletteWildcard != null) {
-                PaletteIdentifier.fromString(paletteWildcard)
+            if (paletteWildcard != null) {
+                val chiseledImage = ChiseledImage(image)
+
+                ctx.source.sendFeedback(Text.literal("image2chisel: Loaded $image"), true)
+
+                if (!chiseledImage.canPlace(ctx.source.playerOrThrow, blockPos, direction)) {
+                    throw IllegalArgumentException("You cannot modify blocks in the target area")
+                }
+                val palette = PaletteIdentifier.fromString(paletteWildcard)
+                chiseledImage.place(ctx.source.world, blockPos, zMin..zMax1, direction, palette, replaceAir)
             } else {
-                PaletteIdentifier()
+                val chiseledImage = ChiseledImage24(image)
+
+                ctx.source.sendFeedback(Text.literal("image2chisel24: Loaded $image"), true)
+
+                if (!chiseledImage.canPlace(ctx.source.playerOrThrow, blockPos, direction)) {
+                    throw IllegalArgumentException("You cannot modify blocks in the target area")
+                }
+
+                chiseledImage.place(ctx.source.world, blockPos, zMin..zMax1, direction, PaletteIdentifier(), replaceAir)
             }
-            chiseledImage.place(ctx.source.world, blockPos, zMin..zMax1, direction, palette, replaceAir)
 
             ctx.source.sendFeedback(Text.literal(
                 "image2chisel: Placed $image at (${blockPos.toShortString()})"),
