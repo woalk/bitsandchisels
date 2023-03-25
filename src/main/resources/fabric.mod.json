@@ -17,10 +17,18 @@
   "environment": "*",
   "entrypoints": {
     "main": [
-      "com.woalk.mods.bitsandchisels.BitsAndChisels"
+      "com.woalk.mods.bitsandchisels.BitsAndChisels",
+      {
+        "adapter": "kotlin",
+        "value": "com.woalk.mods.bitsandchisels.BitsAndChiselsMod"
+      }
     ],
     "client": [
-      "com.woalk.mods.bitsandchisels.BitsBlockClient"
+      "com.woalk.mods.bitsandchisels.BitsBlockClient",
+      {
+        "adapter": "kotlin",
+        "value": "com.woalk.mods.bitsandchisels.BitsAndChiselsClientMod"
+      }
     ]
   },
   "mixins": [

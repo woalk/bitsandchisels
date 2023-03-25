@@ -1,0 +1,30 @@
+package com.woalk.mods.bitsandchisels.registry
+
+import com.woalk.mods.bitsandchisels.BitsAndChisels
+import net.minecraft.util.Identifier
+import net.minecraft.util.registry.Registry
+import java.util.*
+
+abstract class ModRegister<T, V>(private val targetRegistry: Registry<V>) : IModRegister {
+    private val tmpRegistry: MutableList<Pair<String, T>> = LinkedList<Pair<String, T>>()
+
+    protected open fun register(id: String, toRegister: T): T {
+        tmpRegistry.add(Pair(id, toRegister))
+        return toRegister
+    }
+
+    protected abstract fun onRegister(toRegister: T): V
+
+    protected open fun getNamespace() = BitsAndChisels.MODID
+
+    protected open fun registerNow(id: String, toRegister: T) {
+        Registry.register(targetRegistry, Identifier(getNamespace(), id), onRegister(toRegister))
+    }
+
+    override fun registerAll() {
+        for ((id, toRegister) in tmpRegistry) {
+            registerNow(id, toRegister)
+        }
+        tmpRegistry.clear()
+    }
+}
