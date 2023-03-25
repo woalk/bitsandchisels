@@ -31,8 +31,12 @@ object ModBlocks : ModRegister<Pair<Block, (() -> FabricItemSettings)?>, Block>(
     //region convenience methods
     private val itemSettings by lazy {
         FabricItemSettings()
-            .group(WoalkItemGroups.WOALK_ITEMS)
-            .rarity(Rarity.COMMON)
+            .rarity(Rarity.EPIC)
+            .apply {
+                if (WoalkItemsMod.isAdmin) {
+                    group(WoalkItemGroups.WOALK_ITEMS)
+                }
+            }
     }
 
     private fun register(id: String, block: Block): Block =
