@@ -1,5 +1,7 @@
 package com.woalk.mods.bitsandchisels.api;
 
+import com.woalk.mods.bitsandchisels.blocks.ColoredBlockState;
+import com.woalk.mods.bitsandchisels.registry.ModBlocks;
 import com.woalk.mods.bitsandchisels.registry.ModPermissions;
 import me.lucko.fabric.api.permissions.v0.Permissions;
 import org.jetbrains.annotations.Nullable;
@@ -29,9 +31,14 @@ public class BitUtils {
                                  BlockState bitBlockState) {
         BlockState target_state = world.getBlockState(block);
         BlockEntity e1 = world.getBlockEntity(block);
+        boolean isColoredBlock = target_state.isOf(ModBlocks.INSTANCE.getColoredBlock());
         if (target_state.isAir()) {
             world.setBlockState(block, bitBlockState);
-        } else if (!target_state.isOf(BitsAndChisels.BITS_BLOCK) && target_state.isFullCube(world, block) && e1 == null) {
+        } else if (!target_state.isOf(BitsAndChisels.BITS_BLOCK) && target_state.isFullCube(world, block) && (e1 == null || isColoredBlock)) {
+            if (isColoredBlock) {
+                target_state = new ColoredBlockState(state, world, block);
+                world.removeBlockEntity(block);
+            }
             world.setBlockState(block, bitBlockState, 0);
             world.addBlockEntity(new BitsBlockEntity(target_state, block, BitsAndChisels.BITS_BLOCK.getDefaultState(), true));
         }

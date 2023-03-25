@@ -2,6 +2,7 @@ package com.woalk.mods.bitsandchisels;
 
 import java.util.Arrays;
 
+import com.woalk.mods.bitsandchisels.blocks.ColoredBlockState;
 import org.jetbrains.annotations.Nullable;
 
 import com.woalk.mods.bitsandchisels.duck.CubeRenderStuff;
@@ -157,12 +158,19 @@ public class BitMeshes {
     }
 
     private static void doQuad(@Nullable World world, @Nullable BlockPos pos, QuadEmitter emitter, Vec3f tmp, Direction d, BlockState state, int minx, int miny, int minz, int maxx, int maxy, int maxz) {
-        CubeRenderStuff cubeRenderStuff = CubeRenderStuff.of(state);
+        boolean isColoredBlock = state instanceof ColoredBlockState;
+        CubeRenderStuff cubeRenderStuff = CubeRenderStuff.of(
+                isColoredBlock ? ((ColoredBlockState) state).getWrapped() : state
+        );
         for (int z = 0; z < cubeRenderStuff.getQuads(d.getId()).length; z++) {
             BakedQuad vanillaQuad = cubeRenderStuff.getQuads(d.getId())[z];
             MutableQuadView quad = emitter.fromVanilla(vanillaQuad, cubeRenderStuff.getMaterials(d.getId())[z], d);
             BitMeshes.transform(quad, d, minx, miny, minz, maxx, maxy, maxz, tmp);
-            if (vanillaQuad.hasColor()) {
+            //noinspection ConstantConditions
+            if (isColoredBlock) {
+                int color = ((ColoredBlockState) state).getColor();
+                quad.spriteColor(0, color, color, color, color);
+            } else if (vanillaQuad.hasColor()) {
                 int color = 0xFF000000 | ColorPolice.getBlockColor(state, world, pos, vanillaQuad.getColorIndex());
                 quad.spriteColor(0, color, color, color, color);
             }

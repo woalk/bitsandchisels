@@ -2,6 +2,8 @@ package com.woalk.mods.bitsandchisels;
 
 import java.util.ArrayList;
 
+import com.woalk.mods.bitsandchisels.blocks.ColoredBlockState;
+import net.minecraft.item.DyeableItem;
 import org.jetbrains.annotations.Nullable;
 
 import net.minecraft.block.BlockState;
@@ -80,6 +82,8 @@ public class BitNbtUtil {
     public static BlockState toBlockState(@Nullable NbtCompound tag) {
         if (tag == null) {
             return Blocks.AIR.getDefaultState();
+        } else if (tag.contains(DyeableItem.COLOR_KEY)) {
+            return new ColoredBlockState(tag.getInt(DyeableItem.COLOR_KEY));
         } else {
             return NbtHelper.toBlockState(tag);
         }
@@ -88,6 +92,10 @@ public class BitNbtUtil {
     public static NbtCompound fromBlockState(@Nullable BlockState state) {
         if (state == null) {
             return NbtHelper.fromBlockState(Blocks.AIR.getDefaultState());
+        } else if (state instanceof ColoredBlockState) {
+            NbtCompound nbt = NbtHelper.fromBlockState(state);
+            nbt.putInt(DyeableItem.COLOR_KEY, ((ColoredBlockState) state).getColor());
+            return nbt;
         } else {
             return NbtHelper.fromBlockState(state);
         }

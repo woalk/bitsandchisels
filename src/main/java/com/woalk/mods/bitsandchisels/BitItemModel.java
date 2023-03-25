@@ -9,6 +9,8 @@ import java.util.function.Supplier;
 
 import com.mojang.datafixers.util.Pair;
 
+import com.woalk.mods.bitsandchisels.blocks.ColoredBlockState;
+import com.woalk.mods.bitsandchisels.registry.ModBlocks;
 import net.fabricmc.fabric.api.client.rendering.v1.ColorProviderRegistry;
 import net.fabricmc.fabric.api.renderer.v1.model.FabricBakedModel;
 import net.fabricmc.fabric.api.renderer.v1.render.RenderContext;
@@ -56,7 +58,10 @@ public class BitItemModel implements UnbakedModel, BakedModel, FabricBakedModel 
     private static BlockState transform_state;
     private static final QuadTransform TRANSFORM = quad -> {
         BlockColorProvider colorthing = ColorProviderRegistry.BLOCK.get(transform_state.getBlock());
-        if (colorthing != null) {
+        if (transform_state instanceof ColoredBlockState) {
+            int color = 0xFF000000 | ((ColoredBlockState) transform_state).getColor();
+            quad.spriteColor(0, color, color, color, color);
+        } else if (colorthing != null) {
             int color = 0xFF000000 | ColorPolice.getBlockColor(transform_state, null, null, quad.colorIndex());
             quad.spriteColor(0, color, color, color, color);
         }
@@ -85,7 +90,10 @@ public class BitItemModel implements UnbakedModel, BakedModel, FabricBakedModel 
         if (!stack.hasNbt() || stack.getSubNbt("bit") == null) return;
         transform_state = cache.computeIfAbsent(stack.getNbt(), tag -> BitNbtUtil.toBlockState(stack.getSubNbt("bit")));
         context.pushTransform(TRANSFORM);
-        context.fallbackConsumer().accept(MinecraftClient.getInstance().getBlockRenderManager().getModel(transform_state));
+        context.fallbackConsumer().accept(MinecraftClient.getInstance().getBlockRenderManager().getModel(
+                transform_state instanceof ColoredBlockState ?
+                        ((ColoredBlockState) transform_state).getWrapped() :
+                        transform_state));
         context.popTransform();
     }
 

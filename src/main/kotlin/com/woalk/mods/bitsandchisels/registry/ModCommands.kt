@@ -5,18 +5,22 @@ import com.mojang.brigadier.arguments.BoolArgumentType
 import com.mojang.brigadier.arguments.IntegerArgumentType
 import com.mojang.brigadier.arguments.StringArgumentType
 import com.mojang.brigadier.context.CommandContext
+import com.woalk.mods.bitsandchisels.BitItem
 import com.woalk.mods.bitsandchisels.api.BitUtils
+import com.woalk.mods.bitsandchisels.blocks.ColoredBlockState
 import com.woalk.mods.bitsandchisels.image.ChiseledImage
 import com.woalk.mods.bitsandchisels.image.PaletteIdentifier
 import com.woalk.mods.bitsandchisels.image.canPlace
 import com.woalk.mods.bitsandchisels.image.place
 import com.woalk.mods.bitsandchisels.utils.DirectionArgumentType
+import com.woalk.mods.bitsandchisels.utils.toColor
 import me.lucko.fabric.api.permissions.v0.Permissions
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback
 import net.minecraft.block.BlockState
 import net.minecraft.command.argument.BlockStateArgumentType
 import net.minecraft.command.argument.EntityArgumentType
 import net.minecraft.item.BlockItem
+import net.minecraft.item.DyeableItem
 import net.minecraft.server.command.CommandManager.argument
 import net.minecraft.server.command.CommandManager.literal
 import net.minecraft.server.command.ServerCommandSource
@@ -54,6 +58,39 @@ object ModCommands : IModRegister {
             Text.literal("Gave $count ")
                 .append(block.block.name)
                 .append(Text.literal(" bit to "))
+                .append(player.displayName),
+            true
+        )
+        return SINGLE_SUCCESS
+    }
+
+    private fun giveColoredBlockBit(
+        ctx: CommandContext<ServerCommandSource>,
+        player: ServerPlayerEntity? = ctx.source.player,
+        colorString: String,
+        count: Int = 1
+    ): Int {
+        if (player == null) {
+            ctx.source.sendFeedback(
+                Text.literal("No target player given").formatted(Formatting.RED),
+                false
+            )
+            return -1
+        }
+        val color = colorString.toColor()
+        if (color == null || color <= -1) {
+            ctx.source.sendFeedback(
+                Text.literal("Invalid color").formatted(Formatting.RED),
+                false
+            )
+            return -2
+        }
+        val bit = BitUtils.getBitItemStack(ColoredBlockState(color))
+        bit.count = count
+        player.giveItemStack(bit)
+        ctx.source.sendFeedback(
+            Text.literal("Gave $count ")
+                .append(Text.literal("colored bits in #$colorString to "))
                 .append(player.displayName),
             true
         )
@@ -132,6 +169,16 @@ object ModCommands : IModRegister {
                                         )
                                     }
                             )
+                            .then(
+                                argument("color", StringArgumentType.string())
+                                    .executes { ctx ->
+                                        return@executes giveColoredBlockBit(
+                                            ctx,
+                                            ctx.source.player,
+                                            StringArgumentType.getString(ctx, "color")
+                                        )
+                                    }
+                            )
                     )
                     .then(
                         argument("block", BlockStateArgumentType.blockState(commandRegistryAccess))
@@ -142,6 +189,18 @@ object ModCommands : IModRegister {
                                     BlockStateArgumentType.getBlockState(ctx, "block").blockState
                                 )
                             }
+                    )
+                    .then(
+                        literal("#")
+                            .then(
+                                argument("color", StringArgumentType.string())
+                                    .executes { ctx ->
+                                        return@executes giveColoredBlockBit(
+                                            ctx,
+                                            colorString = StringArgumentType.getString(ctx, "color")
+                                        )
+                                    }
+                            )
                     )
             )
             dispatcher.register(
