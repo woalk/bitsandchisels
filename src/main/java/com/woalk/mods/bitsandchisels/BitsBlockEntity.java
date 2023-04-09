@@ -1,6 +1,10 @@
 package com.woalk.mods.bitsandchisels;
 
 import com.woalk.mods.bitsandchisels.mixin.SimpleVoxelShapeFactory;
+import net.minecraft.nbt.NbtList;
+import net.minecraft.nbt.NbtString;
+import net.minecraft.text.Text;
+import net.minecraft.util.Nameable;
 import org.jetbrains.annotations.Nullable;
 
 import net.fabricmc.api.EnvType;
@@ -22,13 +26,18 @@ import net.minecraft.util.shape.BitSetVoxelSet;
 import net.minecraft.util.shape.VoxelShape;
 import net.minecraft.util.shape.VoxelShapes;
 
-public class BitsBlockEntity extends BlockEntity implements RenderAttachmentBlockEntity {
+import java.util.ArrayList;
+import java.util.List;
+
+public class BitsBlockEntity extends BlockEntity implements RenderAttachmentBlockEntity, Nameable {
     private BlockState[][][] states;
     @Environment(EnvType.CLIENT)
     protected Mesh mesh;
     protected VoxelShape shape = VoxelShapes.fullCube();
     protected NbtCompound nbtCache;
     private boolean alive = false;
+    private Text customName = null;
+    private List<Text> loreText = null;
 
     public BitsBlockEntity(BlockPos pos, BlockState state) {
         this(Blocks.AIR.getDefaultState(), pos, state, false);
@@ -55,12 +64,38 @@ public class BitsBlockEntity extends BlockEntity implements RenderAttachmentBloc
     public void writeNbt(NbtCompound tag) {
         super.writeNbt(tag);
         if (!alive) return;
+        writeBitNbt(tag);
+        if (customName != null || loreText != null) {
+            NbtCompound displayNbt = new NbtCompound();
+            writeNameNbt(displayNbt);
+            tag.put("display", displayNbt);
+        }
+    }
+
+    public void writeBitNbt(NbtCompound tag) {
         if (nbtCache == null) {
             BitsAndChisels.LOGGER.error("NbtCache should not be null!");
             BitNbtUtil.write3DBitArray(tag, states);
         } else {
             tag.copyFrom(nbtCache);
         }
+    }
+
+    public void writeNameNbt(NbtCompound displayNbt) {
+        if (customName != null) {
+            displayNbt.putString("Name", Text.Serializer.toJson(this.customName));
+        }
+        if (loreText != null) {
+            NbtList loreNbt = new NbtList();
+            loreText.forEach((text) -> loreNbt.add(NbtString.of(oldChiselItemCompat(Text.Serializer.toJson(text)))));
+            displayNbt.put("Lore", loreNbt);
+        }
+    }
+
+    private String oldChiselItemCompat(String json) {
+        if (json.equals("{\"text\":\"(+NBT)\"}")) {
+            return "\"(+NBT)\"";
+        } else return json;
     }
 
     @Override
@@ -72,7 +107,22 @@ public class BitsBlockEntity extends BlockEntity implements RenderAttachmentBloc
             postFromClientTag();
         }
         rebuildNbtCache();
+        if (tag.contains("display")) {
+            NbtCompound displayNbt = tag.getCompound("display");
+            if (displayNbt.contains("Name")) {
+                customName = Text.Serializer.fromJson(displayNbt.getString("Name"));
+            }
+            if (displayNbt.contains("Lore")) {
+                NbtList loreNbt = displayNbt.getList("Lore", NbtList.STRING_TYPE);
+                readLoreText(loreNbt);
+            }
+        }
         alive = true;
+    }
+
+    public void readLoreText(NbtList loreNbt) {
+        loreText = new ArrayList<>(loreNbt.size());
+        loreNbt.forEach((textNbt) -> loreText.add(Text.Serializer.fromJson(textNbt.asString())));
     }
     
     private void rebuildNbtCache() {
@@ -172,4 +222,18 @@ public class BitsBlockEntity extends BlockEntity implements RenderAttachmentBloc
         return mesh;
     }
 
+    @Override
+    public Text getName() {
+        return null;
+    }
+
+    @Nullable
+    @Override
+    public Text getCustomName() {
+        return Nameable.super.getCustomName();
+    }
+
+    public void setCustomName(Text customName) {
+        this.customName = customName;
+    }
 }

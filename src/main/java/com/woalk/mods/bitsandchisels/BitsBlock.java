@@ -6,11 +6,14 @@ import net.minecraft.block.BlockState;
 import net.minecraft.block.ShapeContext;
 import net.minecraft.block.Waterloggable;
 import net.minecraft.block.entity.BlockEntity;
+import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.fluid.FluidState;
 import net.minecraft.fluid.Fluids;
 import net.minecraft.item.ItemPlacementContext;
 import net.minecraft.item.ItemStack;
+import net.minecraft.nbt.NbtCompound;
+import net.minecraft.nbt.NbtElement;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.state.StateManager.Builder;
 import net.minecraft.state.property.IntProperty;
@@ -22,6 +25,7 @@ import net.minecraft.util.shape.VoxelShapes;
 import net.minecraft.world.BlockView;
 import net.minecraft.world.World;
 import net.minecraft.world.WorldAccess;
+import org.jetbrains.annotations.Nullable;
 
 public class BitsBlock extends Block implements BlockEntityProvider, Waterloggable {
 
@@ -60,7 +64,21 @@ public class BitsBlock extends Block implements BlockEntityProvider, Waterloggab
     public void onBreak(World world, BlockPos pos, BlockState state, PlayerEntity player) {
         BlockEntity blockEntity = world.getBlockEntity(pos);
         if (world instanceof ServerWorld && blockEntity != null) {
-            dropStack(world, pos, ItemHelpers.blockToItem(this, blockEntity));
+            dropStack(world, pos, ItemHelpers.blockToItem(this, state, blockEntity));
+        }
+    }
+
+    @Override
+    public void onPlaced(World world, BlockPos pos, BlockState state, @Nullable LivingEntity placer, ItemStack itemStack) {
+        super.onPlaced(world, pos, state, placer, itemStack);
+        BitsBlockEntity blockEntity = world.getBlockEntity(pos, BitsAndChisels.BITS_BLOCK_ENTITY).orElse(null);
+        if (blockEntity == null) return;
+        if (itemStack.hasCustomName()) {
+            blockEntity.setCustomName(itemStack.getName());
+        }
+        NbtCompound displayNbt = itemStack.getSubNbt("display");
+        if (displayNbt != null && displayNbt.contains("Lore")) {
+            blockEntity.readLoreText(displayNbt.getList("Lore", NbtElement.STRING_TYPE));
         }
     }
 
@@ -71,7 +89,7 @@ public class BitsBlock extends Block implements BlockEntityProvider, Waterloggab
 
     @Override
     public ItemStack getPickStack(BlockView world, BlockPos pos, BlockState state) {
-        return ItemHelpers.blockToItem(this, world.getBlockEntity(pos));
+        return ItemHelpers.blockToItem(this, state, world.getBlockEntity(pos));
     }
     
     @Override
