@@ -34,4 +34,12 @@ class ColoredBlockState(
         ModBlocks.coloredBlock.defaultState,
         color
     )
+
+    override fun equals(other: Any?): Boolean {
+        return if (other is ColoredBlockState) color == other.color else false
+    }
+
+    override fun hashCode(): Int {
+        return color
+    }
 }
