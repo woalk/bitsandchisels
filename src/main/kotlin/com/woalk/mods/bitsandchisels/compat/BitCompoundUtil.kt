@@ -2,10 +2,13 @@ package com.woalk.mods.bitsandchisels.compat
 
 import com.sk89q.jnbt.ByteArrayTag
 import com.sk89q.jnbt.CompoundTag
+import com.sk89q.jnbt.IntTag
 import com.sk89q.jnbt.ListTag
 import com.sk89q.jnbt.Tag
+import com.woalk.mods.bitsandchisels.blocks.ColoredBlockState
 import net.minecraft.block.BlockState
 import net.minecraft.block.Blocks
+import net.minecraft.item.DyeableItem
 
 typealias Block3D = Array<Array<Array<BlockState?>>>
 
@@ -81,16 +84,24 @@ object BitCompoundUtil {
     private fun toBlockState(tag: CompoundTag?): BlockState {
         return if (tag == null) {
             Blocks.AIR.defaultState
+        } else if (tag.containsKey(DyeableItem.COLOR_KEY)) {
+            return ColoredBlockState(tag.getInt(DyeableItem.COLOR_KEY))
         } else {
             CompoundHelper.toBlockState(tag)
         }
     }
 
     private fun fromBlockState(state: BlockState?): CompoundTag {
-        return if (state == null) {
-            CompoundHelper.fromBlockState(Blocks.AIR.defaultState)
-        } else {
-            CompoundHelper.fromBlockState(state)
+        return when (state) {
+            null -> CompoundHelper.fromBlockState(Blocks.AIR.defaultState)
+            is ColoredBlockState -> {
+                CompoundHelper.fromBlockState(state).run {
+                    val map = value.toMutableMap()
+                    map[DyeableItem.COLOR_KEY] = IntTag(state.color)
+                    setValue(map)
+                }
+            }
+            else -> CompoundHelper.fromBlockState(state)
         }
     }
 }
