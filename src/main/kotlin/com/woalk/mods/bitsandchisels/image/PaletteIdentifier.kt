@@ -21,9 +21,11 @@ data class PaletteIdentifier(
         }
     }
 
+    private val withSkinColors = blockWildcard.contains('+')
+
     init {
-        if (!blockWildcard.contains('*')) {
-            throw IllegalArgumentException("blockWildcard must contain *")
+        if (!blockWildcard.contains('*') && !withSkinColors) {
+            throw IllegalArgumentException("blockWildcard must contain * or +")
         }
     }
 
@@ -33,6 +35,6 @@ data class PaletteIdentifier(
 
     fun toIdentifier(wildcardInsert: String) = Identifier(
         namespace,
-        blockWildcard.replace("*", wildcardInsert)
+        blockWildcard.replace(if (withSkinColors) "+" else "*", wildcardInsert)
     )
 }

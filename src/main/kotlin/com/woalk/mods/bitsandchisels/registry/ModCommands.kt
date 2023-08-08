@@ -112,7 +112,7 @@ object ModCommands : IModRegister {
         try {
             val blockPos = BlockPos(ctx.source.position)
             if (paletteWildcard != null) {
-                val chiseledImage = ChiseledImage(image)
+                val chiseledImage = ChiseledImage(image, paletteWildcard.contains('+'))
 
                 ctx.source.sendFeedback(Text.literal("image2chisel: Loaded $image"), true)
 

@@ -10,7 +10,7 @@ import java.io.File
 import java.io.IOException
 import javax.imageio.ImageIO
 
-class ChiseledImage(imageFilePath: String): IChiseledImage {
+class ChiseledImage(imageFilePath: String, withSkinColors: Boolean = false): IChiseledImage {
     companion object {
         private const val IMAGES_DIR = "images"
         private const val MAX_PIXELS = (16 * 16) * (16 * 16) // 256x256
