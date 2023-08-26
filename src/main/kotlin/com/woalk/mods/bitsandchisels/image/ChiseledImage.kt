@@ -43,7 +43,7 @@ class ChiseledImage(imageFilePath: String, withSkinColors: Boolean = false): ICh
             throw IllegalArgumentException("Image is too large, maximum is ${MAX_PIXELS}px")
         }
         hasTransparency = image.hasTransparentPixel()
-        val icm = ConcreteColorModel()
+        val icm = ConcreteColorModel(withSkinColors)
         ditheredImage = if (hasTransparency) {
             val raster = Raster.createWritableRaster(icm.createCompatibleSampleModel(image.width, image.height), null)
             BufferedImage(icm, raster, false, null)

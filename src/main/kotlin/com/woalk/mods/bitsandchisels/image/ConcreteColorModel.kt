@@ -6,9 +6,9 @@ import net.minecraft.util.registry.Registry
 import java.awt.image.IndexColorModel
 
 @OptIn(ExperimentalUnsignedTypes::class)
-class ConcreteColorModel(val withSkinColor: Boolean = false) : IndexColorModel(
+class ConcreteColorModel(withSkinColor: Boolean = false) : IndexColorModel(
     5,
-    17,
+    17 + if (withSkinColor) 2 else 0,
     /*r*/
     ubyteArrayOf(255U,   0U,  45U,  97U,  21U,  55U,  74U,  36U, 125U,  94U, 169U, 225U, 213U, 101U, 142U, 208U, 242U)
         .toByteArray() + if (withSkinColor) ubyteArrayOf(255U, 224U).toByteArray() else byteArrayOf(),
