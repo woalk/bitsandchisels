@@ -55,7 +55,7 @@ object BitCompoundUtil {
         return true
     }
 
-    fun write3DBitArray(from: Block3D): CompoundTag {
+    fun write3DBitArray(from: Block3D, targetTag: CompoundTag? = null): CompoundTag {
         val palette = ArrayList<BlockState>()
         val bits = ByteArray(8192)
         var arrayIndex = 0
@@ -78,7 +78,11 @@ object BitCompoundUtil {
         tag["bits_v2"] = ByteArrayTag(bits)
         val paletteTag = ListTag(CompoundTag::class.java, palette.map { fromBlockState(it) })
         tag["palette"] = paletteTag
-        return CompoundTag(tag)
+        return if (targetTag != null) {
+            targetTag.createBuilder().apply {
+                tag.forEach(this::put)
+            }.build()
+        } else CompoundTag(tag)
     }
 
     private fun toBlockState(tag: CompoundTag?): BlockState {

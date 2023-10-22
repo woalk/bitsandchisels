@@ -29,7 +29,7 @@ class ChiselExtent(extent: Extent, private val transform: Transform) : AbstractD
         val bitsOut = BitCompoundUtil.Block3D()
         BitCompoundUtil.read3DBitArray(tag, bitsIn)
         apply(bitsIn, bitsOut)
-        return BitCompoundUtil.write3DBitArray(bitsOut)
+        return BitCompoundUtil.write3DBitArray(bitsOut, tag)
     }
 
     private fun apply(bitsIn: Block3D, bitsOut: Block3D) {
