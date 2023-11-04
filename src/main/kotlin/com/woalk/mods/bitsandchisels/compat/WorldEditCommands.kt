@@ -145,7 +145,7 @@ object WorldEditCommands : IModRegister {
 
     private fun shift(
         ctx: CommandContext<ServerCommandSource>,
-        direction: Direction,
+        direction: Direction = Direction.getEntityFacingOrder(ctx.source.entityOrThrow).first(),
         amount: Int = 1,
         merge: Boolean = false,
     ): Int = try {
@@ -342,6 +342,25 @@ object WorldEditCommands : IModRegister {
                                                 )
                                             }
                                     )
+                            )
+                    )
+                    .then(
+                        argument("amount", IntegerArgumentType.integer(1, 15))
+                            .executes { ctx ->
+                                shift(
+                                    ctx,
+                                    amount = IntegerArgumentType.getInteger(ctx, "amount")
+                                )
+                            }
+                            .then(
+                                literal("merge")
+                                    .executes { ctx ->
+                                        shift(
+                                            ctx,
+                                            amount = IntegerArgumentType.getInteger(ctx, "amount"),
+                                            merge = true,
+                                        )
+                                    }
                             )
                     )
             )
