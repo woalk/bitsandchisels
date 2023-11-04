@@ -1,5 +1,6 @@
 package com.woalk.mods.bitsandchisels.image
 
+import com.woalk.mods.bitsandchisels.BitsBlock
 import com.woalk.mods.bitsandchisels.api.BitUtils
 import net.minecraft.entity.player.PlayerEntity
 import net.minecraft.util.math.BlockPos
@@ -101,6 +102,9 @@ private fun IChiseledImage.placeInBlock(
                 )
             }
         }
+    }
+    if (palette.blockWildcard.contains("glass")) {
+        world.setBlockState(blockPos, world.getBlockState(blockPos).with(BitsBlock.SHADER_TYPE, 3))
     }
     BitUtils.update(world, blockPos)
 }
