@@ -13,6 +13,7 @@
     "block.woalk.coloured_block": "Custom-Colored Block",
     "gui.bitsandchisels.shader_types": "Available shader_type values:",
     "gui.bitsandchisels.shader_type.explain": "\n%s: %s",
+    "gui.bitsandchisels.shader_type.tooltip": "Shader Type: %s",
     "gui.bitsandchisels.shader_type.0": "None",
     "gui.bitsandchisels.shader_type.1": "Stone",
     "gui.bitsandchisels.shader_type.2": "Polished Andesite/Granite/Diorite",
@@ -29,5 +30,6 @@
     "gui.bitsandchisels.shader_type.13": "Lava (warm light)",
     "gui.bitsandchisels.shader_type.14": "Respawn Anchor (purple light)",
     "gui.bitsandchisels.shader_type.15": "Amethyst Cluster",
-    "gui.bitsandchisels.shader_type.16": "Froglight"
+    "gui.bitsandchisels.shader_type.16": "Froglight",
+    "gui.bitsandchisels.pallette.tooltip": "Bits in pallette: %d"
 }
