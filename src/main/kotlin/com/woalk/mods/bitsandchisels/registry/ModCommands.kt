@@ -11,6 +11,9 @@ import com.woalk.mods.bitsandchisels.image.*
 import com.woalk.mods.bitsandchisels.utils.DirectionArgumentType
 import com.woalk.mods.bitsandchisels.utils.toColor
 import me.lucko.fabric.api.permissions.v0.Permissions
+import net.fabricmc.fabric.api.client.command.v2.ClientCommandManager
+import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback
+import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback
 import net.minecraft.block.BlockState
 import net.minecraft.command.argument.BlockStateArgumentType
@@ -144,6 +147,21 @@ object ModCommands : IModRegister {
             )
             return -2
         }
+
+        return SINGLE_SUCCESS
+    }
+
+    private fun bitShaderHelp(ctx: CommandContext<FabricClientCommandSource>): Int {
+        ctx.source.sendFeedback(Text.empty().apply {
+            append(Text.translatable("gui.bitsandchisels.shader_types").formatted(Formatting.BOLD))
+            for (i in 0..16) {
+                append(Text.translatable(
+                    "gui.bitsandchisels.shader_type.explain",
+                    "%2d".format(i),
+                    Text.translatable("gui.bitsandchisels.shader_type.$i").formatted(Formatting.GOLD)
+                ).formatted(Formatting.RESET))
+            }
+        })
 
         return SINGLE_SUCCESS
     }
@@ -283,6 +301,14 @@ object ModCommands : IModRegister {
                                     )
                             )
                     )
+            )
+        }
+    }
+
+    fun registerAllClient() {
+        ClientCommandRegistrationCallback.EVENT.register { dispatcher, _ ->
+            dispatcher.register(
+                ClientCommandManager.literal("bitshaders").executes(::bitShaderHelp)
             )
         }
     }
