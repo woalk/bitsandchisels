@@ -344,6 +344,7 @@ object WorldEditCommands : IModRegister {
                                     )
                             )
                     )
+                    .executes(::shift)
                     .then(
                         argument("amount", IntegerArgumentType.integer(1, 15))
                             .executes { ctx ->
