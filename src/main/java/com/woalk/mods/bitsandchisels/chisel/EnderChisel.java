@@ -2,6 +2,7 @@ package com.woalk.mods.bitsandchisels.chisel;
 
 import com.woalk.mods.bitsandchisels.BitItem;
 import com.woalk.mods.bitsandchisels.BitsAndChisels;
+import com.woalk.mods.bitsandchisels.BitsBlockEntity;
 import com.woalk.mods.bitsandchisels.api.BitUtils;
 import com.woalk.mods.bitsandchisels.api.client.RedBoxCallback;
 import com.woalk.mods.bitsandchisels.registry.ModPermissions;
@@ -128,6 +129,9 @@ public class EnderChisel extends ToolItem implements ServerPlayNetworking.PlayCh
             int x = (int) Math.floor(((hit.getPos().getX() - pos.getX()) * 16) + (direction.getOffsetX() * -0.5d));
             int y = (int) Math.floor(((hit.getPos().getY() - pos.getY()) * 16) + (direction.getOffsetY() * -0.5d));
             int z = (int) Math.floor(((hit.getPos().getZ() - pos.getZ()) * 16) + (direction.getOffsetZ() * -0.5d));
+            if (!(world.getBlockEntity(pos) instanceof BitsBlockEntity)) {
+                return ActionResult.CONSUME;
+            }
             if (BitUtils.exists(BitUtils.getBit(world, pos, x, y, z))) {
                 PacketByteBuf passedData = new PacketByteBuf(Unpooled.buffer());
                 passedData.writeBlockPos(pos);

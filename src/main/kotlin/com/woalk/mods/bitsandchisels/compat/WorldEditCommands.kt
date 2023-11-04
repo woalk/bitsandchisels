@@ -2,6 +2,7 @@ package com.woalk.mods.bitsandchisels.compat
 
 import com.mojang.brigadier.Command.SINGLE_SUCCESS
 import com.mojang.brigadier.arguments.IntegerArgumentType
+import com.mojang.brigadier.arguments.StringArgumentType
 import com.mojang.brigadier.context.CommandContext
 import com.sk89q.worldedit.EmptyClipboardException
 import com.sk89q.worldedit.IncompleteRegionException
@@ -14,6 +15,7 @@ import com.sk89q.worldedit.session.ClipboardHolder
 import com.woalk.mods.bitsandchisels.registry.IModRegister
 import com.woalk.mods.bitsandchisels.BitsAndChisels
 import com.woalk.mods.bitsandchisels.BitsBlockEntity
+import com.woalk.mods.bitsandchisels.api.BitUtils
 import com.woalk.mods.bitsandchisels.registry.ModPermissions
 import com.woalk.mods.bitsandchisels.utils.DirectionArgumentType
 import me.lucko.fabric.api.permissions.v0.Permissions
@@ -23,9 +25,12 @@ import net.minecraft.command.argument.BlockStateArgumentType
 import net.minecraft.server.command.CommandManager.argument
 import net.minecraft.server.command.CommandManager.literal
 import net.minecraft.server.command.ServerCommandSource
+import net.minecraft.text.Text
+import net.minecraft.util.Formatting
 import net.minecraft.util.math.BlockPos
 import net.minecraft.util.math.Direction
 import net.minecraft.util.math.Vec3i
+import java.util.LinkedList
 import kotlin.math.ceil
 
 object WorldEditCommands : IModRegister {
@@ -215,6 +220,58 @@ object WorldEditCommands : IModRegister {
         -2
     }
 
+    private fun sign(
+        ctx: CommandContext<ServerCommandSource>,
+        name: String? = null,
+        author: String? = ctx.source.name,
+    ): Int = try {
+        val actor = FabricAdapter.adaptPlayer(ctx.source.player)
+        val world = FabricAdapter.adapt(ctx.source.world)
+        val localSession = WorldEdit.getInstance().sessionManager.get(actor)
+
+        val selection = localSession.getSelection(world)
+        val origin = selection.minimumPoint
+        val hasMissed = LinkedList<BlockPos>()
+        var count = 0
+        for (x in 0 until selection.width) {
+            for (y in 0 until selection.height) {
+                for (z in 0 until selection.length) {
+                    val pos = BlockPos(origin.x + x, origin.y + y, origin.z + z)
+                    val be = ctx.source.world.getBlockEntity(pos) as? BitsBlockEntity
+                    if (be == null) {
+                        if (!ctx.source.world.getBlockState(pos).isAir) {
+                            hasMissed.add(pos)
+                        }
+                    } else {
+                        name?.let { be.customName = Text.literal(it) }
+                        be.setLoreText(listOf(
+                            Text.literal("Created by $author"),
+                            Text.literal("($x, $y, $z)").formatted(Formatting.DARK_GRAY),
+                        ))
+                        BitUtils.update(ctx.source.world, pos)
+                        count++
+                    }
+                }
+            }
+        }
+        ctx.source.sendFeedback(Text.literal("Updated $count blocks with signature"), true)
+        if (hasMissed.isNotEmpty()) {
+            ctx.source.sendFeedback(Text.literal(
+                if (hasMissed.size < 4) {
+                    "Warning: ${hasMissed.joinToString(", ") { "(${it.toShortString()})" }} weren't bit blocks or air."
+                } else {
+                    "Warning: Selection contained ${hasMissed.size} blocks that weren't bit blocks or air."
+                }
+            ).formatted(Formatting.YELLOW), false)
+        }
+        SINGLE_SUCCESS
+    } catch (e: IncompleteRegionException) {
+        -1
+    } catch (e: Exception) {
+        e.printStackTrace()
+        -2
+    }
+
     override fun registerAll() {
         CommandRegistrationCallback.EVENT.register { dispatcher, commandRegistryAccess, _ ->
             dispatcher.register(
@@ -263,6 +320,28 @@ object WorldEditCommands : IModRegister {
                                             ctx,
                                             DirectionArgumentType.getDirection(ctx, "direction"),
                                             IntegerArgumentType.getInteger(ctx, "amount")
+                                        )
+                                    }
+                            )
+                    )
+            )
+            dispatcher.register(
+                literal("/bitsign")
+                    .requires(Permissions.require(ModPermissions.COMMAND_WORLDEDIT_SIGN, 4))
+                    .executes(::sign)
+                    .then(
+                        argument("title", StringArgumentType.string())
+                            .executes { ctx ->
+                                sign(ctx, StringArgumentType.getString(ctx, "title"))
+                            }
+                            .then(
+                                argument("author", StringArgumentType.greedyString())
+                                    .requires(Permissions.require(ModPermissions.COMMAND_WORLDEDIT_SIGN_OTHER, 4))
+                                    .executes { ctx ->
+                                        sign(
+                                            ctx,
+                                            StringArgumentType.getString(ctx, "title"),
+                                            StringArgumentType.getString(ctx, "author"),
                                         )
                                     }
                             )

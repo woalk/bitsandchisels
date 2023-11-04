@@ -1,5 +1,6 @@
 package com.woalk.mods.bitsandchisels;
 
+import com.woalk.mods.bitsandchisels.blocks.BitsBlockItem;
 import com.woalk.mods.bitsandchisels.chisel.EnderChisel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,7 +35,7 @@ public class BitsAndChisels implements ModInitializer {
 	public static final ItemGroup ITEM_GROUP = FabricItemGroupBuilder.create(new Identifier(MODID, MODID)).icon(BitsAndChisels::getDiamondChiselStack).build();
 
 	public static final BitsBlock BITS_BLOCK = new BitsBlock(FabricBlockSettings.of(Material.METAL).nonOpaque().dynamicBounds().hardness(4.0f).luminance(s -> s.get(BitsBlock.LIGHT_LEVEL)));
-	public static final BlockItem BITS_BLOCK_ITEM = new BlockItem(BITS_BLOCK, new Item.Settings());
+	public static final BlockItem BITS_BLOCK_ITEM = new BitsBlockItem(BITS_BLOCK, new Item.Settings());
 	public static final DiamondChisel DIAMOND_CHISEL = new DiamondChisel(new Item.Settings().group(ITEM_GROUP));
 	public static final EnderChisel ENDER_CHISEL = new EnderChisel(new Item.Settings().group(ITEM_GROUP));
 	public static final IronChisel IRON_CHISEL = new IronChisel(new Item.Settings().group(ITEM_GROUP));

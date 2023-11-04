@@ -21,6 +21,8 @@ object ModPermissions {
     const val COMMAND_WORLDEDIT_MINIFY = "$COMMAND_WORLDEDIT.minify"
     const val COMMAND_WORLDEDIT_REPLACE = "$COMMAND_WORLDEDIT.bitreplace"
     const val COMMAND_WORLDEDIT_SHIFT = "$COMMAND_WORLDEDIT.bitshift"
+    const val COMMAND_WORLDEDIT_SIGN = "$COMMAND_WORLDEDIT.sign"
+    const val COMMAND_WORLDEDIT_SIGN_OTHER = "$COMMAND_WORLDEDIT.sign.other"
 
     const val USE_DEBUG_STICK = "minecraft.use_debug_stick"
 }

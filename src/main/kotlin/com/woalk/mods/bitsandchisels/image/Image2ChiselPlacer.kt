@@ -1,10 +1,15 @@
 package com.woalk.mods.bitsandchisels.image
 
+import com.woalk.mods.bitsandchisels.BitsBlock
+import com.woalk.mods.bitsandchisels.BitsBlockEntity
 import com.woalk.mods.bitsandchisels.api.BitUtils
 import net.minecraft.entity.player.PlayerEntity
+import net.minecraft.text.Text
+import net.minecraft.util.Formatting
 import net.minecraft.util.math.BlockPos
 import net.minecraft.util.math.Direction
 import net.minecraft.world.World
+import java.util.*
 
 fun IChiseledImage.canPlace(player: PlayerEntity, startingPosInput: BlockPos, direction: Direction): Boolean {
     val startingPos = when (direction) {
@@ -100,6 +105,27 @@ private fun IChiseledImage.placeInBlock(
                     palette.bitBlockState
                 )
             }
+        }
+    }
+    if (palette.blockWildcard.contains("glass")) {
+        world.setBlockState(blockPos, world.getBlockState(blockPos).with(BitsBlock.SHADER_TYPE, 3))
+    }
+    getImageName()?.let { imageName ->
+        val byIndex = imageName.indexOf(" by ")
+        (world.getBlockEntity(blockPos) as? BitsBlockEntity)?.apply {
+            val loreText = LinkedList<Text>()
+            if (byIndex > -1) {
+                val name = imageName.substring(0, byIndex).ifEmpty { "Chiseled Image Block" }
+                val author = imageName.substring(byIndex + 4, imageName.lastIndexOf('.'))
+                customName = Text.literal(name)
+                loreText.add(Text.literal("Created by $author"))
+            } else {
+                customName = Text.literal(imageName.substringBeforeLast('.')).styled {
+                    style -> style.withItalic(false)
+                }
+            }
+            loreText.add(Text.literal("(${xOffset / 16}, ${yOffset / 16})").formatted(Formatting.DARK_GRAY))
+            setLoreText(loreText)
         }
     }
     BitUtils.update(world, blockPos)
