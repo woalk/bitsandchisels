@@ -147,6 +147,7 @@ object WorldEditCommands : IModRegister {
         ctx: CommandContext<ServerCommandSource>,
         direction: Direction,
         amount: Int = 1,
+        merge: Boolean = false,
     ): Int = try {
         val actor = FabricAdapter.adaptPlayer(ctx.source.player)
         val world = FabricAdapter.adapt(ctx.source.world)
@@ -170,28 +171,36 @@ object WorldEditCommands : IModRegister {
                         for (i in 0..15) {
                             for (j in 0..15) {
                                 for (k in 0..15) {
-                                    val targetBit = translateByInverted.add(i, j, k)
-                                    val bit = if (targetBit.x < 0 || targetBit.x > 15 ||
-                                        targetBit.y < 0 || targetBit.y > 15 ||
-                                        targetBit.z < 0 || targetBit.z > 15
+                                    val sourceBitPos = translateByInverted.add(i, j, k)
+                                    val bit = if (sourceBitPos.x < 0 || sourceBitPos.x > 15 ||
+                                        sourceBitPos.y < 0 || sourceBitPos.y > 15 ||
+                                        sourceBitPos.z < 0 || sourceBitPos.z > 15
                                     ) {
                                         val neighborPos = directionVectorInverted.add(vec.x, vec.y, vec.z)
-                                        if (!selection.contains(BlockVector3.at(neighborPos.x, neighborPos.y, neighborPos.z))) {
+                                        if (!merge && !selection.contains(BlockVector3.at(neighborPos.x, neighborPos.y, neighborPos.z))) {
                                             null
                                         } else if (ctx.source.world.getBlockState(BlockPos(neighborPos)).block == BitsAndChisels.BITS_BLOCK) {
                                             val entity = ctx.source.world.getBlockEntity(BlockPos(neighborPos)) as? BitsBlockEntity
                                             val oldBits = entity?.states
-                                            val oldBitPos = targetBit.add(direction.vector.multiply(16))
-                                            oldBits?.get(oldBitPos.x)?.get(oldBitPos.y)?.get(oldBitPos.z)
+                                            val oldBitPos = BlockPos(sourceBitPos.x.mod(16), sourceBitPos.y.mod(16), sourceBitPos.z.mod(16))
+                                            val oldBit = oldBits?.get(oldBitPos.x)?.get(oldBitPos.y)?.get(oldBitPos.z)
+                                            if (oldBit?.isAir != false) {
+                                                val blockPos = BlockPos(vec.x, vec.y, vec.z)
+                                                val entity = ctx.source.world.getBlockEntity(blockPos) as? BitsBlockEntity
+                                                val oldBits = entity?.states
+                                                oldBits?.get(i)?.get(j)?.get(k)
+                                            } else oldBit
                                         } else null
                                     } else {
                                         val blockPos = BlockPos(vec.x, vec.y, vec.z)
                                         if (!selection.contains(BlockVector3.at(blockPos.x, blockPos.y, blockPos.z))) {
-                                            null
+                                            val entity = ctx.source.world.getBlockEntity(blockPos) as? BitsBlockEntity
+                                            val oldBits = entity?.states
+                                            oldBits?.get(i)?.get(j)?.get(k)
                                         } else if (ctx.source.world.getBlockState(blockPos).block == BitsAndChisels.BITS_BLOCK) {
                                             val entity = ctx.source.world.getBlockEntity(blockPos) as? BitsBlockEntity
                                             val oldBits = entity?.states
-                                            oldBits?.get(targetBit.x)?.get(targetBit.y)?.get(targetBit.z)
+                                            oldBits?.get(sourceBitPos.x)?.get(sourceBitPos.y)?.get(sourceBitPos.z)
                                         } else null
                                     }
                                     bits[i][j][k] = if (bit != null) {
@@ -322,6 +331,17 @@ object WorldEditCommands : IModRegister {
                                             IntegerArgumentType.getInteger(ctx, "amount")
                                         )
                                     }
+                                    .then(
+                                        literal("merge")
+                                            .executes { ctx ->
+                                                shift(
+                                                    ctx,
+                                                    DirectionArgumentType.getDirection(ctx, "direction"),
+                                                    IntegerArgumentType.getInteger(ctx, "amount"),
+                                                    true,
+                                                )
+                                            }
+                                    )
                             )
                     )
             )
