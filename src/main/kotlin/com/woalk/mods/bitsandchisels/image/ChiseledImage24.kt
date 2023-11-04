@@ -9,7 +9,7 @@ import java.io.File
 import java.io.IOException
 import javax.imageio.ImageIO
 
-class ChiseledImage24(imageFilePath: String): IChiseledImage {
+class ChiseledImage24(private val imageFilePath: String): IChiseledImage {
     companion object {
         private const val IMAGES_DIR = "images"
         private const val MAX_PIXELS = (16 * 16) * (16 * 16) // 256x256
@@ -54,4 +54,6 @@ class ChiseledImage24(imageFilePath: String): IChiseledImage {
 
     override fun getStateForPixel(x: Int, y: Int, palette: PaletteIdentifier?): BlockState =
         ColoredBlockState(getColorForPixel(x, y))
+
+    override fun getImageName(): String = imageFilePath
 }

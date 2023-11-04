@@ -8,5 +8,6 @@ interface IChiseledImage {
     val blockWidth: Int
     val blockHeight: Int
 
+    fun getImageName(): String? = null
     fun getStateForPixel(x: Int, y: Int, palette: PaletteIdentifier? = null): BlockState
 }

@@ -236,4 +236,8 @@ public class BitsBlockEntity extends BlockEntity implements RenderAttachmentBloc
     public void setCustomName(Text customName) {
         this.customName = customName;
     }
+
+    public void setLoreText(List<Text> loreText) {
+        this.loreText = loreText;
+    }
 }

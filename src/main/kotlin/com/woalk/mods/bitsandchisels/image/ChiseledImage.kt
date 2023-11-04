@@ -10,7 +10,7 @@ import java.io.File
 import java.io.IOException
 import javax.imageio.ImageIO
 
-class ChiseledImage(imageFilePath: String, withSkinColors: Boolean = false): IChiseledImage {
+class ChiseledImage(private val imageFilePath: String, withSkinColors: Boolean = false): IChiseledImage {
     companion object {
         private const val IMAGES_DIR = "images"
         private const val MAX_PIXELS = (16 * 16) * (16 * 16) // 256x256
@@ -77,4 +77,6 @@ class ChiseledImage(imageFilePath: String, withSkinColors: Boolean = false): ICh
 
     override fun getStateForPixel(x: Int, y: Int, palette: PaletteIdentifier?): BlockState =
         getBlockForPixel(x, y, palette!!).defaultState
+
+    override fun getImageName(): String = imageFilePath
 }
