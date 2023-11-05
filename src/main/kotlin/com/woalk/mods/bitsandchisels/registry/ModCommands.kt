@@ -100,7 +100,7 @@ object ModCommands : IModRegister {
         image: String,
         zMin: Int = 0,
         zMax: Int = 15,
-        direction: Direction = Direction.SOUTH,
+        direction: Direction = ctx.source.entity?.let { Direction.getEntityFacingOrder(it).first() } ?: Direction.SOUTH,
         paletteWildcard: String? = null,
         replaceAir: Boolean = true
     ): Int {
@@ -296,6 +296,31 @@ object ModCommands : IModRegister {
                                                                         )
                                                                     }
                                                             )
+                                                    )
+                                            )
+                                            .then(
+                                                argument("palette", StringArgumentType.string())
+                                                    .executes { ctx ->
+                                                        return@executes image2chisel(
+                                                            ctx,
+                                                            StringArgumentType.getString(ctx, "image"),
+                                                            IntegerArgumentType.getInteger(ctx, "z_min"),
+                                                            IntegerArgumentType.getInteger(ctx, "z_max"),
+                                                            paletteWildcard =  StringArgumentType.getString(ctx, "palette")
+                                                        )
+                                                    }
+                                                    .then(
+                                                        argument("set_air", BoolArgumentType.bool())
+                                                            .executes { ctx ->
+                                                                return@executes image2chisel(
+                                                                    ctx,
+                                                                    StringArgumentType.getString(ctx, "image"),
+                                                                    IntegerArgumentType.getInteger(ctx, "z_min"),
+                                                                    IntegerArgumentType.getInteger(ctx, "z_max"),
+                                                                    paletteWildcard = StringArgumentType.getString(ctx, "palette"),
+                                                                    replaceAir = BoolArgumentType.getBool(ctx, "set_air")
+                                                                )
+                                                            }
                                                     )
                                             )
                                     )
