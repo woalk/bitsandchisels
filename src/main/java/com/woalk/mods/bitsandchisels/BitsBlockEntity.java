@@ -1,6 +1,7 @@
 package com.woalk.mods.bitsandchisels;
 
 import com.woalk.mods.bitsandchisels.mixin.SimpleVoxelShapeFactory;
+import net.minecraft.block.entity.BlockEntityType;
 import net.minecraft.nbt.NbtList;
 import net.minecraft.nbt.NbtString;
 import net.minecraft.text.Text;
@@ -55,7 +56,23 @@ public class BitsBlockEntity extends BlockEntity implements RenderAttachmentBloc
     }
 
     public BitsBlockEntity(BlockState[][][] states, BlockPos pos, BlockState state, boolean alive) {
-        super(BitsAndChisels.BITS_BLOCK_ENTITY, pos, state);
+        this(BitsAndChisels.BITS_BLOCK_ENTITY, states, pos, state, alive);
+    }
+
+    public BitsBlockEntity(BlockEntityType<? extends BitsBlockEntity> type, BlockPos pos, BlockState state) {
+        this(type, new BlockState[16][16][16], pos, state, false);
+        final BlockState fillState = Blocks.AIR.getDefaultState();
+        for (int i = 0; i < 16; i++) {
+            for (int j = 0; j < 16; j++) {
+                for (int k = 0; k < 16; k++) {
+                    states[i][j][k] = fillState;
+                }
+            }
+        }
+    }
+
+    public BitsBlockEntity(BlockEntityType<? extends BitsBlockEntity> type, BlockState[][][] states, BlockPos pos, BlockState state, boolean alive) {
+        super(type, pos, state);
         this.states = states;
         this.alive = alive;
     }

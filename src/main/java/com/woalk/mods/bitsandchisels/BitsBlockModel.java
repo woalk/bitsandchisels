@@ -9,6 +9,7 @@ import java.util.function.Supplier;
 
 import com.mojang.datafixers.util.Pair;
 
+import com.woalk.mods.bitsandchisels.blocks.AnimatedBitsBlockEntity;
 import net.fabricmc.fabric.api.renderer.v1.mesh.Mesh;
 import net.fabricmc.fabric.api.renderer.v1.model.FabricBakedModel;
 import net.fabricmc.fabric.api.renderer.v1.model.ModelHelper;
@@ -27,6 +28,7 @@ import net.minecraft.client.texture.SpriteAtlasTexture;
 import net.minecraft.client.util.SpriteIdentifier;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NbtCompound;
+import net.minecraft.nbt.NbtElement;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
@@ -45,6 +47,13 @@ public class BitsBlockModel implements UnbakedModel, BakedModel, FabricBakedMode
     public void emitBlockQuads(BlockRenderView blockView, BlockState state, BlockPos pos, Supplier<Random> randomSupplier, RenderContext context) {
         Object mesh = ((RenderAttachedBlockView) blockView).getBlockEntityRenderAttachment(pos);
         if (mesh instanceof Mesh) context.meshConsumer().accept((Mesh) mesh);
+        else if (mesh instanceof kotlin.Pair) {
+            //noinspection unchecked
+            kotlin.Pair<Integer, List<Mesh>> pair = (kotlin.Pair<Integer, List<Mesh>>) mesh;
+            if (pair.component2().size() > pair.component1()) {
+                context.meshConsumer().accept(pair.component2().get(pair.component1()));
+            }
+        }
     }
 
     @Override
@@ -53,6 +62,9 @@ public class BitsBlockModel implements UnbakedModel, BakedModel, FabricBakedMode
             NbtCompound tag = stack.getSubNbt("BlockEntityTag");
             if (tag != null) {
                 BlockState[][][] bits = new BlockState[16][16][16];
+                if (tag.contains(AnimatedBitsBlockEntity.FRAMES_KEY)) {
+                    tag = tag.getList(AnimatedBitsBlockEntity.FRAMES_KEY, NbtElement.COMPOUND_TYPE).getCompound(0);
+                }
                 if (BitNbtUtil.read3DBitArray(tag, bits)) {
                     return BitMeshes.createMesh(bits, null, null);
                 }
