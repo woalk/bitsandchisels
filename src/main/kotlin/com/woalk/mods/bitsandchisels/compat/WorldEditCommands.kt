@@ -253,10 +253,11 @@ object WorldEditCommands : IModRegister {
                         }
                     } else {
                         name?.let { be.customName = Text.literal(it) }
-                        be.setLoreText(listOf(
-                            Text.literal("Created by $author"),
-                            Text.literal("($x, $y, $z)").formatted(Formatting.DARK_GRAY),
-                        ))
+                        val loreText = mutableListOf<Text>(Text.literal("Created by $author"))
+                        if (selection.width * selection.height * selection.length > 1) loreText.add(
+                            Text.literal("($x, $y, $z)").formatted(Formatting.DARK_GRAY)
+                        )
+                        be.setLoreText(loreText)
                         BitUtils.update(ctx.source.world, pos)
                         count++
                     }
