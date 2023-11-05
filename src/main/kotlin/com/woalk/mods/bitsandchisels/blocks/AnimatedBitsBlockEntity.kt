@@ -19,8 +19,10 @@ class AnimatedBitsBlockEntity(pos: BlockPos, val state: BlockState) : BitsBlockE
 ) {
     companion object {
         const val FRAMES_KEY = "frames"
+        const val FRAME_TIME_KEY = "frametime"
     }
 
+    var frametime: Int = 1
     private val frames: MutableList<Array<Array<Array<BlockState>>>> = LinkedList()
     private val meshes: MutableList<Mesh> = LinkedList()
 
@@ -31,6 +33,11 @@ class AnimatedBitsBlockEntity(pos: BlockPos, val state: BlockState) : BitsBlockE
             BitsAndChisels.LOGGER.error("NbtCache should not be null!")
             writeFrames(tag)
         } else tag.copyFrom(nbtCache)
+    }
+
+    override fun writeNbt(tag: NbtCompound) {
+        super.writeNbt(tag)
+        tag.putInt(FRAME_TIME_KEY, frametime)
     }
 
     override fun rebuildNbtCache() {
@@ -47,6 +54,11 @@ class AnimatedBitsBlockEntity(pos: BlockPos, val state: BlockState) : BitsBlockE
             list.add(frameTag)
         }
         tag.put(FRAMES_KEY, list)
+    }
+
+    override fun readNbt(tag: NbtCompound) {
+        super.readNbt(tag)
+        frametime = tag.getInt(FRAME_TIME_KEY).coerceAtLeast(1)
     }
 
     override fun readBitNbt(tag: NbtCompound) {
@@ -71,10 +83,10 @@ class AnimatedBitsBlockEntity(pos: BlockPos, val state: BlockState) : BitsBlockE
 
     fun tick() {
         frameCounter++
-        if (frameCounter >= frames.size) {
+        if (frameCounter >= frames.size * frametime) {
             frameCounter = 0
         }
     }
 
-    override fun getRenderAttachmentData() = Pair(frameCounter, meshes)
+    override fun getRenderAttachmentData() = Pair(frameCounter / frametime, meshes)
 }

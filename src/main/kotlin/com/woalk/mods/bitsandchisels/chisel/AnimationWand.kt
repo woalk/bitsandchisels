@@ -26,9 +26,21 @@ class AnimationWand(settings: Settings) : ToolItem(ToolMaterials.STONE, settings
             !context.world.canPlayerModifyAt(context.player!!, context.blockPos)) {
             return ActionResult.PASS
         }
-        val chestEntity = context.world?.getBlockEntity(
+        val be = context.world?.getBlockEntity(
             context.blockPos
-        ) as? ChestBlockEntity ?: return ActionResult.PASS
+        ) ?: return ActionResult.PASS
+
+        if (be is AnimatedBitsBlockEntity) {
+            if (context.world.isClient) return ActionResult.success(true)
+            if (context.player!!.isSneaking) {
+                be.frametime = (be.frametime - 1).coerceAtLeast(1)
+            } else be.frametime++
+            be.sync()
+            context.player!!.sendMessage(Text.literal("Set frame time to ${be.frametime}"), true)
+            return ActionResult.SUCCESS
+        }
+
+        val chestEntity = be as? ChestBlockEntity ?: return ActionResult.PASS
         if (context.world.isClient) return ActionResult.success(true)
 
         var error = false
