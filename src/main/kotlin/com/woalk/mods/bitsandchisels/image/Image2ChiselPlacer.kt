@@ -13,9 +13,8 @@ import java.util.*
 
 fun IChiseledImage.canPlace(player: PlayerEntity, startingPosInput: BlockPos, direction: Direction): Boolean {
     val startingPos = when (direction) {
-        Direction.SOUTH, Direction.WEST, Direction.DOWN -> startingPosInput
-        Direction.NORTH -> startingPosInput.add(blockWidth - 1, 0, 0)
-        Direction.EAST -> startingPosInput.add(0, 0, blockWidth - 1)
+        Direction.NORTH, Direction.WEST, Direction.DOWN, Direction.SOUTH -> startingPosInput
+        Direction.EAST -> startingPosInput.add(0, 0, 1 - blockWidth)
         Direction.UP -> startingPosInput.add(blockWidth - 1, 0, 0)
     }
     for (blockXOffset in 0 until blockWidth) {
@@ -43,9 +42,8 @@ fun IChiseledImage.place(
     setAir: Boolean
 ) {
     val startingPos = when (direction) {
-        Direction.SOUTH, Direction.WEST, Direction.DOWN -> startingPosInput
-        Direction.NORTH -> startingPosInput.add(blockWidth - 1, 0, 0)
-        Direction.EAST -> startingPosInput.add(0, 0, blockWidth - 1)
+        Direction.NORTH, Direction.WEST, Direction.DOWN, Direction.SOUTH -> startingPosInput
+        Direction.EAST -> startingPosInput.add(0, 0, 1 - blockWidth)
         Direction.UP -> startingPosInput.add(blockWidth - 1, 0, 0)
     }
     for (blockYOffset in 0 until blockHeight) {
@@ -54,14 +52,14 @@ fun IChiseledImage.place(
                 Direction.SOUTH -> startingPos.add(blockXOffset, blockYOffset, 0)
                 Direction.NORTH -> startingPos.add(-blockXOffset, blockYOffset, 0)
                 Direction.WEST  -> startingPos.add(0, blockYOffset, blockXOffset)
-                Direction.EAST  -> startingPos.add(0, blockYOffset, -blockXOffset)
+                Direction.EAST  -> startingPos.add(0, blockYOffset, blockXOffset)
                 Direction.DOWN  -> startingPos.add(blockXOffset, 0, blockYOffset)
                 Direction.UP    -> startingPos.add(-blockXOffset, 0, blockYOffset)
             }
             placeInBlock(
                 world,
                 offsetPos,
-                blockXOffset * 16,
+                if (direction == Direction.EAST) { blockWidth - blockXOffset - 1 } else { blockXOffset } * 16,
                 blockYOffset * 16,
                 zRange,
                 direction,
@@ -90,8 +88,8 @@ private fun IChiseledImage.placeInBlock(
                     continue
                 }
                 val (bx, by, bz) = when(direction) {
-                    Direction.SOUTH -> Triple(x, y, z)
-                    Direction.NORTH -> Triple(15 - x, y, 15 - z)
+                    Direction.NORTH -> Triple(15 - x, y, z)
+                    Direction.SOUTH -> Triple(x, y, 15 - z)
                     Direction.WEST -> Triple(z, y, x)
                     Direction.EAST -> Triple(15 - z, y, 15 - x)
                     Direction.DOWN -> Triple(x, z, y)
