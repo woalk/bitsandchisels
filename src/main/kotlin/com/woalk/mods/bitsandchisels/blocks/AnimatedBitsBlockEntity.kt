@@ -33,6 +33,7 @@ class AnimatedBitsBlockEntity(pos: BlockPos, val state: BlockState) : BitsBlockE
             BitsAndChisels.LOGGER.error("NbtCache should not be null!")
             writeFrames(tag)
         } else tag.copyFrom(nbtCache)
+        tag.putInt(FRAME_TIME_KEY, frametime)
     }
 
     override fun writeNbt(tag: NbtCompound) {
