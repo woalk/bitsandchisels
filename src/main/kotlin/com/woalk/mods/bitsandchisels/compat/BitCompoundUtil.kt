@@ -21,8 +21,8 @@ object BitCompoundUtil {
 
     fun read3DBitArray(tag: CompoundTag, out: Block3D): Boolean {
         val palette = ArrayList<BlockState>()
-        val palletteTag = tag.getList("palette")
-        for (stateTag in palletteTag) {
+        val paletteTag = tag.getList("palette")
+        for (stateTag in paletteTag) {
             if (stateTag is CompoundTag) {
                 palette.add(toBlockState(stateTag))
             }

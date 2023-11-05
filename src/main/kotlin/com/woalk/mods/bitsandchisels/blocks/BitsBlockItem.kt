@@ -28,7 +28,7 @@ class BitsBlockItem(block: Block, settings: Settings) : BlockItem(block, setting
             stack.getSubNbt("BlockEntityTag")?.getList("palette", NbtElement.COMPOUND_TYPE.toInt())?.let {
                 if (it.isNotEmpty()) {
                     tooltip.add(
-                        Text.translatable("gui.bitsandchisels.pallette.tooltip", it.size)
+                        Text.translatable("gui.bitsandchisels.palette.tooltip", it.size)
                             .formatted(Formatting.GRAY)
                     )
                 }

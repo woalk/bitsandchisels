@@ -34,6 +34,6 @@
     "gui.bitsandchisels.shader_type.14": "Respawn Anchor (purple light)",
     "gui.bitsandchisels.shader_type.15": "Amethyst Cluster",
     "gui.bitsandchisels.shader_type.16": "Froglight",
-    "gui.bitsandchisels.pallette.tooltip": "Bits in pallette: %d",
+    "gui.bitsandchisels.palette.tooltip": "Bits in palette: %d",
     "gui.bitsandchisels.frames.tooltip": "Frames: %d"
 }
