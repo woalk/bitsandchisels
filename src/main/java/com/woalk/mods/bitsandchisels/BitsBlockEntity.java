@@ -30,7 +30,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class BitsBlockEntity extends BlockEntity implements RenderAttachmentBlockEntity, Nameable {
-    private BlockState[][][] states;
+    protected BlockState[][][] states;
     @Environment(EnvType.CLIENT)
     protected Mesh mesh;
     protected VoxelShape shape = VoxelShapes.fullCube();
@@ -101,7 +101,7 @@ public class BitsBlockEntity extends BlockEntity implements RenderAttachmentBloc
     @Override
     public void readNbt(NbtCompound tag) {
         super.readNbt(tag);
-        BitNbtUtil.read3DBitArray(tag, states);
+        readBitNbt(tag);
         rebuildShape();
         if (getWorld() != null && getWorld().isClient) {
             postFromClientTag();
@@ -120,12 +120,16 @@ public class BitsBlockEntity extends BlockEntity implements RenderAttachmentBloc
         alive = true;
     }
 
+    protected void readBitNbt(NbtCompound tag) {
+        BitNbtUtil.read3DBitArray(tag, states);
+    }
+
     public void readLoreText(NbtList loreNbt) {
         loreText = new ArrayList<>(loreNbt.size());
         loreNbt.forEach((textNbt) -> loreText.add(Text.Serializer.fromJson(textNbt.asString())));
     }
     
-    private void rebuildNbtCache() {
+    protected void rebuildNbtCache() {
         NbtCompound c = new NbtCompound();
         BitNbtUtil.write3DBitArray(c, states);
         nbtCache = c;
