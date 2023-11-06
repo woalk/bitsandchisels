@@ -14,6 +14,7 @@
     "block.bitsandchisels.bits_block": "Bit Collection Block",
     "block.bitsandchisels.animated_bits_block": "Animated Bit Collection Block",
     "block.woalk.coloured_block": "Custom-Colored Block",
+    "block.woalk.barrier": "Fake Barrier",
     "gui.bitsandchisels.shader_types": "Available shader_type values:",
     "gui.bitsandchisels.shader_type.explain": "\n%s: %s",
     "gui.bitsandchisels.shader_type.tooltip": "Shader Type: %s",
