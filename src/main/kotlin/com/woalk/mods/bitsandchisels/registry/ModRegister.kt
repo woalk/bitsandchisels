@@ -15,10 +15,10 @@ abstract class ModRegister<T, V>(private val targetRegistry: Registry<V>) : IMod
 
     protected abstract fun onRegister(toRegister: T): V
 
-    protected open fun getNamespace() = BitsAndChisels.MODID
+    protected open fun getNamespace(id: String) = BitsAndChisels.MODID
 
     protected open fun registerNow(id: String, toRegister: T) {
-        Registry.register(targetRegistry, Identifier(getNamespace(), id), onRegister(toRegister))
+        Registry.register(targetRegistry, Identifier(getNamespace(id), id), onRegister(toRegister))
     }
 
     override fun registerAll() {

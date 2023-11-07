@@ -1,10 +1,10 @@
 package com.woalk.mods.bitsandchisels.registry
 
+import com.woalk.mods.bitsandchisels.BitsAndChisels
+import com.woalk.mods.bitsandchisels.BitsBlock
 import com.woalk.mods.bitsandchisels.WoalkItemGroups
 import com.woalk.mods.bitsandchisels.WoalkItemsMod
-import com.woalk.mods.bitsandchisels.blocks.ColoredBlock
-import com.woalk.mods.bitsandchisels.blocks.ColoredBlockEntity
-import com.woalk.mods.bitsandchisels.blocks.ColoredBlockItem
+import com.woalk.mods.bitsandchisels.blocks.*
 import net.fabricmc.fabric.api.client.rendering.v1.ColorProviderRegistry
 import net.fabricmc.fabric.api.item.v1.FabricItemSettings
 import net.fabricmc.fabric.api.`object`.builder.v1.block.FabricBlockSettings
@@ -23,6 +23,14 @@ import net.minecraft.world.BlockView
 @Suppress("unused")
 object ModBlocks : ModRegister<Pair<Block, (() -> FabricItemSettings)?>, Block>(Registry.BLOCK) {
     //region block declarations
+    val animatedBitsBlock = register("animated_bits_block", Pair(AnimatedBitsBlock(
+        FabricBlockSettings.of(Material.METAL)
+            .nonOpaque()
+            .dynamicBounds()
+            .hardness(4.0f)
+            .luminance { s -> s.get(BitsBlock.LIGHT_LEVEL) }
+    ), ::FabricItemSettings)).first
+
     val coloredBlock = register("coloured_block", ColoredBlock(
         FabricBlockSettings.copy(Blocks.WHITE_CONCRETE)
     ))
@@ -44,16 +52,17 @@ object ModBlocks : ModRegister<Pair<Block, (() -> FabricItemSettings)?>, Block>(
 
     override fun onRegister(toRegister: Pair<Block, (() -> FabricItemSettings)?>) = toRegister.first
 
-    override fun getNamespace() = WoalkItemsMod.MOD_ID
+    override fun getNamespace(id: String) = if (id == "coloured_block") WoalkItemsMod.MOD_ID else BitsAndChisels.MODID
 
     override fun registerNow(id: String, toRegister: Pair<Block, (() -> FabricItemSettings)?>) {
         super.registerNow(id, toRegister)
         if (toRegister.second != null) {
             Registry.register(
                 Registry.ITEM,
-                Identifier(getNamespace(), id),
+                Identifier(getNamespace(id), id),
                 when (id) {
                     "coloured_block" -> ColoredBlockItem(toRegister.first, toRegister.second!!.invoke())
+                    "animated_bits_block" -> BitsBlockItem(toRegister.first, toRegister.second!!.invoke())
                     else -> BlockItem(toRegister.first, toRegister.second!!.invoke())
                 }
             )

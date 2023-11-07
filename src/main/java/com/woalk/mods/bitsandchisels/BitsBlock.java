@@ -1,7 +1,8 @@
 package com.woalk.mods.bitsandchisels;
 
 import net.minecraft.block.Block;
-import net.minecraft.block.BlockEntityProvider;
+import net.minecraft.block.BlockRenderType;
+import net.minecraft.block.BlockWithEntity;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.ShapeContext;
 import net.minecraft.block.Waterloggable;
@@ -27,10 +28,15 @@ import net.minecraft.world.World;
 import net.minecraft.world.WorldAccess;
 import org.jetbrains.annotations.Nullable;
 
-public class BitsBlock extends Block implements BlockEntityProvider, Waterloggable {
+public class BitsBlock extends BlockWithEntity implements Waterloggable {
 
     public static final IntProperty LIGHT_LEVEL = IntProperty.of("light_level", 0, 16);
     public static final IntProperty SHADER_TYPE = IntProperty.of("shader_type", 0, 16);
+
+    @Override
+    public BlockRenderType getRenderType(BlockState state) {
+        return BlockRenderType.MODEL;
+    }
 
     public BitsBlock(Settings settings) {
         super(settings);

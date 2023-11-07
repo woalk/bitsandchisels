@@ -26,8 +26,20 @@ class BitsBlockItem(block: Block, settings: Settings) : BlockItem(block, setting
                 ).formatted(Formatting.GRAY))
             }
             stack.getSubNbt("BlockEntityTag")?.getList("palette", NbtElement.COMPOUND_TYPE.toInt())?.let {
-                tooltip.add(Text.translatable("gui.bitsandchisels.pallette.tooltip", it.size)
-                    .formatted(Formatting.GRAY))
+                if (it.isNotEmpty()) {
+                    tooltip.add(
+                        Text.translatable("gui.bitsandchisels.pallette.tooltip", it.size)
+                            .formatted(Formatting.GRAY)
+                    )
+                }
+            }
+            stack.getSubNbt("BlockEntityTag")?.getList("frames", NbtElement.COMPOUND_TYPE.toInt())?.let {
+                if (it.isNotEmpty()) {
+                    tooltip.add(
+                        Text.translatable("gui.bitsandchisels.frames.tooltip", it.size)
+                            .formatted(Formatting.GRAY)
+                    )
+                }
             }
         }
     }

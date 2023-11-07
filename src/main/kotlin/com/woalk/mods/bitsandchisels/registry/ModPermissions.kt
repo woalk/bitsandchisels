@@ -10,6 +10,7 @@ object ModPermissions {
     const val USE_CHISEL_IRON = "$USE_CHISEL.iron"
     const val USE_CHISEL_SMART = "$USE_CHISEL.smart"
     const val USE_CHISEL_ENDER = "$USE_CHISEL.ender"
+    const val USE_ANIMATION_WAND = "$BASE.use_animation_wand"
     const val USE_BIT = "$BASE.use_bit"
     const val USE_BLUEPRINT = "$BASE.use_blueprint"
     const val USE_WRENCH = "$BASE.use_wrench"
