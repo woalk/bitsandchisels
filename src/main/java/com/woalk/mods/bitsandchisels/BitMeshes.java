@@ -3,6 +3,7 @@ package com.woalk.mods.bitsandchisels;
 import java.util.Arrays;
 
 import com.woalk.mods.bitsandchisels.blocks.ColoredBlockState;
+import net.minecraft.block.Blocks;
 import org.jetbrains.annotations.Nullable;
 
 import com.woalk.mods.bitsandchisels.duck.CubeRenderStuff;
@@ -45,7 +46,7 @@ public class BitMeshes {
                 for (int cy = 0; cy < 16; cy++) {
                     for (int cz = 0; cz < 16; cz++) {
                         BlockState state = states[cx][cy][cz];
-                        if (state.isAir() || used[cy][cz] || !quadNeeded(states, d, cx, cy, cz)) continue;
+                        if (isEmpty(state) || used[cy][cz] || !quadNeeded(states, d, cx, cy, cz)) continue;
                         int cy2 = cy;
                         int cz2 = cz;
                         //Greed Y
@@ -84,7 +85,7 @@ public class BitMeshes {
                 for (int cx = 0; cx < 16; cx++) {
                     for (int cz = 0; cz < 16; cz++) {
                         BlockState state = states[cx][cy][cz];
-                        if (state.isAir() || used[cx][cz] || !quadNeeded(states, d, cx, cy, cz)) continue;
+                        if (isEmpty(state) || used[cx][cz] || !quadNeeded(states, d, cx, cy, cz)) continue;
                         int cx2 = cx;
                         int cz2 = cz;
                         //Greed X
@@ -123,7 +124,7 @@ public class BitMeshes {
                 for (int cx = 0; cx < 16; cx++) {
                     for (int cy = 0; cy < 16; cy++) {
                         BlockState state = states[cx][cy][cz];
-                        if (state.isAir() || used[cx][cy] || !quadNeeded(states, d, cx, cy, cz)) continue;
+                        if (isEmpty(state) || used[cx][cy] || !quadNeeded(states, d, cx, cy, cz)) continue;
                         int cx2 = cx;
                         int cy2 = cy;
                         //Greed X
@@ -182,25 +183,29 @@ public class BitMeshes {
     private static boolean quadNeeded(BlockState[][][] states, Direction d, int x, int y, int z) {
         switch (d) {
             case UP:
-                if (y <= 14) return states[x][y + 1][z].isAir() || (RenderLayers.getBlockLayer(states[x][y + 1][z]) != RenderLayer.getSolid() && states[x][y][z] != states[x][y + 1][z]);
+                if (y <= 14) return isEmpty(states[x][y + 1][z]) || (RenderLayers.getBlockLayer(states[x][y + 1][z]) != RenderLayer.getSolid() && states[x][y][z] != states[x][y + 1][z]);
                 return true;
             case DOWN:
-                if (y >= 1) return states[x][y - 1][z].isAir() || (RenderLayers.getBlockLayer(states[x][y - 1][z]) != RenderLayer.getSolid() && states[x][y][z] != states[x][y - 1][z]);
+                if (y >= 1) return isEmpty(states[x][y - 1][z]) || (RenderLayers.getBlockLayer(states[x][y - 1][z]) != RenderLayer.getSolid() && states[x][y][z] != states[x][y - 1][z]);
                 return true;
             case SOUTH:
-                if (z <= 14) return states[x][y][z + 1].isAir() || (RenderLayers.getBlockLayer(states[x][y][z + 1]) != RenderLayer.getSolid() && states[x][y][z] != states[x][y][z + 1]);
+                if (z <= 14) return isEmpty(states[x][y][z + 1]) || (RenderLayers.getBlockLayer(states[x][y][z + 1]) != RenderLayer.getSolid() && states[x][y][z] != states[x][y][z + 1]);
                 return true;
             case NORTH:
-                if (z >= 1) return states[x][y][z - 1].isAir() || (RenderLayers.getBlockLayer(states[x][y][z - 1]) != RenderLayer.getSolid() && states[x][y][z] != states[x][y][z - 1]);
+                if (z >= 1) return isEmpty(states[x][y][z - 1]) || (RenderLayers.getBlockLayer(states[x][y][z - 1]) != RenderLayer.getSolid() && states[x][y][z] != states[x][y][z - 1]);
                 return true;
             case EAST:
-                if (x <= 14) return states[x + 1][y][z].isAir() || (RenderLayers.getBlockLayer(states[x + 1][y][z]) != RenderLayer.getSolid() && states[x][y][z] != states[x + 1][y][z]);
+                if (x <= 14) return isEmpty(states[x + 1][y][z]) || (RenderLayers.getBlockLayer(states[x + 1][y][z]) != RenderLayer.getSolid() && states[x][y][z] != states[x + 1][y][z]);
                 return true;
             case WEST:
-                if (x >= 1) return states[x - 1][y][z].isAir() || (RenderLayers.getBlockLayer(states[x - 1][y][z]) != RenderLayer.getSolid() && states[x][y][z] != states[x - 1][y][z]);
+                if (x >= 1) return isEmpty(states[x - 1][y][z]) || (RenderLayers.getBlockLayer(states[x - 1][y][z]) != RenderLayer.getSolid() && states[x][y][z] != states[x - 1][y][z]);
                 return true;
         }
         return true;
+    }
+
+    private static boolean isEmpty(BlockState state) {
+        return state.isAir() || state.isOf(Blocks.BARRIER);
     }
 
     private static void clear(boolean[][] a) {

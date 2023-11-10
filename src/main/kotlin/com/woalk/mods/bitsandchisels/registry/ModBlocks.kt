@@ -5,12 +5,14 @@ import com.woalk.mods.bitsandchisels.BitsBlock
 import com.woalk.mods.bitsandchisels.WoalkItemGroups
 import com.woalk.mods.bitsandchisels.WoalkItemsMod
 import com.woalk.mods.bitsandchisels.blocks.*
+import net.fabricmc.fabric.api.blockrenderlayer.v1.BlockRenderLayerMap
 import net.fabricmc.fabric.api.client.rendering.v1.ColorProviderRegistry
 import net.fabricmc.fabric.api.item.v1.FabricItemSettings
 import net.fabricmc.fabric.api.`object`.builder.v1.block.FabricBlockSettings
 import net.minecraft.block.*
 import net.minecraft.client.color.block.BlockColorProvider
 import net.minecraft.client.color.item.ItemColorProvider
+import net.minecraft.client.render.RenderLayer
 import net.minecraft.entity.EntityType
 import net.minecraft.item.BlockItem
 import net.minecraft.item.DyeableItem
@@ -34,6 +36,11 @@ object ModBlocks : ModRegister<Pair<Block, (() -> FabricItemSettings)?>, Block>(
     val coloredBlock = register("coloured_block", ColoredBlock(
         FabricBlockSettings.copy(Blocks.WHITE_CONCRETE)
     ))
+    val barrierBlock = register("barrier", Pair(Block(
+        FabricBlockSettings.of(Material.BARRIER)
+            .nonOpaque()
+            .hardness(0.3f)
+    ), ::FabricItemSettings)).first
     //endregion
 
     //region convenience methods
@@ -52,7 +59,7 @@ object ModBlocks : ModRegister<Pair<Block, (() -> FabricItemSettings)?>, Block>(
 
     override fun onRegister(toRegister: Pair<Block, (() -> FabricItemSettings)?>) = toRegister.first
 
-    override fun getNamespace(id: String) = if (id == "coloured_block") WoalkItemsMod.MOD_ID else BitsAndChisels.MODID
+    override fun getNamespace(id: String) = if (id == "animated_bits_block") BitsAndChisels.MODID else WoalkItemsMod.MOD_ID
 
     override fun registerNow(id: String, toRegister: Pair<Block, (() -> FabricItemSettings)?>) {
         super.registerNow(id, toRegister)
@@ -79,6 +86,8 @@ object ModBlocks : ModRegister<Pair<Block, (() -> FabricItemSettings)?>, Block>(
         ColorProviderRegistry.ITEM.register(ItemColorProvider { stack, _ ->
             stack.nbt?.getCompound(DyeableItem.DISPLAY_KEY)?.getInt(DyeableItem.COLOR_KEY) ?: 0xFFFFFF
         }, coloredBlock.asItem())
+
+        BlockRenderLayerMap.INSTANCE.putBlock(barrierBlock, RenderLayer.getTranslucent())
     }
     //endregion
 }

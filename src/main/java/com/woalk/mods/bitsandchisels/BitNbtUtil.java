@@ -19,9 +19,9 @@ public class BitNbtUtil {
 
     public static boolean read3DBitArray(NbtCompound tag, BlockState[][][] out) {
         ArrayList<BlockState> palette = new ArrayList<>();
-        NbtList palletteTag = (NbtList) tag.get("palette");
-        if (palletteTag == null) return false;
-        for (NbtElement statetag : palletteTag) {
+        NbtList paletteTag = (NbtList) tag.get("palette");
+        if (paletteTag == null) return false;
+        for (NbtElement statetag : paletteTag) {
             palette.add(BitNbtUtil.toBlockState((NbtCompound) statetag));
         }
         NbtList bits = (NbtList) tag.get("bits");
@@ -72,11 +72,11 @@ public class BitNbtUtil {
             }
         }
         tag.put("bits_v2", new NbtByteArray(bits));
-        NbtList palletteTag = new NbtList();
+        NbtList paletteTag = new NbtList();
         for (BlockState state : palette) {
-            palletteTag.add(BitNbtUtil.fromBlockState(state));
+            paletteTag.add(BitNbtUtil.fromBlockState(state));
         }
-        tag.put("palette", palletteTag);
+        tag.put("palette", paletteTag);
     }
 
     public static BlockState toBlockState(@Nullable NbtCompound tag) {

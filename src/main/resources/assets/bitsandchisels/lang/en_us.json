@@ -14,6 +14,7 @@
     "block.bitsandchisels.bits_block": "Bit Collection Block",
     "block.bitsandchisels.animated_bits_block": "Animated Bit Collection Block",
     "block.woalk.coloured_block": "Custom-Colored Block",
+    "block.woalk.barrier": "Fake Barrier",
     "gui.bitsandchisels.shader_types": "Available shader_type values:",
     "gui.bitsandchisels.shader_type.explain": "\n%s: %s",
     "gui.bitsandchisels.shader_type.tooltip": "Shader Type: %s",
@@ -34,6 +35,6 @@
     "gui.bitsandchisels.shader_type.14": "Respawn Anchor (purple light)",
     "gui.bitsandchisels.shader_type.15": "Amethyst Cluster",
     "gui.bitsandchisels.shader_type.16": "Froglight",
-    "gui.bitsandchisels.pallette.tooltip": "Bits in pallette: %d",
+    "gui.bitsandchisels.palette.tooltip": "Bits in palette: %d",
     "gui.bitsandchisels.frames.tooltip": "Frames: %d"
 }
