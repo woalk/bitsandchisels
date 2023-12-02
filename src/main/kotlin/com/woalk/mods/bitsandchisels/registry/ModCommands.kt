@@ -99,7 +99,7 @@ object ModCommands : IModRegister {
         ctx: CommandContext<ServerCommandSource>,
         image: String,
         zMin: Int = 0,
-        zMax: Int = 15,
+        zMax: Int = 0,
         direction: Direction = ctx.source.entity?.let { Direction.getEntityFacingOrder(it).first() } ?: Direction.SOUTH,
         paletteWildcard: String? = null,
         replaceAir: Boolean = true
