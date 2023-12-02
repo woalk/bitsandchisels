@@ -55,5 +55,5 @@ class ChiseledImage24(private val imageFilePath: String): IChiseledImage {
     override fun getStateForPixel(x: Int, y: Int, palette: PaletteIdentifier?): BlockState =
         ColoredBlockState(getColorForPixel(x, y))
 
-    override fun getImageName(): String = imageFilePath
+    override fun getImageName(): String = imageFilePath.substringAfterLast('/').substringBeforeLast('.')
 }

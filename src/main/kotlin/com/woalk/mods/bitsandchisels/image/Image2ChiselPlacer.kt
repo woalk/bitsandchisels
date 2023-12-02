@@ -114,11 +114,11 @@ private fun IChiseledImage.placeInBlock(
             val loreText = LinkedList<Text>()
             if (byIndex > -1) {
                 val name = imageName.substring(0, byIndex).ifEmpty { "Chiseled Image Block" }
-                val author = imageName.substring(byIndex + 4, imageName.lastIndexOf('.'))
+                val author = imageName.substring(byIndex + 4)
                 customName = Text.literal(name)
                 loreText.add(Text.literal("Created by $author"))
             } else {
-                customName = Text.literal(imageName.substringBeforeLast('.')).styled {
+                customName = Text.literal(imageName).styled {
                     style -> style.withItalic(false)
                 }
             }
