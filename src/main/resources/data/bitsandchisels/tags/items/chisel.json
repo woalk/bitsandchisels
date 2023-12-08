@@ -1,0 +1,9 @@
+{
+  "replace": false,
+  "values": [
+    "bitsandchisels:iron_chisel",
+    "bitsandchisels:diamond_chisel",
+    "bitsandchisels:smart_chisel",
+    "bitsandchisels:ender_chisel"
+  ]
+}
