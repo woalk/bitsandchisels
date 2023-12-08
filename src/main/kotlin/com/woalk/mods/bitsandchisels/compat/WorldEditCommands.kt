@@ -212,6 +212,7 @@ object WorldEditCommands : IModRegister {
                         }
                         if (hasChanged) {
                             editSession.setBlock(vec, newBlock.toBaseBlock(BitCompoundUtil.write3DBitArray(bits)))
+                            (ctx.source.world.getBlockEntity(BlockPos(vec.x, vec.y, vec.z)) as? BitsBlockEntity)?.sync()
                         }
                     }
                 }
