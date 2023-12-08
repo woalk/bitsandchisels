@@ -1,5 +1,8 @@
 package com.woalk.mods.bitsandchisels;
 
+import com.woalk.mods.bitsandchisels.api.BitUtils;
+import com.woalk.mods.bitsandchisels.registry.ModPermissions;
+import me.lucko.fabric.api.permissions.v0.Permissions;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockRenderType;
 import net.minecraft.block.BlockWithEntity;
@@ -7,6 +10,8 @@ import net.minecraft.block.BlockState;
 import net.minecraft.block.ShapeContext;
 import net.minecraft.block.Waterloggable;
 import net.minecraft.block.entity.BlockEntity;
+import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.fluid.FluidState;
@@ -19,8 +24,13 @@ import net.minecraft.server.world.ServerWorld;
 import net.minecraft.state.StateManager.Builder;
 import net.minecraft.state.property.IntProperty;
 import net.minecraft.state.property.Properties;
+import net.minecraft.tag.TagKey;
+import net.minecraft.util.Identifier;
+import net.minecraft.util.hit.BlockHitResult;
+import net.minecraft.util.hit.HitResult;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
+import net.minecraft.util.registry.Registry;
 import net.minecraft.util.shape.VoxelShape;
 import net.minecraft.util.shape.VoxelShapes;
 import net.minecraft.world.BlockView;
@@ -95,6 +105,22 @@ public class BitsBlock extends BlockWithEntity implements Waterloggable {
 
     @Override
     public ItemStack getPickStack(BlockView world, BlockPos pos, BlockState state) {
+        MinecraftClient client = MinecraftClient.getInstance();
+        PlayerEntity player = client.player;
+        if (player != null && Screen.hasShiftDown() &&
+                player.getMainHandStack().isIn(TagKey.of(Registry.ITEM_KEY, new Identifier(BitsAndChisels.MODID, "chisel")))) {
+            HitResult hit = client.crosshairTarget;
+            if (hit != null && hit.getType() == HitResult.Type.BLOCK && world instanceof World) {
+                Direction direction = ((BlockHitResult) hit).getSide();
+                int x = (int) Math.floor(((hit.getPos().getX() - pos.getX()) * 16) + (direction.getOffsetX() * -0.5d));
+                int y = (int) Math.floor(((hit.getPos().getY() - pos.getY()) * 16) + (direction.getOffsetY() * -0.5d));
+                int z = (int) Math.floor(((hit.getPos().getZ() - pos.getZ()) * 16) + (direction.getOffsetZ() * -0.5d));
+                BlockState bit = BitUtils.getBit((World) world, pos, x, y, z);
+                if (BitUtils.exists(bit)) {
+                    return BitUtils.getBitItemStack(bit);
+                }
+            }
+        }
         return ItemHelpers.blockToItem(this, state, world.getBlockEntity(pos));
     }
     
