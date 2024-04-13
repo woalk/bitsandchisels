@@ -5,6 +5,8 @@ import com.woalk.mods.bitsandchisels.BitsBlock
 import com.woalk.mods.bitsandchisels.WoalkItemGroups
 import com.woalk.mods.bitsandchisels.WoalkItemsMod
 import com.woalk.mods.bitsandchisels.blocks.*
+import net.fabricmc.api.EnvType
+import net.fabricmc.api.Environment
 import net.fabricmc.fabric.api.blockrenderlayer.v1.BlockRenderLayerMap
 import net.fabricmc.fabric.api.client.rendering.v1.ColorProviderRegistry
 import net.fabricmc.fabric.api.item.v1.FabricItemSettings
@@ -79,6 +81,7 @@ object ModBlocks : ModRegister<Pair<Block, (() -> FabricItemSettings)?>, Block>(
     @Suppress("UNUSED_PARAMETER")
     private fun never(state: BlockState, world: BlockView, pos: BlockPos, type: EntityType<*>? = null) = false
 
+    @Environment(EnvType.CLIENT)
     fun registerAllClient() {
         ColorProviderRegistry.BLOCK.register(BlockColorProvider { _, world, pos, _ ->
             (world?.getBlockEntity(pos) as? ColoredBlockEntity)?.colorWithAlpha ?: 0xFFFFFFFFU.toInt()

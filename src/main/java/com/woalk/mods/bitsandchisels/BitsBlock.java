@@ -1,8 +1,8 @@
 package com.woalk.mods.bitsandchisels;
 
 import com.woalk.mods.bitsandchisels.api.BitUtils;
-import com.woalk.mods.bitsandchisels.registry.ModPermissions;
-import me.lucko.fabric.api.permissions.v0.Permissions;
+import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockRenderType;
 import net.minecraft.block.BlockWithEntity;
@@ -105,6 +105,15 @@ public class BitsBlock extends BlockWithEntity implements Waterloggable {
 
     @Override
     public ItemStack getPickStack(BlockView world, BlockPos pos, BlockState state) {
+        if (!(world instanceof ServerWorld)) {
+            final var bitStack = pickBitClient(world, pos, state);
+            if (bitStack != null) return bitStack;
+        }
+        return ItemHelpers.blockToItem(this, state, world.getBlockEntity(pos));
+    }
+
+    @Environment(EnvType.CLIENT)
+    private ItemStack pickBitClient(BlockView world, BlockPos pos, BlockState state) {
         MinecraftClient client = MinecraftClient.getInstance();
         PlayerEntity player = client.player;
         if (player != null && Screen.hasShiftDown() &&
@@ -121,7 +130,7 @@ public class BitsBlock extends BlockWithEntity implements Waterloggable {
                 }
             }
         }
-        return ItemHelpers.blockToItem(this, state, world.getBlockEntity(pos));
+        return null;
     }
     
     @Override

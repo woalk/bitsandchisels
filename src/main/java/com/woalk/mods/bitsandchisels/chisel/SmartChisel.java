@@ -7,6 +7,8 @@ import com.woalk.mods.bitsandchisels.api.client.RedBoxCallback;
 import com.woalk.mods.bitsandchisels.registry.ModPermissions;
 import io.netty.buffer.Unpooled;
 import me.lucko.fabric.api.permissions.v0.Permissions;
+import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.event.player.AttackBlockCallback;
 import net.fabricmc.fabric.api.networking.v1.PacketSender;
@@ -174,6 +176,7 @@ public class SmartChisel extends ToolItem implements ServerPlayNetworking.PlayCh
         return System.currentTimeMillis() / 50;
     }
 
+    @Environment(EnvType.CLIENT)
     @Override
     public void airSwing(ClientPlayerEntity player, ItemStack stack) {
         this.haspos1 = false;
