@@ -197,8 +197,12 @@ public class BitsBlockEntity extends BlockEntity implements RenderAttachmentBloc
             }
         }
         shape = SimpleVoxelShapeFactory.getSimpleVoxelShape(set);
-        if (world != null) {
+        if (world != null && !world.isClient) {
             BlockState state = world.getBlockState(pos);
+            if (!state.isOf(BitsAndChisels.BITS_BLOCK)) {
+                // skip rebuilding, we are currently building terrain
+                return;
+            }
             if (fullcube) {
                 world.setBlockState(pos, states[0][0][0]);
             }
@@ -221,21 +225,19 @@ public class BitsBlockEntity extends BlockEntity implements RenderAttachmentBloc
 
     @Override
     public Packet<ClientPlayPacketListener> toUpdatePacket() {
-        return BlockEntityUpdateS2CPacket.create(this, be -> ((BitsBlockEntity)be).createNbt());
+        return BlockEntityUpdateS2CPacket.create(this);
     }
 
     public void sync() {
         markDirty();
+        assert world != null;
         ((ServerWorld) world).getChunkManager().markForUpdate(getPos());
     }
 
-    // Begin crimes agains modding
     @Override
     public NbtCompound toInitialChunkDataNbt() {
-        sync();
-        return new NbtCompound();
+        return createNbt();
     }
-    // End crimes agains modding
 
     @Environment(EnvType.CLIENT)
     @Override
