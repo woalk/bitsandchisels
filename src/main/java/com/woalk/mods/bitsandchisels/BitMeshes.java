@@ -4,6 +4,7 @@ import java.util.Arrays;
 
 import com.woalk.mods.bitsandchisels.blocks.ColoredBlockState;
 import net.minecraft.block.Blocks;
+import net.minecraft.util.math.Vec3i;
 import org.jetbrains.annotations.Nullable;
 
 import com.woalk.mods.bitsandchisels.duck.CubeRenderStuff;
@@ -33,7 +34,7 @@ public class BitMeshes {
 
     private BitMeshes() { }
 
-    public static Mesh createMesh(BlockState[][][] states, @Nullable World world, @Nullable BlockPos pos) {
+    public static Mesh createMesh(BlockState[][][] states, @Nullable World world, @Nullable BlockPos pos, @Nullable Vec3i offset) {
         MeshBuilder builder = RendererAccess.INSTANCE.getRenderer().meshBuilder();
         QuadEmitter emitter = builder.getEmitter();
         Vec3f tmp = new Vec3f();
@@ -72,7 +73,7 @@ public class BitMeshes {
                             }
                         }
 
-                        doQuad(world, pos, emitter, tmp, d, state, cx, cy, cz, cx, cy2, cz2);
+                        doQuad(world, pos, emitter, tmp, d, state, cx, cy, cz, cx, cy2, cz2, offset);
                     }
                 }
             }
@@ -111,7 +112,7 @@ public class BitMeshes {
                             }
                         }
 
-                        doQuad(world, pos, emitter, tmp, d, state, cx, cy, cz, cx2, cy, cz2);
+                        doQuad(world, pos, emitter, tmp, d, state, cx, cy, cz, cx2, cy, cz2, offset);
                     }
                 }
             }
@@ -150,7 +151,7 @@ public class BitMeshes {
                             }
                         }
 
-                        doQuad(world, pos, emitter, tmp, d, state, cx, cy, cz, cx2, cy2, cz);
+                        doQuad(world, pos, emitter, tmp, d, state, cx, cy, cz, cx2, cy2, cz, offset);
                     }
                 }
             }
@@ -158,7 +159,7 @@ public class BitMeshes {
         return builder.build();
     }
 
-    private static void doQuad(@Nullable World world, @Nullable BlockPos pos, QuadEmitter emitter, Vec3f tmp, Direction d, BlockState state, int minx, int miny, int minz, int maxx, int maxy, int maxz) {
+    private static void doQuad(@Nullable World world, @Nullable BlockPos pos, QuadEmitter emitter, Vec3f tmp, Direction d, BlockState state, int minx, int miny, int minz, int maxx, int maxy, int maxz, @Nullable Vec3i offset) {
         boolean isColoredBlock = state instanceof ColoredBlockState;
         CubeRenderStuff cubeRenderStuff = CubeRenderStuff.of(
                 isColoredBlock ? ((ColoredBlockState) state).getWrapped() : state
@@ -166,7 +167,7 @@ public class BitMeshes {
         for (int z = 0; z < cubeRenderStuff.getQuads(d.getId()).length; z++) {
             BakedQuad vanillaQuad = cubeRenderStuff.getQuads(d.getId())[z];
             MutableQuadView quad = emitter.fromVanilla(vanillaQuad, cubeRenderStuff.getMaterials(d.getId())[z], d);
-            BitMeshes.transform(quad, d, minx, miny, minz, maxx, maxy, maxz, tmp);
+            transform(quad, d, minx, miny, minz, maxx, maxy, maxz, tmp);
             //noinspection ConstantConditions
             if (isColoredBlock) {
                 int color = ((ColoredBlockState) state).getColor();
@@ -176,6 +177,13 @@ public class BitMeshes {
                 quad.spriteColor(0, color, color, color, color);
             }
             if (!canCull(d, minx, miny, minz)) quad.cullFace(null);
+            if (offset != null) {
+                for (int i = 0; i < 4; i++) {
+                    quad.copyPos(i, tmp);
+                    tmp.add(offset.getX(), offset.getY(), offset.getZ());
+                    quad.pos(i, tmp);
+                }
+            }
             emitter = emitter.emit();
         }
     }

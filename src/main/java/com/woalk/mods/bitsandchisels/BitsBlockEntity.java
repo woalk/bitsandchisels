@@ -215,7 +215,7 @@ public class BitsBlockEntity extends BlockEntity implements RenderAttachmentBloc
 
     @Environment(EnvType.CLIENT)
     protected void rebuildMesh() {
-        mesh = BitMeshes.createMesh(states, world, pos);
+        mesh = BitMeshes.createMesh(states, world, pos, null);
     }
 
     public void postFromClientTag() {

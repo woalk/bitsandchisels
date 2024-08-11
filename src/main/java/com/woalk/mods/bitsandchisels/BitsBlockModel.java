@@ -32,6 +32,7 @@ import net.minecraft.nbt.NbtElement;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
+import net.minecraft.util.math.Vec3i;
 import net.minecraft.util.math.random.Random;
 import net.minecraft.world.BlockRenderView;
 
@@ -66,7 +67,7 @@ public class BitsBlockModel implements UnbakedModel, BakedModel, FabricBakedMode
                     tag = tag.getList(AnimatedBitsBlockEntity.FRAMES_KEY, NbtElement.COMPOUND_TYPE).getCompound(0);
                 }
                 if (BitNbtUtil.read3DBitArray(tag, bits)) {
-                    return BitMeshes.createMesh(bits, null, null);
+                    return BitMeshes.createMesh(bits, null, null, null);
                 }
             }
             return null;
