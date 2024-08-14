@@ -29,6 +29,7 @@ import net.minecraft.util.shape.VoxelShapes;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 public class BitsBlockEntity extends BlockEntity implements RenderAttachmentBlockEntity, Nameable {
     protected BlockState[][][] states;
@@ -39,6 +40,7 @@ public class BitsBlockEntity extends BlockEntity implements RenderAttachmentBloc
     private boolean alive = false;
     private Text customName = null;
     private List<Text> loreText = null;
+    private UUID structureId = null;
 
     public BitsBlockEntity(BlockPos pos, BlockState state) {
         this(Blocks.AIR.getDefaultState(), pos, state, false);
@@ -87,6 +89,9 @@ public class BitsBlockEntity extends BlockEntity implements RenderAttachmentBloc
             writeNameNbt(displayNbt);
             tag.put("display", displayNbt);
         }
+        if (structureId != null) {
+            tag.putUuid("StructureId", structureId);
+        }
     }
 
     public void writeBitNbt(NbtCompound tag) {
@@ -133,6 +138,9 @@ public class BitsBlockEntity extends BlockEntity implements RenderAttachmentBloc
                 NbtList loreNbt = displayNbt.getList("Lore", NbtList.STRING_TYPE);
                 readLoreText(loreNbt);
             }
+        }
+        if (tag.contains("StructureId")) {
+            structureId = tag.getUuid("StructureId");
         }
         alive = true;
     }
@@ -262,5 +270,13 @@ public class BitsBlockEntity extends BlockEntity implements RenderAttachmentBloc
 
     public void setLoreText(List<Text> loreText) {
         this.loreText = loreText;
+    }
+
+    public UUID getStructureId() {
+        return structureId;
+    }
+
+    public void setStructureId(UUID structureId) {
+        this.structureId = structureId;
     }
 }

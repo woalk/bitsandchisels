@@ -1,6 +1,7 @@
 package com.woalk.mods.bitsandchisels;
 
 import java.util.Arrays;
+import java.util.Objects;
 
 import com.woalk.mods.bitsandchisels.blocks.ColoredBlockState;
 import net.minecraft.block.Blocks;
@@ -30,16 +31,24 @@ public class BitMeshes {
     private static final Direction[] X_DIRECTIONS = {Direction.EAST, Direction.WEST};
     private static final Direction[] Y_DIRECTIONS = {Direction.UP, Direction.DOWN};
     private static final Direction[] Z_DIRECTIONS = {Direction.SOUTH, Direction.NORTH};
-    private static final float ONE_PIXEL = 1f/16f; 
+    private static final float ONE_PIXEL = 1f/16f;
+
+    private static MeshBuilder builder = null;
 
     private BitMeshes() { }
 
     public static Mesh createMesh(BlockState[][][] states, @Nullable World world, @Nullable BlockPos pos, @Nullable Vec3i offset) {
-        MeshBuilder builder = RendererAccess.INSTANCE.getRenderer().meshBuilder();
+        if (builder == null) {
+            builder = Objects.requireNonNull(RendererAccess.INSTANCE.getRenderer()).meshBuilder();
+        }
         QuadEmitter emitter = builder.getEmitter();
         Vec3f tmp = new Vec3f();
-        boolean[][] used = new boolean[16][16];
+        prepareMesh(states, world, pos, emitter, tmp, offset);
+        return builder.build();
+    }
 
+    public static void prepareMesh(BlockState[][][] states, @Nullable World world, @Nullable BlockPos pos, QuadEmitter emitter, Vec3f tmp, @Nullable Vec3i offset) {
+        boolean[][] used = new boolean[16][16];
         //X
         for (Direction d : X_DIRECTIONS) {
             for (int cx = 0; cx < 16; cx++) {
@@ -156,7 +165,6 @@ public class BitMeshes {
                 }
             }
         }
-        return builder.build();
     }
 
     private static void doQuad(@Nullable World world, @Nullable BlockPos pos, QuadEmitter emitter, Vec3f tmp, Direction d, BlockState state, int minx, int miny, int minz, int maxx, int maxy, int maxz, @Nullable Vec3i offset) {

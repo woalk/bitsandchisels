@@ -1,6 +1,7 @@
 package com.woalk.mods.bitsandchisels.registry
 
 import com.woalk.mods.bitsandchisels.BitsAndChisels
+import com.woalk.mods.bitsandchisels.blocks.BitStructureItem
 import com.woalk.mods.bitsandchisels.chisel.AnimationWand
 import net.fabricmc.fabric.api.item.v1.FabricItemSettings
 import net.minecraft.item.Item
@@ -12,6 +13,7 @@ object ModItems: ModRegister<Item, Item>(Registry.ITEM) {
 
     //region item declarations
     val animationWand = register("animation_wand", AnimationWand(itemSettings))
+    val bitStructureItem = register("bit_structure", BitStructureItem(FabricItemSettings()))
     //endregion
 
     //region convenience functions

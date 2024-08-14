@@ -1,6 +1,8 @@
 package com.woalk.mods.bitsandchisels;
 
 import com.woalk.mods.bitsandchisels.api.BitUtils;
+import com.woalk.mods.bitsandchisels.blocks.BitStructureModel;
+import com.woalk.mods.bitsandchisels.registry.ModItems;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.block.Block;
@@ -20,6 +22,7 @@ import net.minecraft.item.ItemPlacementContext;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.nbt.NbtElement;
+import net.minecraft.nbt.NbtList;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.state.StateManager.Builder;
 import net.minecraft.state.property.IntProperty;
@@ -78,9 +81,28 @@ public class BitsBlock extends BlockWithEntity implements Waterloggable {
 
     @Override
     public void onBreak(World world, BlockPos pos, BlockState state, PlayerEntity player) {
-        BlockEntity blockEntity = world.getBlockEntity(pos);
-        if (world instanceof ServerWorld && blockEntity != null) {
-            dropStack(world, pos, ItemHelpers.blockToItem(this, state, blockEntity));
+        BitsBlockEntity blockEntity = world.getBlockEntity(pos, BitsAndChisels.BITS_BLOCK_ENTITY).orElse(null);
+        if (!world.isClient && blockEntity != null) {
+            if (blockEntity.getStructureId() != null) {
+                final var OFFSETS = BitStructureModel.Companion.getOFFSETS();
+                final var nbts = new NbtList();
+                for (var offset : OFFSETS) {
+                    final var pos2 = pos.add(offset);
+                    final var blockEntity2 =
+                            world.getBlockEntity(pos2, BitsAndChisels.BITS_BLOCK_ENTITY).orElse(null);
+                    final var nbt = new NbtCompound();
+                    if (blockEntity2 != null && blockEntity2.getStructureId().equals(blockEntity.getStructureId())) {
+                        blockEntity2.writeBitNbt(nbt);
+                        world.breakBlock(pos2, false);
+                    }
+                    nbts.add(nbt);
+                }
+                final var stack = ModItems.INSTANCE.getBitStructureItem().getDefaultStack();
+                stack.setSubNbt(BitStructureModel.NBT_BIT_BLOCK_TAGS, nbts);
+                dropStack(world, pos, stack);
+            } else {
+                dropStack(world, pos, ItemHelpers.blockToItem(this, state, blockEntity));
+            }
         }
     }
 
