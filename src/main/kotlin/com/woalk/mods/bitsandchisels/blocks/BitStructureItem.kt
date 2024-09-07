@@ -5,6 +5,7 @@ import com.woalk.mods.bitsandchisels.blocks.BitStructureModel.Companion.NBT_BIT_
 import com.woalk.mods.bitsandchisels.blocks.BitStructureModel.Companion.OFFSETS
 import net.minecraft.advancement.criterion.Criteria
 import net.minecraft.block.BlockState
+import net.minecraft.block.ShapeContext
 import net.minecraft.fluid.Fluids
 import net.minecraft.item.Item
 import net.minecraft.item.ItemPlacementContext
@@ -38,7 +39,16 @@ class BitStructureItem(settings: Settings) : Item(settings) {
         var bitBlockState: BlockState? = null
         val structureId = UUID.randomUUID()
         for ((index, nbtElement) in fullTag.getList(NBT_BIT_BLOCK_TAGS, NbtElement.COMPOUND_TYPE.toInt()).withIndex()) {
-            if (index >= OFFSETS.size) break // too many blocks to place
+            val tag = nbtElement as NbtCompound
+            if (tag.isEmpty) continue
+            if (index >= OFFSETS.size) return ActionResult.FAIL
+            val bitBlockPos = blockPos.add(OFFSETS[index])
+            if (!world.getBlockState(bitBlockPos).material.isReplaceable) return ActionResult.FAIL
+            if (!world.canPlace(BitsAndChisels.BITS_BLOCK.defaultState, bitBlockPos, ShapeContext.of(playerEntity))) {
+                return ActionResult.FAIL
+            }
+        }
+        for ((index, nbtElement) in fullTag.getList(NBT_BIT_BLOCK_TAGS, NbtElement.COMPOUND_TYPE.toInt()).withIndex()) {
             val tag = nbtElement as NbtCompound
             if (tag.isEmpty) continue
             val bitBlockPos = blockPos.add(OFFSETS[index])
