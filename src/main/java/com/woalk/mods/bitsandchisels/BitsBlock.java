@@ -100,7 +100,7 @@ public class BitsBlock extends BlockWithEntity implements Waterloggable {
             final var pos2 = pos.subtract(offset);
             final var blockEntity2 =
                     world.getBlockEntity(pos2, BitsAndChisels.BITS_BLOCK_ENTITY).orElse(null);
-            if (blockEntity2 != null && blockEntity2.getStructureId().equals(blockEntity.getStructureId())) {
+            if (blockEntity2 != null && blockEntity.getStructureId().equals(blockEntity2.getStructureId())) {
                 if (minX > pos2.getX()) minX = pos2.getX();
                 if (minY > pos2.getY()) minY = pos2.getY();
                 if (minZ > pos2.getZ()) minZ = pos2.getZ();
@@ -114,7 +114,7 @@ public class BitsBlock extends BlockWithEntity implements Waterloggable {
             final var blockEntity2 =
                     world.getBlockEntity(pos2, BitsAndChisels.BITS_BLOCK_ENTITY).orElse(null);
             final var nbt = new NbtCompound();
-            if (blockEntity2 != null && blockEntity2.getStructureId().equals(blockEntity.getStructureId())) {
+            if (blockEntity2 != null && blockEntity.getStructureId().equals(blockEntity2.getStructureId())) {
                 blockEntity2.writeBitNbt(nbt);
                 nbt.putInt("shader_type", world.getBlockState(pos2).get(BitsBlock.SHADER_TYPE));
                 world.breakBlock(pos2, false);
