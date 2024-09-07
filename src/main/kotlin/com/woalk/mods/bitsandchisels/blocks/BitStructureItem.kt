@@ -15,6 +15,7 @@ import net.minecraft.item.ItemStack
 import net.minecraft.item.ItemUsageContext
 import net.minecraft.nbt.NbtCompound
 import net.minecraft.nbt.NbtElement
+import net.minecraft.nbt.NbtString
 import net.minecraft.server.network.ServerPlayerEntity
 import net.minecraft.sound.SoundCategory
 import net.minecraft.state.property.Properties
@@ -72,14 +73,17 @@ class BitStructureItem(settings: Settings) : Item(settings) {
                 val nbtCompound3 = nbtCompound2.copy()
                 nbtCompound2.copyFrom(nbtElement)
                 nbtCompound2.putUuid("StructureId", structureId)
-                nbtCompound2.put("display", itemStack.getSubNbt("display"))
+                val displayNbt = itemStack.getSubNbt("display")?.copy() ?: NbtCompound()
+                val lore = displayNbt.getList("Lore", NbtElement.STRING_TYPE.toInt())
+                lore.add(NbtString.of("{\"color\":\"dark_gray\",\"text\":\"(${OFFSETS[index].toShortString()})\"}"))
+                displayNbt.put("Lore", lore)
+                nbtCompound2.put("display", displayNbt)
                 if (nbtCompound2 != nbtCompound3) {
                     blockEntity.readNbt(nbtCompound2)
                     blockEntity.markDirty()
                     return@let
                 }
             }
-            BitsAndChisels.BITS_BLOCK.onPlaced(world, blockPos, bitBlockState, playerEntity, itemStack)
             if (playerEntity is ServerPlayerEntity) {
                 Criteria.PLACED_BLOCK.trigger(playerEntity, blockPos, itemStack)
             }

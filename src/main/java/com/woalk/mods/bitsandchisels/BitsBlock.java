@@ -130,6 +130,10 @@ public class BitsBlock extends BlockWithEntity implements Waterloggable {
         final var displayNbt = new NbtCompound();
         blockEntity.writeNameNbt(displayNbt);
         if (!displayNbt.isEmpty()) {
+            final var lore = displayNbt.getList("Lore", NbtElement.STRING_TYPE);
+            if (lore.getString(lore.size() - 1).matches("^\\{\"color\":\"dark_gray\",\"text\":\"\\(\\d+, \\d+, \\d+\\)\"}$")) {
+                lore.remove(lore.size() - 1);
+            }
             stack.setSubNbt("display", displayNbt);
         }
         dropStack(world, pos, stack);
@@ -143,6 +147,10 @@ public class BitsBlock extends BlockWithEntity implements Waterloggable {
         if (blockEntity == null) return;
         if (itemStack.hasCustomName()) {
             blockEntity.setCustomName(itemStack.getName());
+        }
+        if (itemStack.getOrCreateNbt().contains("StructureId")) {
+            assert itemStack.getNbt() != null;
+            blockEntity.setStructureId(itemStack.getNbt().getUuid("StructureId"));
         }
         NbtCompound displayNbt = itemStack.getSubNbt("display");
         if (displayNbt != null && displayNbt.contains("Lore")) {
