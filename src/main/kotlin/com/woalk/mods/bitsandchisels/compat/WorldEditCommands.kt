@@ -1,6 +1,7 @@
 package com.woalk.mods.bitsandchisels.compat
 
 import com.mojang.brigadier.Command.SINGLE_SUCCESS
+import com.mojang.brigadier.arguments.BoolArgumentType
 import com.mojang.brigadier.arguments.IntegerArgumentType
 import com.mojang.brigadier.arguments.StringArgumentType
 import com.mojang.brigadier.context.CommandContext
@@ -30,7 +31,7 @@ import net.minecraft.util.Formatting
 import net.minecraft.util.math.BlockPos
 import net.minecraft.util.math.Direction
 import net.minecraft.util.math.Vec3i
-import java.util.LinkedList
+import java.util.*
 import kotlin.math.ceil
 
 object WorldEditCommands : IModRegister {
@@ -234,11 +235,13 @@ object WorldEditCommands : IModRegister {
         ctx: CommandContext<ServerCommandSource>,
         name: String? = null,
         author: String? = ctx.source.name,
+        structure: Boolean = true,
     ): Int = try {
         val actor = FabricAdapter.adaptPlayer(ctx.source.player)
         val world = FabricAdapter.adapt(ctx.source.world)
         val localSession = WorldEdit.getInstance().sessionManager.get(actor)
 
+        val structureId = if (structure) UUID.randomUUID() else null
         val selection = localSession.getSelection(world)
         val origin = selection.minimumPoint
         val hasMissed = LinkedList<BlockPos>()
@@ -259,6 +262,9 @@ object WorldEditCommands : IModRegister {
                             Text.literal("($x, $y, $z)").formatted(Formatting.DARK_GRAY)
                         )
                         be.setLoreText(loreText)
+                        if (structure) {
+                            be.structureId = structureId!!
+                        }
                         BitUtils.update(ctx.source.world, pos)
                         count++
                     }
@@ -384,6 +390,27 @@ object WorldEditCommands : IModRegister {
                                             ctx,
                                             StringArgumentType.getString(ctx, "title"),
                                             StringArgumentType.getString(ctx, "author"),
+                                        )
+                                    }
+                                    .then(
+                                        argument("structure", BoolArgumentType.bool())
+                                            .executes { ctx ->
+                                                sign(
+                                                    ctx,
+                                                    StringArgumentType.getString(ctx, "title"),
+                                                    StringArgumentType.getString(ctx, "author"),
+                                                    BoolArgumentType.getBool(ctx, "structure")
+                                                )
+                                            }
+                                    )
+                            )
+                            .then(
+                                argument("structure", BoolArgumentType.bool())
+                                    .executes { ctx ->
+                                        sign(
+                                            ctx,
+                                            StringArgumentType.getString(ctx, "title"),
+                                            structure = BoolArgumentType.getBool(ctx, "structure")
                                         )
                                     }
                             )
