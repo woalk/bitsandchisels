@@ -22,7 +22,7 @@ import kotlin.math.max
 class BitStructureModel: BitsBlockModel() {
     companion object {
         const val NBT_BIT_BLOCK_TAGS = "BitBlockTags"
-        private const val MAX_DIAMETER = 4
+        const val MAX_DIAMETER = 4
         val OFFSETS = Array(MAX_DIAMETER * MAX_DIAMETER * MAX_DIAMETER) { i ->
             Vec3i(i % MAX_DIAMETER, (i / MAX_DIAMETER) % MAX_DIAMETER, (i / MAX_DIAMETER) / MAX_DIAMETER)
         }

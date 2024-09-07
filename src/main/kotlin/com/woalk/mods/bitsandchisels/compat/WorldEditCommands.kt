@@ -17,6 +17,7 @@ import com.woalk.mods.bitsandchisels.registry.IModRegister
 import com.woalk.mods.bitsandchisels.BitsAndChisels
 import com.woalk.mods.bitsandchisels.BitsBlockEntity
 import com.woalk.mods.bitsandchisels.api.BitUtils
+import com.woalk.mods.bitsandchisels.blocks.BitStructureModel
 import com.woalk.mods.bitsandchisels.registry.ModPermissions
 import com.woalk.mods.bitsandchisels.utils.DirectionArgumentType
 import me.lucko.fabric.api.permissions.v0.Permissions
@@ -241,8 +242,12 @@ object WorldEditCommands : IModRegister {
         val world = FabricAdapter.adapt(ctx.source.world)
         val localSession = WorldEdit.getInstance().sessionManager.get(actor)
 
-        val structureId = if (structure) UUID.randomUUID() else null
         val selection = localSession.getSelection(world)
+        val structureId = if (structure && !(selection.width > BitStructureModel.MAX_DIAMETER ||
+                    selection.height > BitStructureModel.MAX_DIAMETER ||
+                    selection.length > BitStructureModel.MAX_DIAMETER)) {
+            UUID.randomUUID()
+        } else null
         val origin = selection.minimumPoint
         val hasMissed = LinkedList<BlockPos>()
         var count = 0
@@ -262,8 +267,8 @@ object WorldEditCommands : IModRegister {
                             Text.literal("($x, $y, $z)").formatted(Formatting.DARK_GRAY)
                         )
                         be.setLoreText(loreText)
-                        if (structure) {
-                            be.structureId = structureId!!
+                        if (structureId != null) {
+                            be.structureId = structureId
                         }
                         BitUtils.update(ctx.source.world, pos)
                         count++
@@ -272,6 +277,13 @@ object WorldEditCommands : IModRegister {
             }
         }
         ctx.source.sendFeedback(Text.literal("Updated $count blocks with signature"), true)
+        if (structure && structureId == null) {
+            ctx.source.sendFeedback(
+                Text.literal("Warning: Build too large to be labeled as structure.")
+                    .formatted(Formatting.YELLOW),
+                false,
+            )
+        }
         if (hasMissed.isNotEmpty()) {
             ctx.source.sendFeedback(Text.literal(
                 if (hasMissed.size < 4) {
