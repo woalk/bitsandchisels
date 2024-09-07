@@ -6,16 +6,21 @@ import com.woalk.mods.bitsandchisels.blocks.BitStructureModel.Companion.OFFSETS
 import net.minecraft.advancement.criterion.Criteria
 import net.minecraft.block.BlockState
 import net.minecraft.block.ShapeContext
+import net.minecraft.client.item.TooltipContext
 import net.minecraft.fluid.Fluids
 import net.minecraft.item.Item
 import net.minecraft.item.ItemPlacementContext
+import net.minecraft.item.ItemStack
 import net.minecraft.item.ItemUsageContext
 import net.minecraft.nbt.NbtCompound
 import net.minecraft.nbt.NbtElement
 import net.minecraft.server.network.ServerPlayerEntity
 import net.minecraft.sound.SoundCategory
 import net.minecraft.state.property.Properties
+import net.minecraft.text.Text
 import net.minecraft.util.ActionResult
+import net.minecraft.util.Formatting
+import net.minecraft.world.World
 import net.minecraft.world.event.GameEvent
 import java.util.*
 
@@ -94,5 +99,21 @@ class BitStructureItem(settings: Settings) : Item(settings) {
             return ActionResult.success(world.isClient)
         }
         return ActionResult.FAIL
+    }
+
+    override fun appendTooltip(
+        stack: ItemStack,
+        world: World?,
+        tooltip: MutableList<Text>,
+        context: TooltipContext
+    ) {
+        super.appendTooltip(stack, world, tooltip, context)
+        val fullTag = stack.nbt ?: return
+        var count = 0
+        for (nbtElement in fullTag.getList(NBT_BIT_BLOCK_TAGS, NbtElement.COMPOUND_TYPE.toInt())) {
+            if ((nbtElement as NbtCompound).isEmpty) continue
+            count++
+        }
+        tooltip.add(Text.translatable("${getTranslationKey(stack)}.desc", count).formatted(Formatting.GRAY))
     }
 }
