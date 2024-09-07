@@ -1,6 +1,7 @@
 package com.woalk.mods.bitsandchisels.blocks
 
 import com.woalk.mods.bitsandchisels.BitsAndChisels
+import com.woalk.mods.bitsandchisels.BitsBlock
 import com.woalk.mods.bitsandchisels.blocks.BitStructureModel.Companion.NBT_BIT_BLOCK_TAGS
 import com.woalk.mods.bitsandchisels.blocks.BitStructureModel.Companion.OFFSETS
 import net.minecraft.advancement.criterion.Criteria
@@ -60,7 +61,7 @@ class BitStructureItem(settings: Settings) : Item(settings) {
             bitBlockState = BitsAndChisels.BITS_BLOCK.defaultState.with(
                 Properties.WATERLOGGED,
                 world.getFluidState(bitBlockPos).fluid === Fluids.WATER
-            )
+            ).with(BitsBlock.SHADER_TYPE, tag.getInt("shader_type"))
             world.setBlockState(bitBlockPos, bitBlockState)
             world.getBlockEntity(bitBlockPos)?.let { blockEntity ->
                 if (!(world.isClient || !blockEntity.copyItemDataRequiresOperator()
@@ -71,6 +72,7 @@ class BitStructureItem(settings: Settings) : Item(settings) {
                 val nbtCompound3 = nbtCompound2.copy()
                 nbtCompound2.copyFrom(nbtElement)
                 nbtCompound2.putUuid("StructureId", structureId)
+                nbtCompound2.put("display", itemStack.getSubNbt("display"))
                 if (nbtCompound2 != nbtCompound3) {
                     blockEntity.readNbt(nbtCompound2)
                     blockEntity.markDirty()

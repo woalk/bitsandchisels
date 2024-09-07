@@ -116,6 +116,7 @@ public class BitsBlock extends BlockWithEntity implements Waterloggable {
             final var nbt = new NbtCompound();
             if (blockEntity2 != null && blockEntity2.getStructureId().equals(blockEntity.getStructureId())) {
                 blockEntity2.writeBitNbt(nbt);
+                nbt.putInt("shader_type", world.getBlockState(pos2).get(BitsBlock.SHADER_TYPE));
                 world.breakBlock(pos2, false);
                 if (!offset.equals(Vec3i.ZERO)) {
                     moreThanPos1 = true;
@@ -126,6 +127,11 @@ public class BitsBlock extends BlockWithEntity implements Waterloggable {
         if (!moreThanPos1) return false;
         final var stack = ModItems.INSTANCE.getBitStructureItem().getDefaultStack();
         stack.setSubNbt(BitStructureModel.NBT_BIT_BLOCK_TAGS, nbts);
+        final var displayNbt = new NbtCompound();
+        blockEntity.writeNameNbt(displayNbt);
+        if (!displayNbt.isEmpty()) {
+            stack.setSubNbt("display", displayNbt);
+        }
         dropStack(world, pos, stack);
         return true;
     }
