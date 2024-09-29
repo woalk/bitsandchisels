@@ -265,22 +265,31 @@ object WorldEditCommands : IModRegister {
         -2
     }
 
+    private enum class StructDo {
+        CREATE,
+        DELETE,
+        NOTHING,
+        AUTO,
+    }
+    private fun Boolean.structDo(): StructDo = if (this) StructDo.CREATE else StructDo.NOTHING
+
     private fun sign(
         ctx: CommandContext<ServerCommandSource>,
         name: String? = null,
         author: String? = ctx.source.name,
-        structure: Boolean = true,
+        structure: StructDo = StructDo.CREATE,
     ): Int = try {
         val actor = FabricAdapter.adaptPlayer(ctx.source.player)
         val world = FabricAdapter.adapt(ctx.source.world)
         val localSession = WorldEdit.getInstance().sessionManager.get(actor)
 
         val selection = localSession.getSelection(world)
-        val structureId = if (structure && !(selection.width > BitStructureModel.MAX_DIAMETER ||
+        val structureId = if (structure == StructDo.CREATE && !(selection.width > BitStructureModel.MAX_DIAMETER ||
                     selection.height > BitStructureModel.MAX_DIAMETER ||
                     selection.length > BitStructureModel.MAX_DIAMETER)) {
             UUID.randomUUID()
         } else null
+        val structureMap = if (structure == StructDo.AUTO) HashMap<String, UUID>() else null
         val origin = selection.minimumPoint
         val hasMissed = LinkedList<BlockPos>()
         var count = 0
@@ -295,13 +304,19 @@ object WorldEditCommands : IModRegister {
                         }
                     } else {
                         name?.let { be.customName = Text.literal(it) }
-                        val loreText = mutableListOf<Text>(Text.literal("Created by $author"))
-                        if (selection.width * selection.height * selection.length > 1) loreText.add(
-                            Text.literal("($x, $y, $z)").formatted(Formatting.DARK_GRAY)
-                        )
-                        be.setLoreText(loreText)
+                        if (author != null) {
+                            val loreText = mutableListOf<Text>(Text.literal("Created by $author"))
+                            if (selection.width * selection.height * selection.length > 1) loreText.add(
+                                Text.literal("($x, $y, $z)").formatted(Formatting.DARK_GRAY)
+                            )
+                            be.setLoreText(loreText)
+                        }
                         if (structureId != null) {
                             be.structureId = structureId
+                        } else if (structure == StructDo.DELETE) {
+                            be.structureId = null
+                        } else if (structure == StructDo.AUTO) be.customName?.let {
+                            be.structureId = structureMap!!.getOrPut(it.string, UUID::randomUUID)
                         }
                         BitUtils.update(ctx.source.world, pos)
                         count++
@@ -309,8 +324,25 @@ object WorldEditCommands : IModRegister {
                 }
             }
         }
-        ctx.source.sendFeedback(Text.literal("Updated $count blocks with signature"), true)
-        if (structure && structureId == null) {
+        if (author != null) {
+            ctx.source.sendFeedback(Text.literal("Updated $count blocks with signature"), true)
+        } else if (structure == StructDo.CREATE) {
+            ctx.source.sendFeedback(Text.literal("Created structure of $count blocks with ID $structureId."), true)
+        } else if (structure == StructDo.DELETE) {
+            ctx.source.sendFeedback(Text.literal("Removed structure ID from $count blocks."), true)
+        } else if (structure == StructDo.AUTO) {
+            ctx.source.sendFeedback(Text.literal("Created ${structureMap!!.size} structures within $count blocks."), true)
+            if (structureMap.size <= 0) {
+                ctx.source.sendFeedback(Text.literal(
+                    "Note that unsigned bit blocks will not be grouped by //bitstructure auto."
+                ).formatted(Formatting.RED), false)
+            }
+        } else {
+            ctx.source.sendFeedback(Text.literal(
+                "Inconsistency detected. Please report to admin that function 'sign' was called with no arguments."
+            ).formatted(Formatting.RED), true)
+        }
+        if (structure == StructDo.CREATE && structureId == null) {
             ctx.source.sendFeedback(
                 Text.literal("Warning: Build too large to be labeled as structure.")
                     .formatted(Formatting.YELLOW),
@@ -434,7 +466,7 @@ object WorldEditCommands : IModRegister {
                                 sign(ctx, StringArgumentType.getString(ctx, "title"))
                             }
                             .then(
-                                argument("author", StringArgumentType.greedyString())
+                                argument("author", StringArgumentType.string())
                                     .requires(Permissions.require(ModPermissions.COMMAND_WORLDEDIT_SIGN_OTHER, 4))
                                     .executes { ctx ->
                                         sign(
@@ -450,7 +482,7 @@ object WorldEditCommands : IModRegister {
                                                     ctx,
                                                     StringArgumentType.getString(ctx, "title"),
                                                     StringArgumentType.getString(ctx, "author"),
-                                                    BoolArgumentType.getBool(ctx, "structure")
+                                                    BoolArgumentType.getBool(ctx, "structure").structDo()
                                                 )
                                             }
                                     )
@@ -461,10 +493,48 @@ object WorldEditCommands : IModRegister {
                                         sign(
                                             ctx,
                                             StringArgumentType.getString(ctx, "title"),
-                                            structure = BoolArgumentType.getBool(ctx, "structure")
+                                            structure = BoolArgumentType.getBool(ctx, "structure").structDo()
                                         )
                                     }
                             )
+                    )
+            )
+            dispatcher.register(
+                literal("/bitstructure")
+                    .requires(Permissions.require(ModPermissions.COMMAND_WORLDEDIT_SIGN, 4))
+                    .then(
+                        literal("create")
+                            .executes { ctx ->
+                                sign(
+                                    ctx,
+                                    null,
+                                    null,
+                                    StructDo.CREATE,
+                                )
+                            }
+                    )
+                    .then(
+                        literal("clear")
+                            .executes { ctx ->
+                                sign(
+                                    ctx,
+                                    null,
+                                    null,
+                                    StructDo.DELETE,
+                                )
+                            }
+                    )
+                    .then(
+                        literal("auto")
+                            .requires(Permissions.require(ModPermissions.COMMAND_WORLDEDIT_SIGN_OTHER, 4))
+                            .executes { ctx ->
+                                sign(
+                                    ctx,
+                                    null,
+                                    null,
+                                    StructDo.AUTO,
+                                )
+                            }
                     )
             )
         }
