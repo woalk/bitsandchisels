@@ -29,15 +29,21 @@ import net.minecraft.server.command.CommandManager.literal
 import net.minecraft.server.command.ServerCommandSource
 import net.minecraft.text.Text
 import net.minecraft.util.Formatting
+import net.minecraft.util.Identifier
 import net.minecraft.util.math.BlockPos
 import net.minecraft.util.math.Direction
 import net.minecraft.util.math.Vec3i
+import net.minecraft.util.registry.Registry
 import java.util.*
 import kotlin.math.ceil
 
 object WorldEditCommands : IModRegister {
 
-    private fun minify(ctx: CommandContext<ServerCommandSource>, onlyFullBlocks: Boolean = true): Int = try {
+    private fun minify(
+        ctx: CommandContext<ServerCommandSource>,
+        onlyFullBlocks: Boolean = true,
+        fullBlockHeuristic: Boolean = true
+    ): Int = try {
         val actor = FabricAdapter.adaptPlayer(ctx.source.player)
         val localSession = WorldEdit.getInstance().sessionManager.get(actor)
         val clipboard = localSession.clipboard.clipboard
@@ -67,14 +73,37 @@ object WorldEditCommands : IModRegister {
                                 val block = FabricAdapter.adapt(
                                     clipboard.getBlock(blockMinPos.add(BlockVector3.at(i, j, k)))
                                 )
+                                val blockId = block.registryEntry.key.get().value
+                                val fullBlock = if (fullBlockHeuristic) {
+                                    if (blockId.path.endsWith("_stairs")) {
+                                        findBlock(blockId, blockId.path.substring(0, blockId.path.length - 7)) ?:
+                                        findBlock(blockId, blockId.path.substring(0, blockId.path.length - 7) + "s") ?:
+                                        findBlock(blockId, blockId.path.substring(0, blockId.path.length - 6) + "planks")
+                                    } else if (blockId.path.endsWith("_slab")) {
+                                        findBlock(blockId, blockId.path.substring(0, blockId.path.length - 5)) ?:
+                                        findBlock(blockId, blockId.path.substring(0, blockId.path.length - 5) + "s") ?:
+                                        findBlock(blockId, blockId.path.substring(0, blockId.path.length - 4) + "planks")
+                                    } else if (blockId.path.endsWith("_wall")) {
+                                        findBlock(blockId, blockId.path.substring(0, blockId.path.length - 5)) ?:
+                                        findBlock(blockId, blockId.path.substring(0, blockId.path.length - 5) + "s")
+                                    } else if (blockId.path.contains("/stairs/")) {
+                                        findBlock(blockId, blockId.path.replace("/stairs/", "/dyed/")) ?:
+                                        findBlock("minecraft", blockId.path.split("/").last())
+                                    } else if (blockId.path.contains("/slabs/")) {
+                                        findBlock(blockId, blockId.path.replace("/slabs/", "/dyed/")) ?:
+                                        findBlock("minecraft", blockId.path.split("/").last())
+                                    } else if (blockId.path.startsWith("containers/")) {
+                                        findBlock("minecraft", blockId.path.split("/").last() + "_planks")
+                                    } else block
+                                } else { block } ?: block
                                 bitsOut[i][j][k] = if (onlyFullBlocks) if (
-                                    block.renderType != BlockRenderType.MODEL ||
-                                    block.block.hasDynamicBounds() ||
-                                    block.hasSidedTransparency() ||
-                                    block.block is WallMountedBlock ||
-                                    block.block is LeavesBlock ||
-                                    !block.isFullCube(ctx.source.world, ctx.source.player!!.blockPos)
-                                ) Blocks.AIR.defaultState else block else block
+                                    fullBlock.renderType != BlockRenderType.MODEL ||
+                                    fullBlock.block.hasDynamicBounds() ||
+                                    fullBlock.hasSidedTransparency() ||
+                                    fullBlock.block is WallMountedBlock ||
+                                    fullBlock.block is LeavesBlock ||
+                                    !fullBlock.isFullCube(ctx.source.world, ctx.source.player!!.blockPos)
+                                ) Blocks.AIR.defaultState else fullBlock else block
                             }
                         }
                     }
@@ -97,6 +126,10 @@ object WorldEditCommands : IModRegister {
         e.printStackTrace()
         -2
     }
+
+    private fun findBlock(ns: Identifier, path: String): BlockState? = findBlock(ns.namespace, path)
+    private fun findBlock(ns: String, path: String): BlockState? =
+        Registry.BLOCK.get(Identifier(ns, path)).defaultState.let { if (it.isAir) null else it }
 
     private fun replace(ctx: CommandContext<ServerCommandSource>, from: BlockState, to: BlockState): Int = try {
         val actor = FabricAdapter.adaptPlayer(ctx.source.player)
@@ -311,6 +344,12 @@ object WorldEditCommands : IModRegister {
                         literal("ignoreLimits")
                             .executes { ctx ->
                                 minify(ctx, false)
+                            }
+                    )
+                    .then(
+                        literal("noHeuristic")
+                            .executes { ctx ->
+                                minify(ctx, fullBlockHeuristic = false)
                             }
                     )
             )
