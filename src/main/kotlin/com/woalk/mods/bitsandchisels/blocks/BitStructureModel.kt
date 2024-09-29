@@ -23,10 +23,12 @@ class BitStructureModel: BitsBlockModel() {
     companion object {
         const val NBT_BIT_BLOCK_TAGS = "BitBlockTags"
         const val MAX_DIAMETER = 4
-        val OFFSETS = Array(MAX_DIAMETER * MAX_DIAMETER * MAX_DIAMETER) { i ->
-            Vec3i(i % MAX_DIAMETER, (i / MAX_DIAMETER) % MAX_DIAMETER, (i / MAX_DIAMETER) / MAX_DIAMETER)
-        }
+        val OFFSETS = createOffsets(MAX_DIAMETER)
         private val cache = LRUCache<NbtCompound, Pair<Mesh, Int>>(100)
+
+        fun createOffsets(diameter: Int, offset: Int = 0) = Array(diameter * diameter * diameter) { i ->
+            Vec3i(i % diameter + offset, (i / diameter) % diameter + offset, (i / diameter) / diameter + offset)
+        }
     }
 
     override fun emitItemQuads(stack: ItemStack, randomSupplier: Supplier<Random?>?, context: RenderContext) {

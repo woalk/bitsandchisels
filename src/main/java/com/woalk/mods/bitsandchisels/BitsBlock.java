@@ -94,9 +94,8 @@ public class BitsBlock extends BlockWithEntity implements Waterloggable {
 
     /** @return {@code true} on success, {@code false} if a normal {@code BitsBlockItem} should be dropped instead. */
     private boolean tryDropStructure(World world, BlockPos pos, BitsBlockEntity blockEntity) {
-        final var OFFSETS = BitStructureModel.Companion.getOFFSETS();
         int minX = pos.getX(), minY = pos.getY(), minZ = pos.getZ();
-        for (var offset : OFFSETS) {
+        for (var offset : BitStructureModel.Companion.createOffsets(BitStructureModel.MAX_DIAMETER * 2 - 1, -BitStructureModel.MAX_DIAMETER + 1)) {
             final var pos2 = pos.subtract(offset);
             final var blockEntity2 =
                     world.getBlockEntity(pos2, BitsAndChisels.BITS_BLOCK_ENTITY).orElse(null);
@@ -109,7 +108,7 @@ public class BitsBlock extends BlockWithEntity implements Waterloggable {
         var pos1 = new BlockPos(minX, minY, minZ);
         final var nbts = new NbtList();
         boolean moreThanPos1 = false;
-        for (var offset : OFFSETS) {
+        for (var offset : BitStructureModel.Companion.getOFFSETS()) {
             final var pos2 = pos1.add(offset);
             final var blockEntity2 =
                     world.getBlockEntity(pos2, BitsAndChisels.BITS_BLOCK_ENTITY).orElse(null);

@@ -326,8 +326,14 @@ object WorldEditCommands : IModRegister {
         }
         if (author != null) {
             ctx.source.sendFeedback(Text.literal("Updated $count blocks with signature"), true)
-        } else if (structure == StructDo.CREATE) {
+        } else if (structure == StructDo.CREATE && structureId != null) {
             ctx.source.sendFeedback(Text.literal("Created structure of $count blocks with ID $structureId."), true)
+        } else if (structure == StructDo.CREATE /* && structureId == null */) {
+            ctx.source.sendFeedback(
+                Text.literal("Warning: Build too large to be labeled as structure.")
+                    .formatted(Formatting.YELLOW),
+                false,
+            )
         } else if (structure == StructDo.DELETE) {
             ctx.source.sendFeedback(Text.literal("Removed structure ID from $count blocks."), true)
         } else if (structure == StructDo.AUTO) {
@@ -342,13 +348,7 @@ object WorldEditCommands : IModRegister {
                 "Inconsistency detected. Please report to admin that function 'sign' was called with no arguments."
             ).formatted(Formatting.RED), true)
         }
-        if (structure == StructDo.CREATE && structureId == null) {
-            ctx.source.sendFeedback(
-                Text.literal("Warning: Build too large to be labeled as structure.")
-                    .formatted(Formatting.YELLOW),
-                false,
-            )
-        }
+
         if (hasMissed.isNotEmpty()) {
             ctx.source.sendFeedback(Text.literal(
                 if (hasMissed.size < 4) {
