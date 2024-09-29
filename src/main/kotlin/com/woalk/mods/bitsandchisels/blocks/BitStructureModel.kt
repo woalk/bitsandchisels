@@ -22,7 +22,7 @@ import kotlin.math.max
 class BitStructureModel: BitsBlockModel() {
     companion object {
         const val NBT_BIT_BLOCK_TAGS = "BitBlockTags"
-        const val MAX_DIAMETER = 4
+        const val MAX_DIAMETER = 5
         val OFFSETS = createOffsets(MAX_DIAMETER)
         private val cache = LRUCache<NbtCompound, Pair<Mesh, Int>>(100)
 
