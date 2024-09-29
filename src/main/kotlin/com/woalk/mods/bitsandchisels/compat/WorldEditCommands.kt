@@ -326,6 +326,13 @@ object WorldEditCommands : IModRegister {
         }
         if (author != null) {
             ctx.source.sendFeedback(Text.literal("Updated $count blocks with signature"), true)
+            if (structure == StructDo.CREATE && structureId == null) {
+                ctx.source.sendFeedback(
+                    Text.literal("Warning: Build too large to be labeled as structure.")
+                        .formatted(Formatting.YELLOW),
+                    false,
+                )
+            }
         } else if (structure == StructDo.CREATE && structureId != null) {
             ctx.source.sendFeedback(Text.literal("Created structure of $count blocks with ID $structureId."), true)
         } else if (structure == StructDo.CREATE /* && structureId == null */) {
