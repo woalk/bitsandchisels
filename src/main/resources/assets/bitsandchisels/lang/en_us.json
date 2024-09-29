@@ -13,6 +13,8 @@
     "item.bitsandchisels.blueprint": "Blueprint",
     "block.bitsandchisels.bits_block": "Bit Collection Block",
     "block.bitsandchisels.animated_bits_block": "Animated Bit Collection Block",
+    "item.bitsandchisels.bit_structure": "Bit Structure",
+    "item.bitsandchisels.bit_structure.desc": "Contains %d blocks",
     "block.woalk.coloured_block": "Custom-Colored Block",
     "block.woalk.barrier": "Fake Barrier",
     "gui.bitsandchisels.shader_types": "Available shader_type values:",

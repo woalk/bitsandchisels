@@ -1,6 +1,8 @@
 package com.woalk.mods.bitsandchisels;
 
 import com.woalk.mods.bitsandchisels.api.BitUtils;
+import com.woalk.mods.bitsandchisels.blocks.BitStructureModel;
+import com.woalk.mods.bitsandchisels.registry.ModItems;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.block.Block;
@@ -20,6 +22,7 @@ import net.minecraft.item.ItemPlacementContext;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.nbt.NbtElement;
+import net.minecraft.nbt.NbtList;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.state.StateManager.Builder;
 import net.minecraft.state.property.IntProperty;
@@ -30,6 +33,7 @@ import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.hit.HitResult;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
+import net.minecraft.util.math.Vec3i;
 import net.minecraft.util.registry.Registry;
 import net.minecraft.util.shape.VoxelShape;
 import net.minecraft.util.shape.VoxelShapes;
@@ -78,10 +82,61 @@ public class BitsBlock extends BlockWithEntity implements Waterloggable {
 
     @Override
     public void onBreak(World world, BlockPos pos, BlockState state, PlayerEntity player) {
-        BlockEntity blockEntity = world.getBlockEntity(pos);
-        if (world instanceof ServerWorld && blockEntity != null) {
-            dropStack(world, pos, ItemHelpers.blockToItem(this, state, blockEntity));
+        BitsBlockEntity blockEntity = world.getBlockEntity(pos, BitsAndChisels.BITS_BLOCK_ENTITY).orElse(null);
+        if (!world.isClient && blockEntity != null) {
+            if (blockEntity.getStructureId() == null || player.isSneaking() ||
+                    !tryDropStructure(world, pos, blockEntity)) {
+                // no structure ID, or drop not successful
+                dropStack(world, pos, ItemHelpers.blockToItem(this, state, blockEntity));
+            }
         }
+    }
+
+    /** @return {@code true} on success, {@code false} if a normal {@code BitsBlockItem} should be dropped instead. */
+    private boolean tryDropStructure(World world, BlockPos pos, BitsBlockEntity blockEntity) {
+        int minX = pos.getX(), minY = pos.getY(), minZ = pos.getZ();
+        for (var offset : BitStructureModel.Companion.createOffsets(BitStructureModel.MAX_DIAMETER * 2 - 1, -BitStructureModel.MAX_DIAMETER + 1)) {
+            final var pos2 = pos.subtract(offset);
+            final var blockEntity2 =
+                    world.getBlockEntity(pos2, BitsAndChisels.BITS_BLOCK_ENTITY).orElse(null);
+            if (blockEntity2 != null && blockEntity.getStructureId().equals(blockEntity2.getStructureId())) {
+                if (minX > pos2.getX()) minX = pos2.getX();
+                if (minY > pos2.getY()) minY = pos2.getY();
+                if (minZ > pos2.getZ()) minZ = pos2.getZ();
+            }
+        }
+        var pos1 = new BlockPos(minX, minY, minZ);
+        final var nbts = new NbtList();
+        boolean moreThanPos1 = false;
+        for (var offset : BitStructureModel.Companion.getOFFSETS()) {
+            final var pos2 = pos1.add(offset);
+            final var blockEntity2 =
+                    world.getBlockEntity(pos2, BitsAndChisels.BITS_BLOCK_ENTITY).orElse(null);
+            final var nbt = new NbtCompound();
+            if (blockEntity2 != null && blockEntity.getStructureId().equals(blockEntity2.getStructureId())) {
+                blockEntity2.writeBitNbt(nbt);
+                nbt.putInt("shader_type", world.getBlockState(pos2).get(BitsBlock.SHADER_TYPE));
+                world.breakBlock(pos2, false);
+                if (!offset.equals(Vec3i.ZERO)) {
+                    moreThanPos1 = true;
+                }
+            }
+            nbts.add(nbt);
+        }
+        if (!moreThanPos1) return false;
+        final var stack = ModItems.INSTANCE.getBitStructureItem().getDefaultStack();
+        stack.setSubNbt(BitStructureModel.NBT_BIT_BLOCK_TAGS, nbts);
+        final var displayNbt = new NbtCompound();
+        blockEntity.writeNameNbt(displayNbt);
+        if (!displayNbt.isEmpty()) {
+            final var lore = displayNbt.getList("Lore", NbtElement.STRING_TYPE);
+            if (lore.getString(lore.size() - 1).matches("^\\{\"color\":\"dark_gray\",\"text\":\"\\(\\d+, \\d+, \\d+\\)\"}$")) {
+                lore.remove(lore.size() - 1);
+            }
+            stack.setSubNbt("display", displayNbt);
+        }
+        dropStack(world, pos, stack);
+        return true;
     }
 
     @Override
@@ -91,6 +146,10 @@ public class BitsBlock extends BlockWithEntity implements Waterloggable {
         if (blockEntity == null) return;
         if (itemStack.hasCustomName()) {
             blockEntity.setCustomName(itemStack.getName());
+        }
+        if (itemStack.getOrCreateNbt().contains("StructureId")) {
+            assert itemStack.getNbt() != null;
+            blockEntity.setStructureId(itemStack.getNbt().getUuid("StructureId"));
         }
         NbtCompound displayNbt = itemStack.getSubNbt("display");
         if (displayNbt != null && displayNbt.contains("Lore")) {

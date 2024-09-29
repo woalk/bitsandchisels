@@ -24,6 +24,9 @@ public class ItemHelpers {
             compoundTag3 = new NbtCompound();
             ((BitsBlockEntity) blockEntity).writeNameNbt(compoundTag3);
             stack.setSubNbt("display", compoundTag3);
+            if (((BitsBlockEntity) blockEntity).getStructureId() != null) {
+                stack.getOrCreateNbt().putUuid("StructureId", ((BitsBlockEntity) blockEntity).getStructureId());
+            }
         }
         return stack;
     }

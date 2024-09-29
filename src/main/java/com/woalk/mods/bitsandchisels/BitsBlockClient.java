@@ -1,5 +1,6 @@
 package com.woalk.mods.bitsandchisels;
 
+import com.woalk.mods.bitsandchisels.blocks.BitStructureModel;
 import org.jetbrains.annotations.Nullable;
 
 import net.fabricmc.api.ClientModInitializer;
@@ -26,6 +27,7 @@ public class BitsBlockClient implements ClientModInitializer {
         public static final Identifier BITS_BLOCK_MODEL = new Identifier("bitsandchisels:block/bits_block_model");
         public static final Identifier BITS_BLOCK_ITEM_MODEL = new Identifier("bitsandchisels:item/bits_block");
         public static final Identifier ANIMATED_BITS_BLOCK_ITEM_MODEL = new Identifier("bitsandchisels:item/animated_bits_block");
+        public static final Identifier BIT_STRUCTURE_MODEL = new Identifier("bitsandchisels:item/bit_structure");
         public static final Identifier BIT_ITEM_MODEL = new Identifier("bitsandchisels:item/bit_item");
 
         @Override
@@ -34,6 +36,8 @@ public class BitsBlockClient implements ClientModInitializer {
                 return new BitsBlockModel();
             } else if (resourceId.equals(BIT_ITEM_MODEL)) {
                 return new BitItemModel();
+            } else if (resourceId.equals(BIT_STRUCTURE_MODEL)) {
+                return new BitStructureModel();
             } else {
                 return null;
             }

@@ -32,6 +32,7 @@ import net.minecraft.nbt.NbtElement;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
+import net.minecraft.util.math.Vec3i;
 import net.minecraft.util.math.random.Random;
 import net.minecraft.world.BlockRenderView;
 
@@ -41,7 +42,7 @@ public class BitsBlockModel implements UnbakedModel, BakedModel, FabricBakedMode
 
     // *Important Stuff
 
-    private static LRUCache<NbtCompound, Mesh> cache = new LRUCache<>(200); //Should be enough (tm)
+    protected static LRUCache<NbtCompound, Mesh> cache = new LRUCache<>(200); //Should be enough (tm)
 
     @Override
     public void emitBlockQuads(BlockRenderView blockView, BlockState state, BlockPos pos, Supplier<Random> randomSupplier, RenderContext context) {
@@ -58,15 +59,16 @@ public class BitsBlockModel implements UnbakedModel, BakedModel, FabricBakedMode
 
     @Override
     public void emitItemQuads(ItemStack stack, Supplier<Random> randomSupplier, RenderContext context) {
-        Mesh mesh = cache.computeIfAbsent(stack.getNbt(), discard -> {
-            NbtCompound tag = stack.getSubNbt("BlockEntityTag");
+        NbtCompound beTag = stack.getSubNbt("BlockEntityTag");
+        Mesh mesh = cache.computeIfAbsent(beTag, discard -> {
+            NbtCompound tag = beTag;
             if (tag != null) {
                 BlockState[][][] bits = new BlockState[16][16][16];
                 if (tag.contains(AnimatedBitsBlockEntity.FRAMES_KEY)) {
                     tag = tag.getList(AnimatedBitsBlockEntity.FRAMES_KEY, NbtElement.COMPOUND_TYPE).getCompound(0);
                 }
                 if (BitNbtUtil.read3DBitArray(tag, bits)) {
-                    return BitMeshes.createMesh(bits, null, null);
+                    return BitMeshes.createMesh(bits, null, null, null);
                 }
             }
             return null;
