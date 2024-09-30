@@ -2,8 +2,6 @@ package com.woalk.mods.bitsandchisels.blocks
 
 import com.woalk.mods.bitsandchisels.BitsAndChisels
 import com.woalk.mods.bitsandchisels.BitsBlock
-import com.woalk.mods.bitsandchisels.blocks.BitStructureModel.Companion.NBT_BIT_BLOCK_TAGS
-import com.woalk.mods.bitsandchisels.blocks.BitStructureModel.Companion.OFFSETS
 import net.minecraft.advancement.criterion.Criteria
 import net.minecraft.block.BlockState
 import net.minecraft.block.ShapeContext
@@ -22,11 +20,22 @@ import net.minecraft.state.property.Properties
 import net.minecraft.text.Text
 import net.minecraft.util.ActionResult
 import net.minecraft.util.Formatting
+import net.minecraft.util.math.Vec3i
 import net.minecraft.world.World
 import net.minecraft.world.event.GameEvent
 import java.util.*
 
 class BitStructureItem(settings: Settings) : Item(settings) {
+    companion object {
+        const val NBT_BIT_BLOCK_TAGS = "BitBlockTags"
+        const val MAX_DIAMETER = 5
+        val OFFSETS = createOffsets(MAX_DIAMETER)
+
+        fun createOffsets(diameter: Int, offset: Int = 0) = Array(diameter * diameter * diameter) { i ->
+            Vec3i(i % diameter + offset, (i / diameter) % diameter + offset, (i / diameter) / diameter + offset)
+        }
+    }
+
     override fun useOnBlock(context: ItemUsageContext): ActionResult {
         val actionResult = this.place(ItemPlacementContext(context))
         if (!actionResult.isAccepted && this.isFood) {

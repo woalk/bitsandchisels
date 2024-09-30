@@ -1,7 +1,7 @@
 package com.woalk.mods.bitsandchisels;
 
 import com.woalk.mods.bitsandchisels.api.BitUtils;
-import com.woalk.mods.bitsandchisels.blocks.BitStructureModel;
+import com.woalk.mods.bitsandchisels.blocks.BitStructureItem;
 import com.woalk.mods.bitsandchisels.registry.ModItems;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
@@ -95,7 +95,7 @@ public class BitsBlock extends BlockWithEntity implements Waterloggable {
     /** @return {@code true} on success, {@code false} if a normal {@code BitsBlockItem} should be dropped instead. */
     private boolean tryDropStructure(World world, BlockPos pos, BitsBlockEntity blockEntity) {
         int minX = pos.getX(), minY = pos.getY(), minZ = pos.getZ();
-        for (var offset : BitStructureModel.Companion.createOffsets(BitStructureModel.MAX_DIAMETER * 2 - 1, -BitStructureModel.MAX_DIAMETER + 1)) {
+        for (var offset : BitStructureItem.Companion.createOffsets(BitStructureItem.MAX_DIAMETER * 2 - 1, -BitStructureItem.MAX_DIAMETER + 1)) {
             final var pos2 = pos.subtract(offset);
             final var blockEntity2 =
                     world.getBlockEntity(pos2, BitsAndChisels.BITS_BLOCK_ENTITY).orElse(null);
@@ -108,7 +108,7 @@ public class BitsBlock extends BlockWithEntity implements Waterloggable {
         var pos1 = new BlockPos(minX, minY, minZ);
         final var nbts = new NbtList();
         boolean moreThanPos1 = false;
-        for (var offset : BitStructureModel.Companion.getOFFSETS()) {
+        for (var offset : BitStructureItem.Companion.getOFFSETS()) {
             final var pos2 = pos1.add(offset);
             final var blockEntity2 =
                     world.getBlockEntity(pos2, BitsAndChisels.BITS_BLOCK_ENTITY).orElse(null);
@@ -125,7 +125,7 @@ public class BitsBlock extends BlockWithEntity implements Waterloggable {
         }
         if (!moreThanPos1) return false;
         final var stack = ModItems.INSTANCE.getBitStructureItem().getDefaultStack();
-        stack.setSubNbt(BitStructureModel.NBT_BIT_BLOCK_TAGS, nbts);
+        stack.setSubNbt(BitStructureItem.NBT_BIT_BLOCK_TAGS, nbts);
         final var displayNbt = new NbtCompound();
         blockEntity.writeNameNbt(displayNbt);
         if (!displayNbt.isEmpty()) {

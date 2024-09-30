@@ -4,6 +4,8 @@ import com.woalk.mods.bitsandchisels.BitMeshes
 import com.woalk.mods.bitsandchisels.BitNbtUtil
 import com.woalk.mods.bitsandchisels.BitsBlockModel
 import com.woalk.mods.bitsandchisels.LRUCache
+import com.woalk.mods.bitsandchisels.blocks.BitStructureItem.Companion.NBT_BIT_BLOCK_TAGS
+import com.woalk.mods.bitsandchisels.blocks.BitStructureItem.Companion.OFFSETS
 import net.fabricmc.fabric.api.renderer.v1.RendererAccess
 import net.fabricmc.fabric.api.renderer.v1.mesh.Mesh
 import net.fabricmc.fabric.api.renderer.v1.render.RenderContext
@@ -21,14 +23,7 @@ import kotlin.math.max
 
 class BitStructureModel: BitsBlockModel() {
     companion object {
-        const val NBT_BIT_BLOCK_TAGS = "BitBlockTags"
-        const val MAX_DIAMETER = 5
-        val OFFSETS = createOffsets(MAX_DIAMETER)
         private val cache = LRUCache<NbtCompound, Pair<Mesh, Int>>(100)
-
-        fun createOffsets(diameter: Int, offset: Int = 0) = Array(diameter * diameter * diameter) { i ->
-            Vec3i(i % diameter + offset, (i / diameter) % diameter + offset, (i / diameter) / diameter + offset)
-        }
     }
 
     override fun emitItemQuads(stack: ItemStack, randomSupplier: Supplier<Random?>?, context: RenderContext) {

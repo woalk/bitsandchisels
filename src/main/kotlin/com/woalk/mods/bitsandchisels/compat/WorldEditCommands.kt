@@ -17,7 +17,7 @@ import com.woalk.mods.bitsandchisels.registry.IModRegister
 import com.woalk.mods.bitsandchisels.BitsAndChisels
 import com.woalk.mods.bitsandchisels.BitsBlockEntity
 import com.woalk.mods.bitsandchisels.api.BitUtils
-import com.woalk.mods.bitsandchisels.blocks.BitStructureModel
+import com.woalk.mods.bitsandchisels.blocks.BitStructureItem
 import com.woalk.mods.bitsandchisels.registry.ModPermissions
 import com.woalk.mods.bitsandchisels.utils.DirectionArgumentType
 import me.lucko.fabric.api.permissions.v0.Permissions
@@ -284,9 +284,9 @@ object WorldEditCommands : IModRegister {
         val localSession = WorldEdit.getInstance().sessionManager.get(actor)
 
         val selection = localSession.getSelection(world)
-        val structureId = if (structure == StructDo.CREATE && !(selection.width > BitStructureModel.MAX_DIAMETER ||
-                    selection.height > BitStructureModel.MAX_DIAMETER ||
-                    selection.length > BitStructureModel.MAX_DIAMETER)) {
+        val structureId = if (structure == StructDo.CREATE && !(selection.width > BitStructureItem.MAX_DIAMETER ||
+                    selection.height > BitStructureItem.MAX_DIAMETER ||
+                    selection.length > BitStructureItem.MAX_DIAMETER)) {
             UUID.randomUUID()
         } else null
         val structureMap = if (structure == StructDo.AUTO) HashMap<String, UUID>() else null
