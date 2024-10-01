@@ -2,7 +2,7 @@ package com.woalk.mods.bitsandchisels.blocks
 
 import com.woalk.mods.bitsandchisels.BitMeshes
 import com.woalk.mods.bitsandchisels.BitNbtUtil
-import com.woalk.mods.bitsandchisels.BitsBlockModel
+import com.woalk.mods.bitsandchisels.AbstractBitsBlockModel
 import com.woalk.mods.bitsandchisels.LRUCache
 import com.woalk.mods.bitsandchisels.blocks.BitStructureItem.Companion.NBT_BIT_BLOCK_TAGS
 import com.woalk.mods.bitsandchisels.blocks.BitStructureItem.Companion.OFFSETS
@@ -10,18 +10,15 @@ import net.fabricmc.fabric.api.renderer.v1.RendererAccess
 import net.fabricmc.fabric.api.renderer.v1.mesh.Mesh
 import net.fabricmc.fabric.api.renderer.v1.render.RenderContext
 import net.minecraft.block.BlockState
-import net.minecraft.client.render.model.json.ModelTransformation
-import net.minecraft.client.render.model.json.Transformation
 import net.minecraft.item.ItemStack
 import net.minecraft.nbt.NbtCompound
 import net.minecraft.nbt.NbtElement
 import net.minecraft.util.math.Vec3f
-import net.minecraft.util.math.Vec3i
 import net.minecraft.util.math.random.Random
 import java.util.function.Supplier
 import kotlin.math.max
 
-class BitStructureModel: BitsBlockModel() {
+class BitStructureModel: AbstractBitsBlockModel() {
     companion object {
         private val cache = LRUCache<NbtCompound, Pair<Mesh, Int>>(100)
     }

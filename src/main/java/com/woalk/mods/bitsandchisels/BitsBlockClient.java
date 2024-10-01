@@ -1,6 +1,7 @@
 package com.woalk.mods.bitsandchisels;
 
 import com.woalk.mods.bitsandchisels.blocks.BitStructureModel;
+import com.woalk.mods.bitsandchisels.blocks.BitsBlockModel;
 import org.jetbrains.annotations.Nullable;
 
 import net.fabricmc.api.ClientModInitializer;
