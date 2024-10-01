@@ -3,7 +3,6 @@ package com.woalk.mods.bitsandchisels.mixin;
 import java.util.List;
 
 import com.woalk.mods.bitsandchisels.BitsAndChisels;
-import com.woalk.mods.bitsandchisels.CanvasHelper;
 import com.woalk.mods.bitsandchisels.duck.CubeRenderStuff;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
@@ -48,13 +47,7 @@ public class BlockStateMixin implements CubeRenderStuff {
                 quads[d.getId()] = localquads;
                 materials[d.getId()] = new RenderMaterial[localquads.length];
                 for (int i = 0; i < localquads.length; i++) {
-                    BakedQuad quad = localquads[i];
-                    if (BitsAndChisels.CANVAS) {
-                        Sprite sprite = ((BakedQuadAccessor)quad).getSprite();
-                        materials[d.getId()][i] = CanvasHelper.getMaterial(thiz, sprite);
-                    } else {
-                        materials[d.getId()][i] = RendererAccess.INSTANCE.getRenderer().materialFinder().blendMode(0, BlendMode.fromRenderLayer(RenderLayers.getBlockLayer(thiz))).find();
-                    }
+                    materials[d.getId()][i] = RendererAccess.INSTANCE.getRenderer().materialFinder().blendMode(0, BlendMode.fromRenderLayer(RenderLayers.getBlockLayer(thiz))).find();
                 }
             }
         }

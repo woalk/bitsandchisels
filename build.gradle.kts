@@ -32,10 +32,6 @@ dependencies {
     val fabricKotlinVersion: String by project
     modImplementation("net.fabricmc", "fabric-language-kotlin", fabricKotlinVersion)
 
-    val frexVersion: String by project
-    modImplementation("io.vram", "frex-fabric-mc119", frexVersion)
-    modRuntimeOnly("io.vram", "frex-fabric-mc119", frexVersion)
-
     val fabricPermissionsApiVersion: String by project
     include(modImplementation("me.lucko", "fabric-permissions-api", fabricPermissionsApiVersion))
 
