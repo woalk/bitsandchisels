@@ -30,8 +30,6 @@ public class BitsAndChisels implements ModInitializer {
 
 	public static final Logger LOGGER = LoggerFactory.getLogger("BitsAndChisels");
 
-	public static final boolean CANVAS = FabricLoader.getInstance().isModLoaded("canvas");
-
 	public static final ItemGroup ITEM_GROUP = FabricItemGroupBuilder.create(new Identifier(MODID, MODID)).icon(BitsAndChisels::getDiamondChiselStack).build();
 
 	public static final BitsBlock BITS_BLOCK = new BitsBlock(FabricBlockSettings.of(Material.METAL).nonOpaque().dynamicBounds().hardness(4.0f).luminance(s -> s.get(BitsBlock.LIGHT_LEVEL)));

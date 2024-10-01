@@ -36,13 +36,13 @@ import net.minecraft.util.math.Vec3i;
 import net.minecraft.util.math.random.Random;
 import net.minecraft.world.BlockRenderView;
 
-public class BitsBlockModel implements UnbakedModel, BakedModel, FabricBakedModel {
+public abstract class AbstractBitsBlockModel implements UnbakedModel, BakedModel, FabricBakedModel {
     public static final SpriteIdentifier SPRITE = new SpriteIdentifier(SpriteAtlasTexture.BLOCK_ATLAS_TEXTURE, new Identifier("bitsandchisels", "block/null"));
     static boolean frapiwarn = false;
 
     // *Important Stuff
 
-    protected static LRUCache<NbtCompound, Mesh> cache = new LRUCache<>(200); //Should be enough (tm)
+    protected static final LRUCache<NbtCompound, Mesh> cache = new LRUCache<>(200); //Should be enough (tm)
 
     @Override
     public void emitBlockQuads(BlockRenderView blockView, BlockState state, BlockPos pos, Supplier<Random> randomSupplier, RenderContext context) {
