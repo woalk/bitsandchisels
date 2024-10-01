@@ -56,5 +56,6 @@ class BitStructureModel: AbstractBitsBlockModel() {
             true
         }
         if (mesh != null) context.meshConsumer().accept(mesh.first)
+        context.popTransform()
     }
 }
