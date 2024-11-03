@@ -13,7 +13,7 @@ object ModItems: ModRegister<Item, Item>(Registry.ITEM) {
 
     //region item declarations
     val animationWand = register("animation_wand", AnimationWand(itemSettings))
-    val bitStructureItem = register("bit_structure", BitStructureItem(FabricItemSettings().maxCount(1)))
+    val bitStructureItem = register("bit_structure", BitStructureItem(FabricItemSettings().maxCount(16)))
     //endregion
 
     //region convenience functions
