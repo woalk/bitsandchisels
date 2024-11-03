@@ -94,12 +94,22 @@ public class BitsBlock extends BlockWithEntity implements Waterloggable {
 
     /** @return {@code true} on success, {@code false} if a normal {@code BitsBlockItem} should be dropped instead. */
     private boolean tryDropStructure(World world, BlockPos pos, BitsBlockEntity blockEntity) {
+        final var stack = tryGetStructure(world, pos, blockEntity, true);
+        if (stack == null) {
+            return false;
+        }
+        dropStack(world, pos, stack);
+        return true;
+    }
+
+    @Nullable
+    private ItemStack tryGetStructure(World world, BlockPos pos, BitsBlockEntity blockEntity, boolean breakBlock) {
         int minX = pos.getX(), minY = pos.getY(), minZ = pos.getZ();
         for (var offset : BitStructureItem.Companion.createOffsets(BitStructureItem.MAX_DIAMETER * 2 - 1, -BitStructureItem.MAX_DIAMETER + 1)) {
             final var pos2 = pos.subtract(offset);
             final var blockEntity2 =
                     world.getBlockEntity(pos2, BitsAndChisels.BITS_BLOCK_ENTITY).orElse(null);
-            if (blockEntity2 != null && blockEntity.getStructureId().equals(blockEntity2.getStructureId())) {
+            if (blockEntity2 != null && blockEntity.getStructureId() != null && blockEntity.getStructureId().equals(blockEntity2.getStructureId())) {
                 if (minX > pos2.getX()) minX = pos2.getX();
                 if (minY > pos2.getY()) minY = pos2.getY();
                 if (minZ > pos2.getZ()) minZ = pos2.getZ();
@@ -113,17 +123,19 @@ public class BitsBlock extends BlockWithEntity implements Waterloggable {
             final var blockEntity2 =
                     world.getBlockEntity(pos2, BitsAndChisels.BITS_BLOCK_ENTITY).orElse(null);
             final var nbt = new NbtCompound();
-            if (blockEntity2 != null && blockEntity.getStructureId().equals(blockEntity2.getStructureId())) {
+            if (blockEntity2 != null && blockEntity.getStructureId() != null && blockEntity.getStructureId().equals(blockEntity2.getStructureId())) {
                 blockEntity2.writeBitNbt(nbt);
                 nbt.putInt("shader_type", world.getBlockState(pos2).get(BitsBlock.SHADER_TYPE));
-                world.breakBlock(pos2, false);
+                if (breakBlock) {
+                    world.breakBlock(pos2, false);
+                }
                 if (!offset.equals(Vec3i.ZERO)) {
                     moreThanPos1 = true;
                 }
             }
             nbts.add(nbt);
         }
-        if (!moreThanPos1) return false;
+        if (!moreThanPos1) return null;
         final var stack = ModItems.INSTANCE.getBitStructureItem().getDefaultStack();
         stack.setSubNbt(BitStructureItem.NBT_BIT_BLOCK_TAGS, nbts);
         final var displayNbt = new NbtCompound();
@@ -135,8 +147,7 @@ public class BitsBlock extends BlockWithEntity implements Waterloggable {
             }
             stack.setSubNbt("display", displayNbt);
         }
-        dropStack(world, pos, stack);
-        return true;
+        return stack;
     }
 
     @Override
@@ -168,7 +179,18 @@ public class BitsBlock extends BlockWithEntity implements Waterloggable {
             final var bitStack = pickBitClient(world, pos, state);
             if (bitStack != null) return bitStack;
         }
-        return ItemHelpers.blockToItem(this, state, world.getBlockEntity(pos));
+        final var blockEntity = world.getBlockEntity(pos, BitsAndChisels.BITS_BLOCK_ENTITY).orElse(null);
+        if (blockEntity != null) {
+            if (world instanceof World) {
+                final var structure = tryGetStructure((World) world, pos, blockEntity, false);
+                if (structure != null) {
+                    return structure;
+                } // else
+            } // else
+            return ItemHelpers.blockToItem(this, state, blockEntity);
+        } else {
+            return ItemStack.EMPTY;
+        }
     }
 
     @Environment(EnvType.CLIENT)
