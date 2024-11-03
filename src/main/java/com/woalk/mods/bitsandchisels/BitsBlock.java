@@ -181,12 +181,6 @@ public class BitsBlock extends BlockWithEntity implements Waterloggable {
         }
         final var blockEntity = world.getBlockEntity(pos, BitsAndChisels.BITS_BLOCK_ENTITY).orElse(null);
         if (blockEntity != null) {
-            if (world instanceof World) {
-                final var structure = tryGetStructure((World) world, pos, blockEntity, false);
-                if (structure != null) {
-                    return structure;
-                } // else
-            } // else
             return ItemHelpers.blockToItem(this, state, blockEntity);
         } else {
             return ItemStack.EMPTY;
@@ -197,18 +191,24 @@ public class BitsBlock extends BlockWithEntity implements Waterloggable {
     private ItemStack pickBitClient(BlockView world, BlockPos pos, BlockState state) {
         MinecraftClient client = MinecraftClient.getInstance();
         PlayerEntity player = client.player;
-        if (player != null && Screen.hasShiftDown() &&
-                player.getMainHandStack().isIn(TagKey.of(Registry.ITEM_KEY, new Identifier(BitsAndChisels.MODID, "chisel")))) {
-            HitResult hit = client.crosshairTarget;
-            if (hit != null && hit.getType() == HitResult.Type.BLOCK && world instanceof World) {
-                Direction direction = ((BlockHitResult) hit).getSide();
-                int x = (int) Math.floor(((hit.getPos().getX() - pos.getX()) * 16) + (direction.getOffsetX() * -0.5d));
-                int y = (int) Math.floor(((hit.getPos().getY() - pos.getY()) * 16) + (direction.getOffsetY() * -0.5d));
-                int z = (int) Math.floor(((hit.getPos().getZ() - pos.getZ()) * 16) + (direction.getOffsetZ() * -0.5d));
-                BlockState bit = BitUtils.getBit((World) world, pos, x, y, z);
-                if (BitUtils.exists(bit)) {
-                    return BitUtils.getBitItemStack(bit);
+        if (player != null && Screen.hasShiftDown()) {
+            if (player.getMainHandStack().isIn(TagKey.of(Registry.ITEM_KEY, new Identifier(BitsAndChisels.MODID, "chisel")))) {
+                HitResult hit = client.crosshairTarget;
+                if (hit != null && hit.getType() == HitResult.Type.BLOCK && world instanceof World) {
+                    Direction direction = ((BlockHitResult) hit).getSide();
+                    int x = (int) Math.floor(((hit.getPos().getX() - pos.getX()) * 16) + (direction.getOffsetX() * -0.5d));
+                    int y = (int) Math.floor(((hit.getPos().getY() - pos.getY()) * 16) + (direction.getOffsetY() * -0.5d));
+                    int z = (int) Math.floor(((hit.getPos().getZ() - pos.getZ()) * 16) + (direction.getOffsetZ() * -0.5d));
+                    BlockState bit = BitUtils.getBit((World) world, pos, x, y, z);
+                    if (BitUtils.exists(bit)) {
+                        return BitUtils.getBitItemStack(bit);
+                    }
                 }
+            }
+        } else if (world instanceof World) {
+            final var blockEntity = world.getBlockEntity(pos, BitsAndChisels.BITS_BLOCK_ENTITY).orElse(null);
+            if (blockEntity != null) {
+                return tryGetStructure((World) world, pos, blockEntity, false);
             }
         }
         return null;
