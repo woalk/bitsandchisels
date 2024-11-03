@@ -33,7 +33,7 @@ object ModBlocks : ModRegister<Pair<Block, (() -> FabricItemSettings)?>, Block>(
             .dynamicBounds()
             .hardness(4.0f)
             .luminance { s -> s.get(BitsBlock.LIGHT_LEVEL) }
-    ), ::FabricItemSettings)).first
+    )) { FabricItemSettings().maxCount(16) }).first
 
     val coloredBlock = register("coloured_block", ColoredBlock(
         FabricBlockSettings.copy(Blocks.WHITE_CONCRETE)
