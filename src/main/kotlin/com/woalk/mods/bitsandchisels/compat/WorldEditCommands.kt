@@ -278,6 +278,7 @@ object WorldEditCommands : IModRegister {
         name: String? = null,
         author: String? = ctx.source.name,
         structure: StructDo = StructDo.CREATE,
+        allowSingleBlockStructure: Boolean = false,
     ): Int = try {
         val actor = FabricAdapter.adaptPlayer(ctx.source.player)
         val world = FabricAdapter.adapt(ctx.source.world)
@@ -288,7 +289,7 @@ object WorldEditCommands : IModRegister {
                     selection.height > BitStructureItem.MAX_DIAMETER ||
                     selection.length > BitStructureItem.MAX_DIAMETER) && !(selection.width == 1 &&
                     selection.height == 1 &&
-                    selection.length == 1)
+                    selection.length == 1 && !allowSingleBlockStructure)
         ) {
             UUID.randomUUID()
         } else null
@@ -520,6 +521,7 @@ object WorldEditCommands : IModRegister {
                                     null,
                                     null,
                                     StructDo.CREATE,
+                                    true,
                                 )
                             }
                     )
@@ -531,6 +533,7 @@ object WorldEditCommands : IModRegister {
                                     null,
                                     null,
                                     StructDo.DELETE,
+                                    true,
                                 )
                             }
                     )
@@ -543,6 +546,7 @@ object WorldEditCommands : IModRegister {
                                     null,
                                     null,
                                     StructDo.AUTO,
+                                    true,
                                 )
                             }
                     )
