@@ -286,7 +286,10 @@ object WorldEditCommands : IModRegister {
         val selection = localSession.getSelection(world)
         val structureId = if (structure == StructDo.CREATE && !(selection.width > BitStructureItem.MAX_DIAMETER ||
                     selection.height > BitStructureItem.MAX_DIAMETER ||
-                    selection.length > BitStructureItem.MAX_DIAMETER)) {
+                    selection.length > BitStructureItem.MAX_DIAMETER) && !(selection.width == 1 &&
+                    selection.height == 1 &&
+                    selection.length == 1)
+        ) {
             UUID.randomUUID()
         } else null
         val structureMap = if (structure == StructDo.AUTO) HashMap<String, UUID>() else null
