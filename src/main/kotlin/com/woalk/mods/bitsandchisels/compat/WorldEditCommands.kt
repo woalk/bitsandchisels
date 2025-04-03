@@ -285,11 +285,10 @@ object WorldEditCommands : IModRegister {
         val localSession = WorldEdit.getInstance().sessionManager.get(actor)
 
         val selection = localSession.getSelection(world)
+        val isSingleBlock = selection.width == 1 && selection.height == 1 && selection.length == 1
         val structureId = if (structure == StructDo.CREATE && !(selection.width > BitStructureItem.MAX_DIAMETER ||
                     selection.height > BitStructureItem.MAX_DIAMETER ||
-                    selection.length > BitStructureItem.MAX_DIAMETER) && !(selection.width == 1 &&
-                    selection.height == 1 &&
-                    selection.length == 1 && !allowSingleBlockStructure)
+                    selection.length > BitStructureItem.MAX_DIAMETER) && !(isSingleBlock && !allowSingleBlockStructure)
         ) {
             UUID.randomUUID()
         } else null
@@ -332,8 +331,9 @@ object WorldEditCommands : IModRegister {
             ctx.source.sendFeedback(Text.literal("Updated $count blocks with signature"), true)
             if (structure == StructDo.CREATE && structureId == null) {
                 ctx.source.sendFeedback(
-                    Text.literal("Warning: Build too large to be labeled as structure.")
-                        .formatted(Formatting.YELLOW),
+                    Text.literal(
+                        "Warning: Build too ${if (isSingleBlock) "small" else "large"} to be labeled as structure."
+                    ).formatted(Formatting.YELLOW),
                     false,
                 )
             }
