@@ -74,28 +74,7 @@ object WorldEditCommands : IModRegister {
                                     clipboard.getBlock(blockMinPos.add(BlockVector3.at(i, j, k)))
                                 )
                                 val blockId = block.registryEntry.key.get().value
-                                val fullBlock = if (fullBlockHeuristic) {
-                                    if (blockId.path.endsWith("_stairs")) {
-                                        findBlock(blockId, blockId.path.substring(0, blockId.path.length - 7)) ?:
-                                        findBlock(blockId, blockId.path.substring(0, blockId.path.length - 7) + "s") ?:
-                                        findBlock(blockId, blockId.path.substring(0, blockId.path.length - 6) + "planks")
-                                    } else if (blockId.path.endsWith("_slab")) {
-                                        findBlock(blockId, blockId.path.substring(0, blockId.path.length - 5)) ?:
-                                        findBlock(blockId, blockId.path.substring(0, blockId.path.length - 5) + "s") ?:
-                                        findBlock(blockId, blockId.path.substring(0, blockId.path.length - 4) + "planks")
-                                    } else if (blockId.path.endsWith("_wall")) {
-                                        findBlock(blockId, blockId.path.substring(0, blockId.path.length - 5)) ?:
-                                        findBlock(blockId, blockId.path.substring(0, blockId.path.length - 5) + "s")
-                                    } else if (blockId.path.contains("/stairs/")) {
-                                        findBlock(blockId, blockId.path.replace("/stairs/", "/dyed/")) ?:
-                                        findBlock("minecraft", blockId.path.split("/").last())
-                                    } else if (blockId.path.contains("/slabs/")) {
-                                        findBlock(blockId, blockId.path.replace("/slabs/", "/dyed/")) ?:
-                                        findBlock("minecraft", blockId.path.split("/").last())
-                                    } else if (blockId.path.startsWith("containers/")) {
-                                        findBlock("minecraft", blockId.path.split("/").last() + "_planks")
-                                    } else block
-                                } else { block } ?: block
+                                val fullBlock = findBlock(block, blockId, fullBlockHeuristic)
                                 bitsOut[i][j][k] = if (onlyFullBlocks) if (
                                     fullBlock.renderType != BlockRenderType.MODEL ||
                                     fullBlock.block.hasDynamicBounds() ||
@@ -127,6 +106,68 @@ object WorldEditCommands : IModRegister {
         -2
     }
 
+    private fun findBlock(block: BlockState, id: Identifier, fullBlockHeuristic: Boolean): BlockState {
+        val blockId = if (id.namespace == "minekea") {
+            Identifier.of(
+                if (id.path.startsWith("betterend") || id.path.startsWith("betternether") || id.path.startsWith("byg")) {
+                    id.path.split("/").first()
+                } else id.namespace,
+                id.path.replace(Regex("building/.+/bookshelves"), "furniture/bookshelves"),
+            )!!
+        } else id
+        return if (fullBlockHeuristic) {
+            if (blockId.path.endsWith("_stairs")) {
+                findBlock(blockId, blockId.path.substring(0, blockId.path.length - 7)) ?:
+                findBlock(blockId, blockId.path.substring(0, blockId.path.length - 7) + "s") ?:
+                findBlock(blockId, blockId.path.substring(0, blockId.path.length - 6) + "planks")
+            } else if (blockId.path.endsWith("_slab")) {
+                findBlock(blockId, blockId.path.substring(0, blockId.path.length - 5)) ?:
+                findBlock(blockId, blockId.path.substring(0, blockId.path.length - 5) + "s") ?:
+                findBlock(blockId, blockId.path.substring(0, blockId.path.length - 4) + "planks")
+            } else if (blockId.path.endsWith("_wall")) {
+                findBlock(blockId, blockId.path.substring(0, blockId.path.length - 5)) ?:
+                findBlock(blockId, blockId.path.substring(0, blockId.path.length - 5) + "s")
+            } else if (blockId.path.contains("/stairs/vertical/")) {
+                findBlock(blockId, blockId.path.replace("/stairs/vertical/", "/dyed/")) ?:
+                findBlock(blockId, blockId.path.replace("/stairs/vertical/", "/dyed/").replace("brick", "bricks")) ?:
+                findBlock("minecraft", blockId.path.split("/").last()) ?:
+                findBlock("minecraft", blockId.path.split("/").last() + "s") ?:
+                findBlock("minecraft", blockId.path.split("/").last() + "_planks")
+            } else if (blockId.path.contains("/stairs/")) {
+                findBlock(blockId, blockId.path.replace("/stairs/", "/dyed/")) ?:
+                findBlock("minecraft", blockId.path.split("/").last()) ?:
+                findBlock("minecraft", blockId.path.split("/").last() + "s") ?:
+                findBlock("minecraft", blockId.path.split("/").last() + "_planks")
+            } else if (blockId.path.contains("/slabs/")) {
+                findBlock(blockId, blockId.path.replace("/slabs/", "/dyed/")) ?:
+                findBlock("minecraft", blockId.path.split("/").last()) ?:
+                findBlock("minecraft", blockId.path.split("/").last() + "s") ?:
+                findBlock("minecraft", blockId.path.split("/").last() + "_planks") ?:
+                findBlock("minecraft", blockId.path.split("/").last() + "_block")
+            } else if (blockId.path.contains("/walls/")) {
+                findBlock(blockId, blockId.path.replace("/walls/", "/dyed/")) ?:
+                findBlock("minecraft", blockId.path.split("/").last()) ?:
+                findBlock("minecraft", blockId.path.split("/").last() + "s") ?:
+                findBlock("minecraft", blockId.path.split("/").last() + "_planks") ?:
+                findBlock("minecraft", blockId.path.split("/").last() + "_block")
+            } else if (blockId.path.contains("/bookshelves/storage/")) {
+                findBlock(blockId, blockId.path.replace("furniture/bookshelves/storage/", "building/dyed/")) ?:
+                findBlock("minecraft", blockId.path.split("/").last()) ?:
+                findBlock("minecraft", blockId.path.split("/").last() + "s") ?:
+                findBlock("minecraft", blockId.path.split("/").last() + "_block")
+            } else if (blockId.path.contains("/bookshelves/")) {
+                findBlock(blockId, blockId.path.replace("furniture/bookshelves/", "building/dyed/")) ?:
+                findBlock("minecraft", blockId.path.split("/").last()) ?:
+                findBlock("minecraft", blockId.path.split("/").last() + "s") ?:
+                findBlock("minecraft", blockId.path.split("/").last() + "_block") ?:
+                Blocks.BOOKSHELF.defaultState
+            } else if (blockId.path.startsWith("containers/")) {
+                findBlock("minecraft", blockId.path.split("/").last() + "_planks")
+            } else if (blockId.path.endsWith("leaves") || blockId.path.endsWith("_crop")) {
+                Blocks.MOSS_BLOCK.defaultState
+            } else block
+        } else { block } ?: block
+    }
     private fun findBlock(ns: Identifier, path: String): BlockState? = findBlock(ns.namespace, path)
     private fun findBlock(ns: String, path: String): BlockState? =
         Registry.BLOCK.get(Identifier(ns, path)).defaultState.let { if (it.isAir) null else it }
