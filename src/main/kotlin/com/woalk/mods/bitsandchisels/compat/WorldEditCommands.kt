@@ -129,6 +129,7 @@ object WorldEditCommands : IModRegister {
                 findBlock(blockId, blockId.path.substring(0, blockId.path.length - 5) + "s")
             } else if (blockId.path.contains("/stairs/vertical/")) {
                 findBlock(blockId, blockId.path.replace("/stairs/vertical/", "/dyed/")) ?:
+                findBlock(blockId, blockId.path.replace("/stairs/vertical/", "/dyed/").replace("brick", "bricks")) ?:
                 findBlock("minecraft", blockId.path.split("/").last()) ?:
                 findBlock("minecraft", blockId.path.split("/").last() + "s") ?:
                 findBlock("minecraft", blockId.path.split("/").last() + "_planks")
@@ -141,24 +142,28 @@ object WorldEditCommands : IModRegister {
                 findBlock(blockId, blockId.path.replace("/slabs/", "/dyed/")) ?:
                 findBlock("minecraft", blockId.path.split("/").last()) ?:
                 findBlock("minecraft", blockId.path.split("/").last() + "s") ?:
-                findBlock("minecraft", blockId.path.split("/").last() + "_planks")
+                findBlock("minecraft", blockId.path.split("/").last() + "_planks") ?:
+                findBlock("minecraft", blockId.path.split("/").last() + "_block")
             } else if (blockId.path.contains("/walls/")) {
                 findBlock(blockId, blockId.path.replace("/walls/", "/dyed/")) ?:
                 findBlock("minecraft", blockId.path.split("/").last()) ?:
                 findBlock("minecraft", blockId.path.split("/").last() + "s") ?:
-                findBlock("minecraft", blockId.path.split("/").last() + "_planks")
+                findBlock("minecraft", blockId.path.split("/").last() + "_planks") ?:
+                findBlock("minecraft", blockId.path.split("/").last() + "_block")
             } else if (blockId.path.contains("/bookshelves/storage/")) {
                 findBlock(blockId, blockId.path.replace("furniture/bookshelves/storage/", "building/dyed/")) ?:
                 findBlock("minecraft", blockId.path.split("/").last()) ?:
-                findBlock("minecraft", blockId.path.split("/").last() + "s")
+                findBlock("minecraft", blockId.path.split("/").last() + "s") ?:
+                findBlock("minecraft", blockId.path.split("/").last() + "_block")
             } else if (blockId.path.contains("/bookshelves/")) {
                 findBlock(blockId, blockId.path.replace("furniture/bookshelves/", "building/dyed/")) ?:
                 findBlock("minecraft", blockId.path.split("/").last()) ?:
                 findBlock("minecraft", blockId.path.split("/").last() + "s") ?:
+                findBlock("minecraft", blockId.path.split("/").last() + "_block") ?:
                 Blocks.BOOKSHELF.defaultState
             } else if (blockId.path.startsWith("containers/")) {
                 findBlock("minecraft", blockId.path.split("/").last() + "_planks")
-            } else if (blockId.path.endsWith("leaves")) {
+            } else if (blockId.path.endsWith("leaves") || blockId.path.endsWith("_crop")) {
                 Blocks.MOSS_BLOCK.defaultState
             } else block
         } else { block } ?: block
