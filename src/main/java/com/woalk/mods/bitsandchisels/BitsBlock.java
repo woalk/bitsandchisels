@@ -40,6 +40,7 @@ import net.minecraft.util.shape.VoxelShapes;
 import net.minecraft.world.BlockView;
 import net.minecraft.world.World;
 import net.minecraft.world.WorldAccess;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 public class BitsBlock extends BlockWithEntity implements Waterloggable {
@@ -84,11 +85,33 @@ public class BitsBlock extends BlockWithEntity implements Waterloggable {
     public void onBreak(World world, BlockPos pos, BlockState state, PlayerEntity player) {
         BitsBlockEntity blockEntity = world.getBlockEntity(pos, BitsAndChisels.BITS_BLOCK_ENTITY).orElse(null);
         if (!world.isClient && blockEntity != null) {
-            if (blockEntity.getStructureId() == null || player.isSneaking() ||
-                    !tryDropStructure(world, pos, blockEntity)) {
-                // no structure ID, or drop not successful
-                dropStack(world, pos, ItemHelpers.blockToItem(this, state, blockEntity));
+            ItemStack dropStack = getDropItem(world, pos, state, blockEntity, player, true);
+            if (dropStack != null) {
+                dropStack(world, pos, dropStack);
             }
+        }
+    }
+
+    @Nullable
+    public ItemStack getDropItem(
+            @NotNull World world,
+            @NotNull BlockPos pos,
+            @NotNull BlockState state,
+            @Nullable BitsBlockEntity blockEntity,
+            @Nullable PlayerEntity player,
+            boolean breakBlock
+    ) {
+        if (blockEntity == null) {
+            blockEntity = world.getBlockEntity(pos, BitsAndChisels.BITS_BLOCK_ENTITY).orElse(null);
+            if (blockEntity == null) {
+                return null;
+            }
+        }
+        if (blockEntity.getStructureId() != null && (player == null || !player.isSneaking())) {
+            return tryGetStructure(world, pos, blockEntity, breakBlock);
+        } else {
+            // no structure ID, or drop not successful
+            return ItemHelpers.blockToItem(this, state, blockEntity);
         }
     }
 

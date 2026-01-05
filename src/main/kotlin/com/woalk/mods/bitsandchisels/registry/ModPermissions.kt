@@ -14,6 +14,7 @@ object ModPermissions {
     const val USE_BIT = "$BASE.use_bit"
     const val USE_BLUEPRINT = "$BASE.use_blueprint"
     const val USE_WRENCH = "$BASE.use_wrench"
+    const val USE_DUPLICATION_KIT = "$BASE.use_duplication_kit"
 
     const val COMMAND_BIT = "$BASE.bit_command"
     const val COMMAND_IMAGE2CHISEL = "$BASE.image2chisel_command"
