@@ -14,6 +14,7 @@
     "item.bitsandchisels.duplication_kit": "Bits Duplication Kit",
     "item.bitsandchisels.duplication_kit.desc1": "Use on a Bit Structure.",
     "item.bitsandchisels.duplication_kit.desc2": "Consumed on use.",
+    "item.bitsandchisels.duplication_kit.remark": "Duplicated by %s",
     "block.bitsandchisels.bits_block": "Bit Collection Block",
     "block.bitsandchisels.animated_bits_block": "Animated Bit Collection Block",
     "item.bitsandchisels.bit_structure": "Bit Structure",

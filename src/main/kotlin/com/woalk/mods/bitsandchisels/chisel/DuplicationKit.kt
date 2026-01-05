@@ -8,6 +8,8 @@ import net.minecraft.item.Item
 import net.minecraft.item.ItemStack
 import net.minecraft.item.ItemUsage
 import net.minecraft.item.ItemUsageContext
+import net.minecraft.nbt.NbtElement
+import net.minecraft.nbt.NbtString
 import net.minecraft.sound.SoundEvents
 import net.minecraft.stat.Stats
 import net.minecraft.text.Text
@@ -35,6 +37,18 @@ class DuplicationKit(settings: Settings) : Item(settings) {
             }
             val itemStack = block.getDropItem(context.world, context.blockPos, blockState, null, context.player, false)
             if (itemStack != null) {
+                itemStack.getSubNbt("display")?.apply {
+                    val lore = getList("Lore", NbtElement.STRING_TYPE.toInt())
+                    lore.add(
+                        NbtString.of(
+                            Text.Serializer.toJson(
+                                Text.translatable("$translationKey.remark", context.player!!.displayName)
+                                    .formatted(Formatting.GRAY)
+                            )
+                        )
+                    )
+                    put("Lore", lore)
+                }
                 println("Duplicated item $itemStack ${itemStack.nbt.toString()}")
                 context.player!!.incrementStat(Stats.USED.getOrCreateStat(this))
                 val newStack = ItemUsage.exchangeStack(context.stack, context.player, itemStack, false)
