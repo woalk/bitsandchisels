@@ -3,12 +3,17 @@ package com.woalk.mods.bitsandchisels.chisel
 import com.woalk.mods.bitsandchisels.BitsBlock
 import com.woalk.mods.bitsandchisels.registry.ModPermissions
 import me.lucko.fabric.api.permissions.v0.Permissions
+import net.minecraft.client.item.TooltipContext
 import net.minecraft.item.Item
+import net.minecraft.item.ItemStack
 import net.minecraft.item.ItemUsage
 import net.minecraft.item.ItemUsageContext
 import net.minecraft.sound.SoundEvents
 import net.minecraft.stat.Stats
+import net.minecraft.text.Text
 import net.minecraft.util.ActionResult
+import net.minecraft.util.Formatting
+import net.minecraft.world.World
 
 class DuplicationKit(settings: Settings) : Item(settings) {
     override fun useOnBlock(context: ItemUsageContext): ActionResult {
@@ -38,5 +43,11 @@ class DuplicationKit(settings: Settings) : Item(settings) {
             }
         }
         return ActionResult.FAIL
+    }
+
+    override fun appendTooltip(stack: ItemStack?, world: World?, tooltip: MutableList<Text?>, context: TooltipContext) {
+        super.appendTooltip(stack, world, tooltip, context)
+        tooltip.add(Text.translatable("$translationKey.desc1").formatted(Formatting.DARK_PURPLE).formatted(Formatting.ITALIC))
+        tooltip.add(Text.translatable("$translationKey.desc2").formatted(Formatting.DARK_PURPLE).formatted(Formatting.ITALIC))
     }
 }
