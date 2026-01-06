@@ -1,0 +1,43 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "group": "duplication_kit",
+  "key": {
+    "|": {
+      "item": "minecraft:stick"
+    },
+    "^": {
+      "item": "minecraft:flint"
+    },
+    "v": {
+      "item": "minecraft:flower_pot"
+    },
+    "I": {
+      "item": "minecraft:iron_ingot"
+    },
+    "_": {
+      "item": "minecraft:paper"
+    },
+    "O": [
+      {
+        "item": "minecraft:diamond_ore"
+      },
+      {
+        "item": "minecraft:emerald_ore"
+      },
+      {
+        "item": "minecraft:deepslate_emerald_ore"
+      },
+      {
+        "item": "minecraft:deepslate_coal_ore"
+      }
+    ]
+  },
+  "pattern": [
+    "^OI",
+    "_v|"
+  ],
+  "result": {
+    "count": 1,
+    "item": "bitsandchisels:duplication_kit"
+  }
+}
