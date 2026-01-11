@@ -246,7 +246,16 @@ public class BitsBlock extends BlockWithEntity implements Waterloggable {
         } else if (world instanceof World) {
             final var blockEntity = world.getBlockEntity(pos, BitsAndChisels.BITS_BLOCK_ENTITY).orElse(null);
             if (blockEntity != null) {
-                return tryGetStructure((World) world, pos, blockEntity, player, false);
+                if (blockEntity.getStructureId() != null && (player == null || !player.isSneaking())) {
+                    return tryGetStructure((World) world, pos, blockEntity, player, false);
+                } else {
+                    final var stack = ItemHelpers.blockToItem(this, state, blockEntity);
+                    if (player != null) {
+                        final var rotation = DirectionUtilsKt.getNearestDirectionForVector(pos.subtract(player.getBlockPos()));
+                        stack.getOrCreateSubNbt("BlockEntityTag").putInt(BitStructureItem.NBT_ROTATION, rotation.getId());
+                    }
+                    return stack;
+                }
             }
         }
         return null;
