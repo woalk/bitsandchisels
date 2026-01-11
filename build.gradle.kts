@@ -55,4 +55,5 @@ tasks {
     }
 }
 loom {
+    accessWidenerPath.set(file("src/main/resources/bitsandchisels.accesswidener"))
 }

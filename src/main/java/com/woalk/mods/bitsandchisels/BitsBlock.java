@@ -3,6 +3,7 @@ package com.woalk.mods.bitsandchisels;
 import com.woalk.mods.bitsandchisels.api.BitUtils;
 import com.woalk.mods.bitsandchisels.blocks.BitStructureItem;
 import com.woalk.mods.bitsandchisels.registry.ModItems;
+import com.woalk.mods.bitsandchisels.utils.DirectionUtilsKt;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.block.Block;
@@ -18,10 +19,12 @@ import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.fluid.FluidState;
 import net.minecraft.fluid.Fluids;
+import net.minecraft.item.BlockItem;
 import net.minecraft.item.ItemPlacementContext;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.nbt.NbtElement;
+import net.minecraft.nbt.NbtInt;
 import net.minecraft.nbt.NbtList;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.state.StateManager.Builder;
@@ -108,16 +111,21 @@ public class BitsBlock extends BlockWithEntity implements Waterloggable {
             }
         }
         if (blockEntity.getStructureId() != null && (player == null || !player.isSneaking())) {
-            return tryGetStructure(world, pos, blockEntity, breakBlock);
+            return tryGetStructure(world, pos, blockEntity, player, breakBlock);
         } else {
             // no structure ID, or drop not successful
-            return ItemHelpers.blockToItem(this, state, blockEntity);
+            final var stack = ItemHelpers.blockToItem(this, state, blockEntity);
+            if (player != null) {
+                final var rotation = DirectionUtilsKt.getNearestDirectionForVector(pos.subtract(player.getBlockPos()));
+                stack.getOrCreateSubNbt("BlockEntityTag").putInt(BitStructureItem.NBT_ROTATION, rotation.getId());
+            }
+            return stack;
         }
     }
 
     /** @return {@code true} on success, {@code false} if a normal {@code BitsBlockItem} should be dropped instead. */
     private boolean tryDropStructure(World world, BlockPos pos, BitsBlockEntity blockEntity) {
-        final var stack = tryGetStructure(world, pos, blockEntity, true);
+        final var stack = tryGetStructure(world, pos, blockEntity, null, true);
         if (stack == null) {
             return false;
         }
@@ -126,7 +134,7 @@ public class BitsBlock extends BlockWithEntity implements Waterloggable {
     }
 
     @Nullable
-    private ItemStack tryGetStructure(World world, BlockPos pos, BitsBlockEntity blockEntity, boolean breakBlock) {
+    private ItemStack tryGetStructure(World world, BlockPos pos, BitsBlockEntity blockEntity, @Nullable PlayerEntity player, boolean breakBlock) {
         int minX = pos.getX(), minY = pos.getY(), minZ = pos.getZ();
         for (var offset : BitStructureItem.Companion.createOffsets(BitStructureItem.MAX_DIAMETER * 2 - 1, -BitStructureItem.MAX_DIAMETER + 1)) {
             final var pos2 = pos.subtract(offset);
@@ -161,6 +169,13 @@ public class BitsBlock extends BlockWithEntity implements Waterloggable {
         if (!moreThanPos1) return null;
         final var stack = ModItems.INSTANCE.getBitStructureItem().getDefaultStack();
         stack.setSubNbt(BitStructureItem.NBT_BIT_BLOCK_TAGS, nbts);
+        if (player != null) {
+            final var rotation = DirectionUtilsKt.getNearestDirectionForVector(pos.subtract(player.getBlockPos()));
+            stack.setSubNbt(
+                    BitStructureItem.NBT_ROTATION,
+                    NbtInt.of(rotation.getId())
+            );
+        }
         final var displayNbt = new NbtCompound();
         blockEntity.writeNameNbt(displayNbt);
         if (!displayNbt.isEmpty()) {
@@ -231,7 +246,16 @@ public class BitsBlock extends BlockWithEntity implements Waterloggable {
         } else if (world instanceof World) {
             final var blockEntity = world.getBlockEntity(pos, BitsAndChisels.BITS_BLOCK_ENTITY).orElse(null);
             if (blockEntity != null) {
-                return tryGetStructure((World) world, pos, blockEntity, false);
+                if (blockEntity.getStructureId() != null && (player == null || !player.isSneaking())) {
+                    return tryGetStructure((World) world, pos, blockEntity, player, false);
+                } else {
+                    final var stack = ItemHelpers.blockToItem(this, state, blockEntity);
+                    if (player != null) {
+                        final var rotation = DirectionUtilsKt.getNearestDirectionForVector(pos.subtract(player.getBlockPos()));
+                        stack.getOrCreateSubNbt("BlockEntityTag").putInt(BitStructureItem.NBT_ROTATION, rotation.getId());
+                    }
+                    return stack;
+                }
             }
         }
         return null;
