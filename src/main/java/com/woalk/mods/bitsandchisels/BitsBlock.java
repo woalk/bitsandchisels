@@ -108,7 +108,7 @@ public class BitsBlock extends BlockWithEntity implements Waterloggable {
             }
         }
         if (blockEntity.getStructureId() != null && (player == null || !player.isSneaking())) {
-            return tryGetStructure(world, pos, blockEntity, breakBlock);
+            return tryGetStructure(world, pos, blockEntity, player, breakBlock);
         } else {
             // no structure ID, or drop not successful
             return ItemHelpers.blockToItem(this, state, blockEntity);
@@ -117,7 +117,7 @@ public class BitsBlock extends BlockWithEntity implements Waterloggable {
 
     /** @return {@code true} on success, {@code false} if a normal {@code BitsBlockItem} should be dropped instead. */
     private boolean tryDropStructure(World world, BlockPos pos, BitsBlockEntity blockEntity) {
-        final var stack = tryGetStructure(world, pos, blockEntity, true);
+        final var stack = tryGetStructure(world, pos, blockEntity, null, true);
         if (stack == null) {
             return false;
         }
@@ -126,7 +126,7 @@ public class BitsBlock extends BlockWithEntity implements Waterloggable {
     }
 
     @Nullable
-    private ItemStack tryGetStructure(World world, BlockPos pos, BitsBlockEntity blockEntity, boolean breakBlock) {
+    private ItemStack tryGetStructure(World world, BlockPos pos, BitsBlockEntity blockEntity, @Nullable PlayerEntity player, boolean breakBlock) {
         int minX = pos.getX(), minY = pos.getY(), minZ = pos.getZ();
         for (var offset : BitStructureItem.Companion.createOffsets(BitStructureItem.MAX_DIAMETER * 2 - 1, -BitStructureItem.MAX_DIAMETER + 1)) {
             final var pos2 = pos.subtract(offset);
@@ -231,7 +231,7 @@ public class BitsBlock extends BlockWithEntity implements Waterloggable {
         } else if (world instanceof World) {
             final var blockEntity = world.getBlockEntity(pos, BitsAndChisels.BITS_BLOCK_ENTITY).orElse(null);
             if (blockEntity != null) {
-                return tryGetStructure((World) world, pos, blockEntity, false);
+                return tryGetStructure((World) world, pos, blockEntity, player, false);
             }
         }
         return null;
