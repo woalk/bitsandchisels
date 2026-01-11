@@ -31,6 +31,7 @@
       }
     ]
   },
+  "accessWidener": "bitsandchisels.accesswidener",
   "mixins": [
     "bitsandchisels.mixins.json"
   ],

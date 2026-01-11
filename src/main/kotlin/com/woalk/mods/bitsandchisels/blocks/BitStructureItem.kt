@@ -28,6 +28,7 @@ import java.util.*
 class BitStructureItem(settings: Settings) : Item(settings) {
     companion object {
         const val NBT_BIT_BLOCK_TAGS = "BitBlockTags"
+        const val NBT_ROTATION = "Rotation"
         const val MAX_DIAMETER = 5
         val OFFSETS = createOffsets(MAX_DIAMETER)
 
