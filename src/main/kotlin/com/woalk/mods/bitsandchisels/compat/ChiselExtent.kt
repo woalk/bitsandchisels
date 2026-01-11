@@ -17,48 +17,51 @@ class ChiselExtent(extent: Extent, private val transform: Transform) : AbstractD
                 val baseBlock = block.toBaseBlock()
                 val nbt = baseBlock.nbtData
                 if (nbt != null) {
-                    return super.setBlock(location, baseBlock.toBaseBlock(apply(nbt)))
+                    return super.setBlock(location, baseBlock.toBaseBlock(apply(transform, nbt)))
                 }
             }
         }
         return super.setBlock(location, block)
     }
 
-    private fun apply(tag: CompoundTag): CompoundTag {
-        val bitsIn = BitCompoundUtil.Block3D()
-        val bitsOut = BitCompoundUtil.Block3D()
-        BitCompoundUtil.read3DBitArray(tag, bitsIn)
-        apply(bitsIn, bitsOut)
-        return BitCompoundUtil.write3DBitArray(bitsOut, tag)
-    }
+    companion object {
+        fun apply(transform: Transform, tag: CompoundTag): CompoundTag {
+            val bitsIn = BitCompoundUtil.Block3D()
+            val bitsOut = BitCompoundUtil.Block3D()
+            BitCompoundUtil.read3DBitArray(tag, bitsIn)
+            apply(transform, bitsIn, bitsOut)
+            return BitCompoundUtil.write3DBitArray(bitsOut, tag)
+        }
 
-    private fun apply(bitsIn: Block3D, bitsOut: Block3D) {
-        for (i in 0..15) {
-            for (j in 0..15) {
-                for (k in 0..15) {
-                    val target = transform.apply(Vector3.at(i.toDouble(), j.toDouble(), k.toDouble())).toBlockPoint()
-                        .add(onlyNegatives(transform.apply(Vector3.at(15.0, 15.0, 15.0))).toBlockPoint())
-                    if (target.x > 15 || target.y > 15 || target.z > 15) {
-                        continue
+        private fun apply(transform: Transform, bitsIn: Block3D, bitsOut: Block3D) {
+            for (i in 0..15) {
+                for (j in 0..15) {
+                    for (k in 0..15) {
+                        val target =
+                            transform.apply(Vector3.at(i.toDouble(), j.toDouble(), k.toDouble())).toBlockPoint()
+                                .add(onlyNegatives(transform.apply(Vector3.at(15.0, 15.0, 15.0))).toBlockPoint())
+                        if (target.x > 15 || target.y > 15 || target.z > 15) {
+                            continue
+                        }
+                        val x = if (target.x < 0) {
+                            16 + target.x
+                        } else target.x
+                        val y = if (target.y < 0) {
+                            16 + target.y
+                        } else target.y
+                        val z = if (target.z < 0) {
+                            16 + target.z
+                        } else target.z
+                        bitsOut[x][y][z] = bitsIn[i][j][k]
                     }
-                    val x = if (target.x < 0) {
-                        16 + target.x
-                    } else target.x
-                    val y = if (target.y < 0) {
-                        16 + target.y
-                    } else target.y
-                    val z = if (target.z < 0) {
-                        16 + target.z
-                    } else target.z
-                    bitsOut[x][y][z] = bitsIn[i][j][k]
                 }
             }
         }
-    }
 
-    private fun onlyNegatives(vec: Vector3): Vector3 = Vector3.at(
-        if (vec.x < 0) -vec.x else 0.0,
-        if (vec.y < 0) -vec.y else 0.0,
-        if (vec.z < 0) -vec.z else 0.0
-    )
+        private fun onlyNegatives(vec: Vector3): Vector3 = Vector3.at(
+            if (vec.x < 0) -vec.x else 0.0,
+            if (vec.y < 0) -vec.y else 0.0,
+            if (vec.z < 0) -vec.z else 0.0
+        )
+    }
 }
