@@ -1,7 +1,12 @@
 package com.woalk.mods.bitsandchisels.blocks
 
+import com.sk89q.worldedit.fabric.internal.NBTConverter
+import com.sk89q.worldedit.math.transform.AffineTransform
 import com.woalk.mods.bitsandchisels.BitsAndChisels
 import com.woalk.mods.bitsandchisels.BitsBlock
+import com.woalk.mods.bitsandchisels.compat.ChiselExtent
+import com.woalk.mods.bitsandchisels.utils.rotate
+import com.woalk.mods.bitsandchisels.utils.toYaw
 import net.minecraft.advancement.criterion.Criteria
 import net.minecraft.block.BlockState
 import net.minecraft.block.ShapeContext
@@ -20,10 +25,12 @@ import net.minecraft.state.property.Properties
 import net.minecraft.text.Text
 import net.minecraft.util.ActionResult
 import net.minecraft.util.Formatting
+import net.minecraft.util.math.Direction
 import net.minecraft.util.math.Vec3i
 import net.minecraft.world.World
 import net.minecraft.world.event.GameEvent
 import java.util.*
+import kotlin.math.roundToInt
 
 class BitStructureItem(settings: Settings) : Item(settings) {
     companion object {
@@ -38,6 +45,7 @@ class BitStructureItem(settings: Settings) : Item(settings) {
     }
 
     override fun useOnBlock(context: ItemUsageContext): ActionResult {
+        if (context.world.isClient) return ActionResult.SUCCESS
         val actionResult = this.place(ItemPlacementContext(context))
         if (!actionResult.isAccepted && this.isFood) {
             val actionResult2 = use(context.world, context.player, context.hand).result
@@ -55,11 +63,12 @@ class BitStructureItem(settings: Settings) : Item(settings) {
         val fullTag = itemStack.nbt ?: return ActionResult.FAIL
         var bitBlockState: BlockState? = null
         val structureId = UUID.randomUUID()
+        val rotation = ((Direction.byId(fullTag.getInt(NBT_ROTATION)).vector.toYaw() - (playerEntity?.yaw ?: 0f)) / 90).roundToInt() * 90
         for ((index, nbtElement) in fullTag.getList(NBT_BIT_BLOCK_TAGS, NbtElement.COMPOUND_TYPE.toInt()).withIndex()) {
             val tag = nbtElement as NbtCompound
             if (tag.isEmpty) continue
             if (index >= OFFSETS.size) return ActionResult.FAIL
-            val bitBlockPos = blockPos.add(OFFSETS[index])
+            val bitBlockPos = blockPos.add(OFFSETS[index].rotate(rotation))
             if (!world.getBlockState(bitBlockPos).material.isReplaceable) return ActionResult.FAIL
             if (!world.canPlace(BitsAndChisels.BITS_BLOCK.defaultState, bitBlockPos, ShapeContext.of(playerEntity))) {
                 return ActionResult.FAIL
@@ -68,7 +77,7 @@ class BitStructureItem(settings: Settings) : Item(settings) {
         for ((index, nbtElement) in fullTag.getList(NBT_BIT_BLOCK_TAGS, NbtElement.COMPOUND_TYPE.toInt()).withIndex()) {
             val tag = nbtElement as NbtCompound
             if (tag.isEmpty) continue
-            val bitBlockPos = blockPos.add(OFFSETS[index])
+            val bitBlockPos = blockPos.add(OFFSETS[index].rotate(rotation))
             bitBlockState = BitsAndChisels.BITS_BLOCK.defaultState.with(
                 Properties.WATERLOGGED,
                 world.getFluidState(bitBlockPos).fluid === Fluids.WATER
@@ -82,6 +91,12 @@ class BitStructureItem(settings: Settings) : Item(settings) {
                 val nbtCompound2: NbtCompound = blockEntity.createNbt()
                 val nbtCompound3 = nbtCompound2.copy()
                 nbtCompound2.copyFrom(nbtElement)
+                val nbtCompound4 = NBTConverter.fromNative(nbtCompound2)
+                val nbtCompound5 = NBTConverter.toNative(
+                    ChiselExtent.apply(AffineTransform().rotateY(rotation.toDouble()), nbtCompound4)
+                )
+                nbtCompound2.put("bits_v2", nbtCompound5.get("bits_v2"))
+                nbtCompound2.put("palette", nbtCompound5.get("palette"))
                 nbtCompound2.putUuid("StructureId", structureId)
                 val displayNbt = itemStack.getSubNbt("display")?.copy() ?: NbtCompound()
                 val lore = displayNbt.getList("Lore", NbtElement.STRING_TYPE.toInt())

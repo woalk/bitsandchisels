@@ -23,3 +23,14 @@ fun getNearestDirectionForVector(pos: Vec3i): Direction {
 }
 
 fun Vec3i.toYaw(): Double = Math.toDegrees(((atan2(-x.toDouble(), z.toDouble()) + 2 * Math.PI) % (2 * Math.PI)))
+
+fun Vec3i.rotate90() = Vec3i(this.z, this.y, -this.x)
+fun Vec3i.rotate180() = Vec3i(-this.x, this.y, -this.z)
+fun Vec3i.rotate270() = Vec3i(-this.z, this.y, this.x)
+
+fun Vec3i.rotate(angle: Int) = when (angle.mod(360)) {
+    90 -> rotate90()
+    -180, 180 -> rotate180()
+    -90, 270 -> rotate270()
+    else -> this
+}
