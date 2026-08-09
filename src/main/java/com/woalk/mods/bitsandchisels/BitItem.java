@@ -11,15 +11,18 @@ import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
 import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.item.TooltipContext;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.ItemUsageContext;
+import net.minecraft.nbt.NbtCompound;
 import net.minecraft.network.PacketByteBuf;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayNetworkHandler;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.Text;
 import net.minecraft.util.ActionResult;
+import net.minecraft.util.Formatting;
 import net.minecraft.util.Hand;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.hit.BlockHitResult;
@@ -27,6 +30,9 @@ import net.minecraft.util.hit.HitResult;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
 import net.minecraft.world.World;
+import org.jetbrains.annotations.Nullable;
+
+import java.util.List;
 
 public class BitItem extends Item implements ServerPlayNetworking.PlayChannelHandler {
 
@@ -273,5 +279,20 @@ public class BitItem extends Item implements ServerPlayNetworking.PlayChannelHan
         BlockState state = stack.getSubNbt("bit") != null ? BitNbtUtil.toBlockState(stack.getSubNbt("bit")) : Blocks.AIR.getDefaultState();
         return Text.translatable(this.getTranslationKey(stack), Text.translatable(state.getBlock().getTranslationKey()));
     }
-    
+
+    @Override
+    public void appendTooltip(ItemStack stack, @Nullable World world, List<Text> tooltip, TooltipContext context) {
+        super.appendTooltip(stack, world, tooltip, context);
+        if (context.isAdvanced()) {
+            final NbtCompound blockState = stack.getSubNbt("bit");
+            if (blockState != null) {
+                tooltip.add(Text.literal(blockState.getString("Name")).formatted(Formatting.DARK_PURPLE));
+                final NbtCompound remainder = blockState.copy();
+                remainder.remove("Name");
+                if (!remainder.isEmpty()) {
+                    tooltip.add(Text.literal(remainder.asString()).formatted(Formatting.DARK_GREEN));
+                }
+            }
+        }
+    }
 }
