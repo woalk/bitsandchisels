@@ -3,6 +3,7 @@ package com.woalk.mods.bitsandchisels.image
 import net.minecraft.world.level.block.Block
 import net.minecraft.world.level.block.Blocks
 import net.minecraft.core.Registry
+import net.minecraft.core.registries.BuiltInRegistries
 import java.awt.image.IndexColorModel
 
 @OptIn(ExperimentalUnsignedTypes::class)
@@ -46,10 +47,10 @@ class ConcreteColorModel(withSkinColor: Boolean = false) : IndexColorModel(
                 if (transparent) {
                     Blocks.AIR
                 } else {
-                    Registry.BLOCK.get(palette.toIdentifier(WHITE.name.lowercase()))
+                    BuiltInRegistries.BLOCK.get(palette.toIdentifier(WHITE.name.lowercase()))
                 }
             } else {
-                Registry.BLOCK.get(palette.toIdentifier(name.lowercase()))
+                BuiltInRegistries.BLOCK.get(palette.toIdentifier(name.lowercase()))
             }
     }
 }

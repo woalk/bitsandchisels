@@ -27,7 +27,7 @@ fun IChiseledImage.canPlace(player: Player, startingPosInput: BlockPos, directio
                 Direction.DOWN  -> startingPos.offset(blockXOffset, 0, blockYOffset)
                 Direction.UP    -> startingPos.offset(-blockXOffset, 0, blockYOffset)
             }
-            if (!player.level.isLoaded(offsetPos)) return false
+            if (!player.level().isLoaded(offsetPos)) return false
         }
     }
     return true

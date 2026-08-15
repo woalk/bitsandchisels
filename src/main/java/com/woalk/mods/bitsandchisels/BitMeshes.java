@@ -24,8 +24,8 @@ import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.client.renderer.texture.TextureAtlas;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import com.mojang.math.Vector3f;
 import net.minecraft.world.level.Level;
+import org.joml.Vector3f;
 
 public class BitMeshes {
     private static final Direction[] X_DIRECTIONS = {Direction.EAST, Direction.WEST};

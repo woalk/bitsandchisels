@@ -3,6 +3,7 @@ package com.woalk.mods.bitsandchisels;
 import java.util.ArrayList;
 
 import com.woalk.mods.bitsandchisels.blocks.ColoredBlockState;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.world.item.DyeableLeatherItem;
 import org.jetbrains.annotations.Nullable;
 
@@ -85,7 +86,7 @@ public class BitNbtUtil {
         } else if (tag.contains(DyeableLeatherItem.TAG_COLOR)) {
             return new ColoredBlockState(tag.getInt(DyeableLeatherItem.TAG_COLOR));
         } else {
-            return NbtUtils.readBlockState(tag);
+            return NbtUtils.readBlockState(BuiltInRegistries.BLOCK.asLookup(), tag);
         }
     }
 

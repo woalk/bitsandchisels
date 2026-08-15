@@ -15,17 +15,13 @@ import net.fabricmc.fabric.api.renderer.v1.model.FabricBakedModel;
 import net.fabricmc.fabric.api.renderer.v1.model.ModelHelper;
 import net.fabricmc.fabric.api.renderer.v1.render.RenderContext;
 import net.fabricmc.fabric.api.rendering.data.v1.RenderAttachedBlockView;
+import net.minecraft.client.resources.model.*;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.client.renderer.block.model.BakedQuad;
-import net.minecraft.client.resources.model.ModelState;
-import net.minecraft.client.resources.model.ModelBakery;
-import net.minecraft.client.resources.model.UnbakedModel;
 import net.minecraft.client.renderer.block.model.ItemOverrides;
 import net.minecraft.client.renderer.block.model.ItemTransforms;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.client.renderer.texture.TextureAtlas;
-import net.minecraft.client.resources.model.Material;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.Tag;
@@ -35,6 +31,7 @@ import net.minecraft.core.Direction;
 import net.minecraft.core.Vec3i;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.BlockAndTintGetter;
+import org.jetbrains.annotations.Nullable;
 
 public abstract class AbstractBitsBlockModel implements UnbakedModel, BakedModel, FabricBakedModel {
     public static final Material SPRITE = new Material(TextureAtlas.LOCATION_BLOCKS, new ResourceLocation("bitsandchisels", "block/null"));
@@ -85,15 +82,12 @@ public abstract class AbstractBitsBlockModel implements UnbakedModel, BakedModel
     }
 
     @Override
-    public Collection<Material> getMaterials(Function<ResourceLocation, UnbakedModel> unbakedModelGetter,
-                                             Set<Pair<String, String>> unresolvedTextureReferences) {
-        return Collections.singletonList(SPRITE);
+    public @Nullable BakedModel bake(ModelBaker modelBaker, Function<Material, TextureAtlasSprite> function, ModelState modelState, ResourceLocation resourceLocation) {
+        return this;
     }
 
     @Override
-    public BakedModel bake(ModelBakery loader, Function<Material, TextureAtlasSprite> textureGetter,
-                           ModelState rotationContainer, ResourceLocation modelId) {
-        return this;
+    public void resolveParents(Function<ResourceLocation, UnbakedModel> function) {
     }
 
     @Override

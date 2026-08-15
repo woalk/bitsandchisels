@@ -17,12 +17,6 @@ import net.minecraft.world.phys.shapes.VoxelShape;
 
 @Mixin(LevelRenderer.class)
 public class RedSelectionBoxMixin implements RedBoxCallback.IRedBoxDrawer {
-
-    @Shadow
-    public static void renderVoxelShape(PoseStack matrixStack, VertexConsumer vertexConsumer, VoxelShape voxelShape, double d, double e, double f, float g, float h, float i, float j) {
-        throw new RuntimeException("mixin failed");
-    }
-
     @Inject(at = @At("HEAD"), method = "renderHitOutline")
     private void drawBlockOutlineAddon(PoseStack matrixStack, VertexConsumer vertexConsumer, Entity entity, double d, double e, double f, BlockPos blockPos, BlockState blockState, CallbackInfo bruh) {
         RedBoxCallback.EVENT.invoker().drawBoxes(this, matrixStack, vertexConsumer, d, e, f);

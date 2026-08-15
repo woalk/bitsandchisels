@@ -83,21 +83,21 @@ public class EnderChisel extends TieredItem implements ServerPlayNetworking.Play
             BitsAndChisels.LOGGER.warn("Ender Chisel used");
             ItemStack stack = player.getMainHandItem();
             ItemStack bit = player.getOffhandItem();
-            if (player.level.isLoaded(pos) && player.blockPosition().distSqr(pos) < 81) {
+            if (player.level().isLoaded(pos) && player.blockPosition().distSqr(pos) < 81) {
                 if (stack.getItem() == BitsAndChisels.ENDER_CHISEL && bit.getItem() instanceof BitItem) {
-                    BlockState oldState = BitUtils.getBit(player.level, pos, x, y, z);
+                    BlockState oldState = BitUtils.getBit(player.level(), pos, x, y, z);
                     BlockState targetState = BitUtils.getBit(bit);
                     for (int i = 0; i < 16; i++) {
                         for (int j = 0; j < 16; j++) {
                             for (int k = 0; k < 16; k++) {
-                                BlockState newState = BitUtils.getBit(player.level, pos, i, j, k);
+                                BlockState newState = BitUtils.getBit(player.level(), pos, i, j, k);
                                 if (newState != null && newState.equals(oldState) || oldState == null) {
-                                    BitUtils.setBit(player.level, pos, i, j, k, targetState);
+                                    BitUtils.setBit(player.level(), pos, i, j, k, targetState);
                                 }
                             }
                         }
                     }
-                    BitUtils.update(player.level, pos);
+                    BitUtils.update(player.level(), pos);
                 } else {
                     player.sendSystemMessage(Component.literal("No bit selected in off-hand.").withStyle(ChatFormatting.RED));
                 }

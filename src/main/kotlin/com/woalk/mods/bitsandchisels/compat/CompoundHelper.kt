@@ -9,19 +9,24 @@ import net.minecraft.world.level.block.state.StateHolder
 import net.minecraft.world.level.block.state.properties.Property
 import net.minecraft.resources.ResourceLocation
 import net.minecraft.core.Registry
+import net.minecraft.core.registries.BuiltInRegistries
+import org.enginehub.linbus.tree.LinCompoundTag
+import org.enginehub.linbus.tree.LinStringTag
+import org.enginehub.linbus.tree.LinTag
+import org.enginehub.linbus.tree.LinTagType
 
 /** @see [net.minecraft.nbt.NbtHelper] */
 object CompoundHelper {
-    fun toBlockState(nbt: CompoundTag): BlockState {
-        if (!nbt.containsKey("Name")) {
+    fun toBlockState(nbt: LinCompoundTag): BlockState {
+        if (!nbt.value().containsKey("Name")) {
             return Blocks.AIR.defaultBlockState()
         }
-        val block = Registry.BLOCK[ResourceLocation(nbt.getString("Name"))]
+        val block = BuiltInRegistries.BLOCK[ResourceLocation(nbt.getTag("Name", LinTagType.stringTag()).value())]
         var blockState = block.defaultBlockState()
-        if (nbt.containsKey("Properties")) {
-            val nbtCompound = nbt.value["Properties"] as CompoundTag
+        if (nbt.value().containsKey("Properties")) {
+            val nbtCompound = nbt.getTag("Properties", LinTagType.compoundTag())
             val stateManager = block.stateDefinition
-            for (string in nbtCompound.value.keys) {
+            for (string in nbtCompound.value().keys) {
                 val property = stateManager.getProperty(string) ?: continue
                 blockState = withProperty(blockState, property, string, nbtCompound, nbt)
             }
@@ -33,10 +38,10 @@ object CompoundHelper {
         state: S,
         property: Property<T>,
         key: String,
-        properties: CompoundTag,
-        root: CompoundTag
+        properties: LinCompoundTag,
+        root: LinCompoundTag
     ): S {
-        val optional = property.getValue(properties.getString(key))
+        val optional = property.getValue(properties.getTag(key, LinTagType.stringTag()).value())
         return if (optional.isPresent) {
             state!!.setValue(
                 property,
@@ -45,18 +50,18 @@ object CompoundHelper {
         } else state
     }
 
-    fun fromBlockState(state: BlockState): CompoundTag {
-        val nbtCompound = HashMap<String, Tag>()
-        nbtCompound["Name"] = StringTag(Registry.BLOCK.getKey(state.block).toString())
+    fun fromBlockState(state: BlockState): LinCompoundTag {
+        val nbtCompound = HashMap<String, LinTag<out Any>>()
+        nbtCompound["Name"] = LinStringTag.of(BuiltInRegistries.BLOCK.getKey(state.block).toString())
         val immutableMap = state.values
         if (!immutableMap.isEmpty()) {
-            val nbtCompound2 = HashMap<String, Tag>()
+            val nbtCompound2 = HashMap<String, LinTag<out Any>>()
             for ((key, value) in immutableMap) {
-                nbtCompound2[key.name] = StringTag(nameValue(key, value))
+                nbtCompound2[key.name] = LinStringTag.of(nameValue(key, value))
             }
-            nbtCompound["Properties"] = CompoundTag(nbtCompound2)
+            nbtCompound["Properties"] = LinCompoundTag.of(nbtCompound2)
         }
-        return CompoundTag(nbtCompound)
+        return LinCompoundTag.of(nbtCompound)
     }
 
     private fun <T : Comparable<T>?> nameValue(property: Property<in T>, value: Comparable<T>): String {

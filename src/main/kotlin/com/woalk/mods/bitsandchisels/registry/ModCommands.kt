@@ -36,29 +36,26 @@ object ModCommands : IModRegister {
         count: Int = 1
     ): Int {
         if (player == null) {
-            ctx.source.sendSuccess(
-                Component.literal("No target player given").withStyle(ChatFormatting.RED),
-                false
-            )
+            ctx.source.sendSuccess({
+                Component.literal("No target player given").withStyle(ChatFormatting.RED)
+            }, false)
             return -1
         }
         if (block == null) {
-            ctx.source.sendSuccess(
-                Component.literal("No block given").withStyle(ChatFormatting.RED),
-                false
-            )
+            ctx.source.sendSuccess({
+                Component.literal("No block given").withStyle(ChatFormatting.RED)
+            }, false)
             return -2
         }
         val bit = BitUtils.getBitItemStack(block)
         bit.count = count
         player.addItem(bit)
-        ctx.source.sendSuccess(
+        ctx.source.sendSuccess({
             Component.literal("Gave $count ")
                 .append(block.block.name)
                 .append(Component.literal(" bit to "))
-                .append(player.displayName),
-            true
-        )
+                .append(player.displayName)
+        }, true)
         return SINGLE_SUCCESS
     }
 
@@ -69,29 +66,26 @@ object ModCommands : IModRegister {
         count: Int = 1
     ): Int {
         if (player == null) {
-            ctx.source.sendSuccess(
-                Component.literal("No target player given").withStyle(ChatFormatting.RED),
-                false
-            )
+            ctx.source.sendSuccess({
+                Component.literal("No target player given").withStyle(ChatFormatting.RED)
+            }, false)
             return -1
         }
         val color = colorString.toColor()
         if (color == null || color <= -1) {
-            ctx.source.sendSuccess(
-                Component.literal("Invalid color").withStyle(ChatFormatting.RED),
-                false
-            )
+            ctx.source.sendSuccess({
+                Component.literal("Invalid color").withStyle(ChatFormatting.RED)
+            }, false)
             return -2
         }
         val bit = BitUtils.getBitItemStack(ColoredBlockState(color))
         bit.count = count
         player.addItem(bit)
-        ctx.source.sendSuccess(
+        ctx.source.sendSuccess({
             Component.literal("Gave $count ")
                 .append(Component.literal("colored bits in #$colorString to "))
-                .append(player.displayName),
-            true
-        )
+                .append(player.displayName)
+        }, true)
         return SINGLE_SUCCESS
     }
 
@@ -105,19 +99,18 @@ object ModCommands : IModRegister {
         replaceAir: Boolean = true
     ): Int {
         if (zMin !in 0 until 16 || zMax !in 0 until 16) {
-            ctx.source.sendSuccess(
-                Component.literal("Z not in range").withStyle(ChatFormatting.RED),
-                false
-            )
+            ctx.source.sendSuccess({
+                Component.literal("Z not in range").withStyle(ChatFormatting.RED)
+            }, false)
             return -1
         }
         val zMax1 = if (zMax in 1 until zMin) maxOf(zMin + zMax - 1, zMin) else zMax
         try {
-            val blockPos = BlockPos(ctx.source.position)
+            val blockPos = BlockPos.containing(ctx.source.position)
             if (paletteWildcard != null) {
                 val chiseledImage = ChiseledImage(image, paletteWildcard.contains('+'))
 
-                ctx.source.sendSuccess(Component.literal("image2chisel: Loaded $image"), true)
+                ctx.source.sendSuccess({ Component.literal("image2chisel: Loaded $image") }, true)
 
                 if (!chiseledImage.canPlace(ctx.source.playerOrException, blockPos, direction)) {
                     throw IllegalArgumentException("You cannot modify blocks in the target area")
@@ -127,7 +120,7 @@ object ModCommands : IModRegister {
             } else {
                 val chiseledImage = ChiseledImage24(image)
 
-                ctx.source.sendSuccess(Component.literal("image2chisel24: Loaded $image"), true)
+                ctx.source.sendSuccess({ Component.literal("image2chisel24: Loaded $image") }, true)
 
                 if (!chiseledImage.canPlace(ctx.source.playerOrException, blockPos, direction)) {
                     throw IllegalArgumentException("You cannot modify blocks in the target area")
@@ -136,16 +129,15 @@ object ModCommands : IModRegister {
                 chiseledImage.place(ctx.source.level, blockPos, zMin..zMax1, direction, PaletteIdentifier(), replaceAir)
             }
 
-            ctx.source.sendSuccess(
+            ctx.source.sendSuccess({
                 Component.literal(
-                "image2chisel: Placed $image at (${blockPos.toShortString()})"),
-                true
-            )
+                    "image2chisel: Placed $image at (${blockPos.toShortString()})"
+                )
+            }, true)
         } catch (e: Exception) {
-            ctx.source.sendSuccess(
-                Component.literal(e.message).withStyle(ChatFormatting.RED),
-                false
-            )
+            ctx.source.sendSuccess({
+                Component.literal(e.message ?: e.javaClass.simpleName).withStyle(ChatFormatting.RED)
+            }, false)
             return -2
         }
 
@@ -232,13 +224,14 @@ object ModCommands : IModRegister {
                     .then(
                         literal("help")
                             .executes { ctx ->
-                                ctx.source.sendSuccess(
+                                ctx.source.sendSuccess({
                                     Component.literal(
-                                    "Usage: /image2chisel <file name, must end with .png> " +
-                                            "[z_min] [z_max or thickness] [north, south, east, west, up, down] " +
-                                            "[palette, default \"minecraft:*_concrete\"] " +
-                                            "[set_air, false to not change bits that are just air]"
-                                ), false)
+                                        "Usage: /image2chisel <file name, must end with .png> " +
+                                                "[z_min] [z_max or thickness] [north, south, east, west, up, down] " +
+                                                "[palette, default \"minecraft:*_concrete\"] " +
+                                                "[set_air, false to not change bits that are just air]"
+                                    )
+                                }, false)
                                 return@executes SINGLE_SUCCESS
                             }
                     )
@@ -309,7 +302,7 @@ object ModCommands : IModRegister {
                                                             StringArgumentType.getString(ctx, "image"),
                                                             IntegerArgumentType.getInteger(ctx, "z_min"),
                                                             IntegerArgumentType.getInteger(ctx, "z_max"),
-                                                            paletteWildcard =  StringArgumentType.getString(ctx, "palette")
+                                                            paletteWildcard = StringArgumentType.getString(ctx, "palette").ifEmpty { null }
                                                         )
                                                     }
                                                     .then(
@@ -320,7 +313,7 @@ object ModCommands : IModRegister {
                                                                     StringArgumentType.getString(ctx, "image"),
                                                                     IntegerArgumentType.getInteger(ctx, "z_min"),
                                                                     IntegerArgumentType.getInteger(ctx, "z_max"),
-                                                                    paletteWildcard = StringArgumentType.getString(ctx, "palette"),
+                                                                    paletteWildcard = StringArgumentType.getString(ctx, "palette").ifEmpty { null },
                                                                     replaceAir = BoolArgumentType.getBool(ctx, "set_air")
                                                                 )
                                                             }

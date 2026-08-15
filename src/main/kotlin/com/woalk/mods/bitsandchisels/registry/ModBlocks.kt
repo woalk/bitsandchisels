@@ -2,7 +2,6 @@ package com.woalk.mods.bitsandchisels.registry
 
 import com.woalk.mods.bitsandchisels.BitsAndChisels
 import com.woalk.mods.bitsandchisels.BitsBlock
-import com.woalk.mods.bitsandchisels.WoalkItemGroups
 import com.woalk.mods.bitsandchisels.WoalkItemsMod
 import com.woalk.mods.bitsandchisels.blocks.*
 import net.fabricmc.api.EnvType
@@ -22,15 +21,15 @@ import net.minecraft.resources.ResourceLocation
 import net.minecraft.world.item.Rarity
 import net.minecraft.core.BlockPos
 import net.minecraft.core.Registry
+import net.minecraft.core.registries.BuiltInRegistries
 import net.minecraft.world.level.BlockGetter
 import net.minecraft.world.level.block.state.BlockState
-import net.minecraft.world.level.material.Material
 
 @Suppress("unused")
-object ModBlocks : ModRegister<Pair<Block, (() -> FabricItemSettings)?>, Block>(Registry.BLOCK) {
+object ModBlocks : ModRegister<Pair<Block, (() -> FabricItemSettings)?>, Block>(BuiltInRegistries.BLOCK) {
     //region block declarations
     val animatedBitsBlock = register("animated_bits_block", Pair(AnimatedBitsBlock(
-        FabricBlockSettings.of(Material.METAL)
+        FabricBlockSettings.of()
             .noOcclusion()
             .dynamicShape()
             .destroyTime(4.0f)
@@ -38,11 +37,11 @@ object ModBlocks : ModRegister<Pair<Block, (() -> FabricItemSettings)?>, Block>(
     )) { FabricItemSettings().maxCount(16) }).first
 
     val coloredBlock = register("coloured_block", ColoredBlock(
-        FabricBlockSettings.copy(Blocks.WHITE_CONCRETE)
+        FabricBlockSettings.copyOf(Blocks.WHITE_CONCRETE)
     ))
     val barrierBlock = register("barrier", Pair(
         Block(
-        FabricBlockSettings.of(Material.BARRIER)
+        FabricBlockSettings.of()
             .noOcclusion()
             .destroyTime(0.3f)
     ), ::FabricItemSettings)).first
@@ -52,11 +51,6 @@ object ModBlocks : ModRegister<Pair<Block, (() -> FabricItemSettings)?>, Block>(
     private val itemSettings by lazy {
         FabricItemSettings()
             .rarity(Rarity.EPIC)
-            .apply {
-                if (WoalkItemsMod.isAdmin) {
-                    tab(WoalkItemGroups.WOALK_ITEMS)
-                }
-            }
     }
 
     private fun register(id: String, block: Block): Block =
@@ -70,7 +64,7 @@ object ModBlocks : ModRegister<Pair<Block, (() -> FabricItemSettings)?>, Block>(
         super.registerNow(id, toRegister)
         if (toRegister.second != null) {
             Registry.register(
-                Registry.ITEM,
+                BuiltInRegistries.ITEM,
                 ResourceLocation(getNamespace(id), id),
                 when (id) {
                     "coloured_block" -> ColoredBlockItem(toRegister.first, toRegister.second!!.invoke())

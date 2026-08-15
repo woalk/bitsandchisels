@@ -9,6 +9,12 @@ import com.woalk.mods.bitsandchisels.blocks.ColoredBlockState
 import net.minecraft.world.level.block.state.BlockState
 import net.minecraft.world.level.block.Blocks
 import net.minecraft.world.item.DyeableLeatherItem
+import org.enginehub.linbus.tree.LinByteArrayTag
+import org.enginehub.linbus.tree.LinCompoundTag
+import org.enginehub.linbus.tree.LinIntTag
+import org.enginehub.linbus.tree.LinListTag
+import org.enginehub.linbus.tree.LinTag
+import org.enginehub.linbus.tree.LinTagType
 
 typealias Block3D = Array<Array<Array<BlockState?>>>
 
@@ -19,27 +25,15 @@ object BitCompoundUtil {
         }
     }
 
-    fun read3DBitArray(tag: CompoundTag, out: Block3D): Boolean {
+    fun read3DBitArray(tag: LinCompoundTag, out: Block3D): Boolean {
         val palette = ArrayList<BlockState>()
-        val paletteTag = tag.getList("palette")
-        for (stateTag in paletteTag) {
-            if (stateTag is CompoundTag) {
-                palette.add(toBlockState(stateTag))
-            }
+        val paletteTag = tag.getListTag("palette", LinTagType.compoundTag())
+        for (stateTag in paletteTag.value()) {
+            palette.add(toBlockState(stateTag))
         }
-        val bits = tag.getList("bits")
-        val bitsBytes = tag.getByteArray("bits_v2")
+        val bitsBytes = tag.getTag("bits_v2", LinTagType.byteArrayTag()).value()
         var index = 0
-        if (bits.isNotEmpty()) {
-            for (i in 0..15) {
-                for (j in 0..15) {
-                    for (k in 0..15) {
-                        out[i][j][k] = palette[bits[index].value as Int]
-                        index++
-                    }
-                }
-            }
-        } else if (bitsBytes.isNotEmpty()) {
+        if (bitsBytes.isNotEmpty()) {
             for (i in 0..15) {
                 for (j in 0..15) {
                     for (k in 0..15) {
@@ -55,7 +49,7 @@ object BitCompoundUtil {
         return true
     }
 
-    fun write3DBitArray(from: Block3D, targetTag: CompoundTag? = null): CompoundTag {
+    fun write3DBitArray(from: Block3D, targetTag: LinCompoundTag? = null): LinCompoundTag {
         val palette = ArrayList<BlockState>()
         val bits = ByteArray(8192)
         var arrayIndex = 0
@@ -74,35 +68,35 @@ object BitCompoundUtil {
                 }
             }
         }
-        val tag = HashMap<String, Tag>()
-        tag["bits_v2"] = ByteArrayTag(bits)
-        val paletteTag = ListTag(CompoundTag::class.java, palette.map { fromBlockState(it) })
+        val tag = HashMap<String, LinTag<out Any>>()
+        tag["bits_v2"] = LinByteArrayTag.of(*bits)
+        val paletteTag = LinListTag.of(LinTagType.compoundTag(), palette.map { fromBlockState(it) })
         tag["palette"] = paletteTag
         return if (targetTag != null) {
-            targetTag.createBuilder().apply {
+            targetTag.toBuilder().apply {
                 tag.forEach(this::put)
             }.build()
-        } else CompoundTag(tag)
+        } else LinCompoundTag.of(tag)
     }
 
-    private fun toBlockState(tag: CompoundTag?): BlockState {
+    private fun toBlockState(tag: LinCompoundTag?): BlockState {
         return if (tag == null) {
             Blocks.AIR.defaultBlockState()
-        } else if (tag.containsKey(DyeableLeatherItem.TAG_COLOR)) {
-            return ColoredBlockState(tag.getInt(DyeableLeatherItem.TAG_COLOR))
+        } else if (tag.value().containsKey(DyeableLeatherItem.TAG_COLOR)) {
+            ColoredBlockState(tag.getTag(DyeableLeatherItem.TAG_COLOR, LinTagType.intTag()).value())
         } else {
             CompoundHelper.toBlockState(tag)
         }
     }
 
-    private fun fromBlockState(state: BlockState?): CompoundTag {
+    private fun fromBlockState(state: BlockState?): LinCompoundTag {
         return when (state) {
             null -> CompoundHelper.fromBlockState(Blocks.AIR.defaultBlockState())
             is ColoredBlockState -> {
                 CompoundHelper.fromBlockState(state).run {
-                    val map = value.toMutableMap()
-                    map[DyeableLeatherItem.TAG_COLOR] = IntTag(state.color)
-                    setValue(map)
+                    val map = value().toMutableMap()
+                    map[DyeableLeatherItem.TAG_COLOR] = LinIntTag.of(state.color)
+                    LinCompoundTag.of(map)
                 }
             }
             else -> CompoundHelper.fromBlockState(state)

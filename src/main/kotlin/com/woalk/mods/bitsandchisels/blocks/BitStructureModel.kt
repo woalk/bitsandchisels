@@ -13,8 +13,8 @@ import net.minecraft.world.level.block.state.BlockState
 import net.minecraft.world.item.ItemStack
 import net.minecraft.nbt.CompoundTag
 import net.minecraft.nbt.Tag
-import com.mojang.math.Vector3f
 import net.minecraft.util.RandomSource
+import org.joml.Vector3f
 import java.util.function.Supplier
 import kotlin.math.max
 

@@ -15,27 +15,24 @@ import net.fabricmc.fabric.api.client.rendering.v1.ColorProviderRegistry;
 import net.fabricmc.fabric.api.renderer.v1.model.FabricBakedModel;
 import net.fabricmc.fabric.api.renderer.v1.render.RenderContext;
 import net.fabricmc.fabric.api.renderer.v1.render.RenderContext.QuadTransform;
+import net.minecraft.client.resources.model.*;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.color.block.BlockColor;
-import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.client.renderer.block.model.BakedQuad;
-import net.minecraft.client.resources.model.ModelState;
-import net.minecraft.client.resources.model.ModelBakery;
-import net.minecraft.client.resources.model.UnbakedModel;
 import net.minecraft.client.renderer.block.model.ItemOverrides;
 import net.minecraft.client.renderer.block.model.ItemTransforms;
 import net.minecraft.client.renderer.block.model.ItemTransform;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
-import net.minecraft.client.resources.model.Material;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import com.mojang.math.Vector3f;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.BlockAndTintGetter;
+import org.jetbrains.annotations.Nullable;
+import org.joml.Vector3f;
 
 public class BitItemModel implements UnbakedModel, BakedModel, FabricBakedModel {
 
@@ -44,7 +41,7 @@ public class BitItemModel implements UnbakedModel, BakedModel, FabricBakedModel 
     private static ItemTransform makeTransform(float rotationX, float rotationY, float rotationZ, float translationX, float translationY, float translationZ, float scaleX, float scaleY, float scaleZ) {
 		Vector3f translation = new Vector3f(translationX, translationY, translationZ);
 		translation.mul(0.0625f);
-		translation.clamp(-5.0F, 5.0F);
+		translation = new Vector3f(Math.clamp(translation.x, -5.0F, 5.0F), Math.clamp(translation.y, -5.0F, 5.0F), Math.clamp(translation.z, -5.0F, 5.0F));
 		return new ItemTransform(new Vector3f(rotationX, rotationY, rotationZ), translation, new Vector3f(scaleX, scaleY, scaleZ));
 	}
 
@@ -104,6 +101,10 @@ public class BitItemModel implements UnbakedModel, BakedModel, FabricBakedModel 
     }
 
     @Override
+    public void resolveParents(Function<ResourceLocation, UnbakedModel> function) {
+    }
+
+    @Override
     public boolean useAmbientOcclusion() {
         return false;
     }
@@ -144,14 +145,7 @@ public class BitItemModel implements UnbakedModel, BakedModel, FabricBakedModel 
     }
 
     @Override
-    public Collection<Material> getMaterials(Function<ResourceLocation, UnbakedModel> unbakedModelGetter,
-                                             Set<Pair<String, String>> unresolvedTextureReferences) {
-        return Collections.emptyList();
-    }
-
-    @Override
-    public BakedModel bake(ModelBakery loader, Function<Material, TextureAtlasSprite> textureGetter,
-                           ModelState rotationContainer, ResourceLocation modelId) {
+    public @Nullable BakedModel bake(ModelBaker modelBaker, Function<Material, TextureAtlasSprite> function, ModelState modelState, ResourceLocation resourceLocation) {
         return this;
     }
     

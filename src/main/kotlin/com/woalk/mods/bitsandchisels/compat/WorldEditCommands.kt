@@ -35,6 +35,7 @@ import net.minecraft.core.BlockPos
 import net.minecraft.core.Direction
 import net.minecraft.core.Vec3i
 import net.minecraft.core.Registry
+import net.minecraft.core.registries.BuiltInRegistries
 import java.util.*
 import kotlin.math.ceil
 
@@ -51,9 +52,9 @@ object WorldEditCommands : IModRegister {
 
         val size = clipboard.dimensions
         val bitsSize = BlockVector3.at(
-            ceil(size.x.toDouble() / 16).toInt(),
-            ceil(size.y.toDouble() / 16).toInt(),
-            ceil(size.z.toDouble() / 16).toInt()
+            ceil(size.x().toDouble() / 16).toInt(),
+            ceil(size.y().toDouble() / 16).toInt(),
+            ceil(size.z().toDouble() / 16).toInt()
         )
 
         val newClipboard = BlockArrayClipboard(
@@ -62,9 +63,9 @@ object WorldEditCommands : IModRegister {
                 clipboard.minimumPoint.add(bitsSize.subtract(BlockVector3.ONE))
             )
         )
-        for (x in 0 until bitsSize.x) {
-            for (y in 0 until bitsSize.y) {
-                for (z in 0 until bitsSize.z) {
+        for (x in 0 until bitsSize.x()) {
+            for (y in 0 until bitsSize.y()) {
+                for (z in 0 until bitsSize.z()) {
                     val vec = BlockVector3.at(x, y, z)
                     val blockMinPos = clipboard.minimumPoint.add(vec.multiply(16))
                     val bitsOut = BitCompoundUtil.Block3D()
@@ -171,7 +172,7 @@ object WorldEditCommands : IModRegister {
     }
     private fun findBlock(ns: ResourceLocation, path: String): BlockState? = findBlock(ns.namespace, path)
     private fun findBlock(ns: String, path: String): BlockState? =
-        Registry.BLOCK.get(ResourceLocation(ns, path)).defaultBlockState().let { if (it.isAir) null else it }
+        BuiltInRegistries.BLOCK.get(ResourceLocation(ns, path)).defaultBlockState().let { if (it.isAir) null else it }
 
     private fun replace(ctx: CommandContext<CommandSourceStack>, from: BlockState, to: BlockState): Int = try {
         val actor = FabricAdapter.adaptPlayer(ctx.source.player)
@@ -184,7 +185,7 @@ object WorldEditCommands : IModRegister {
                 for (y in 0 until selection.height) {
                     for (z in 0 until selection.length) {
                         val vec = selection.minimumPoint.add(BlockVector3.at(x, y, z))
-                        val blockPos = BlockPos(vec.x, vec.y, vec.z)
+                        val blockPos = BlockPos(vec.x(), vec.y(), vec.z())
                         if (ctx.source.level.getBlockState(blockPos).block == BitsAndChisels.BITS_BLOCK) {
                             val entity = ctx.source.level.getBlockEntity(blockPos) as? BitsBlockEntity ?: continue
                             val bits: Block3D = entity.states
@@ -253,7 +254,7 @@ object WorldEditCommands : IModRegister {
                                         sourceBitPos.y < 0 || sourceBitPos.y > 15 ||
                                         sourceBitPos.z < 0 || sourceBitPos.z > 15
                                     ) {
-                                        val neighborPos = directionVectorInverted.offset(vec.x, vec.y, vec.z)
+                                        val neighborPos = directionVectorInverted.offset(vec.x(), vec.y(), vec.z())
                                         if (!merge && !selection.contains(BlockVector3.at(neighborPos.x, neighborPos.y, neighborPos.z))) {
                                             null
                                         } else if (ctx.source.level.getBlockState(BlockPos(neighborPos)).block == BitsAndChisels.BITS_BLOCK) {
@@ -262,14 +263,14 @@ object WorldEditCommands : IModRegister {
                                             val oldBitPos = BlockPos(sourceBitPos.x.mod(16), sourceBitPos.y.mod(16), sourceBitPos.z.mod(16))
                                             val oldBit = oldBits?.get(oldBitPos.x)?.get(oldBitPos.y)?.get(oldBitPos.z)
                                             if (oldBit?.isAir != false) {
-                                                val blockPos = BlockPos(vec.x, vec.y, vec.z)
+                                                val blockPos = BlockPos(vec.x(), vec.y(), vec.z())
                                                 val entity = ctx.source.level.getBlockEntity(blockPos) as? BitsBlockEntity
                                                 val oldBits = entity?.states
                                                 oldBits?.get(i)?.get(j)?.get(k)
                                             } else oldBit
                                         } else null
                                     } else {
-                                        val blockPos = BlockPos(vec.x, vec.y, vec.z)
+                                        val blockPos = BlockPos(vec.x(), vec.y(), vec.z())
                                         if (!selection.contains(BlockVector3.at(blockPos.x, blockPos.y, blockPos.z))) {
                                             val entity = ctx.source.level.getBlockEntity(blockPos) as? BitsBlockEntity
                                             val oldBits = entity?.states
@@ -289,7 +290,7 @@ object WorldEditCommands : IModRegister {
                         }
                         if (hasChanged) {
                             editSession.setBlock(vec, newBlock.toBaseBlock(BitCompoundUtil.write3DBitArray(bits)))
-                            (ctx.source.level.getBlockEntity(BlockPos(vec.x, vec.y, vec.z)) as? BitsBlockEntity)?.sync()
+                            (ctx.source.level.getBlockEntity(BlockPos(vec.x(), vec.y(), vec.z())) as? BitsBlockEntity)?.sync()
                         }
                     }
                 }
@@ -341,7 +342,7 @@ object WorldEditCommands : IModRegister {
         for (x in 0 until selection.width) {
             for (y in 0 until selection.height) {
                 for (z in 0 until selection.length) {
-                    val pos = BlockPos(origin.x + x, origin.y + y, origin.z + z)
+                    val pos = BlockPos(origin.x() + x, origin.y() + y, origin.z() + z)
                     val be = ctx.source.level.getBlockEntity(pos) as? BitsBlockEntity
                     if (be == null) {
                         if (!ctx.source.level.getBlockState(pos).isAir) {
@@ -370,52 +371,59 @@ object WorldEditCommands : IModRegister {
             }
         }
         if (author != null) {
-            ctx.source.sendSuccess(Component.literal("Updated $count blocks with signature"), true)
+            ctx.source.sendSuccess({ Component.literal("Updated $count blocks with signature") }, true)
             if (structure == StructDo.CREATE && structureId == null) {
                 ctx.source.sendSuccess(
-                    Component.literal(
-                        "Warning: Build too ${if (isSingleBlock) "small" else "large"} to be labeled as structure."
-                    ).withStyle(ChatFormatting.YELLOW),
+                    {
+                        Component.literal(
+                            "Warning: Build too ${if (isSingleBlock) "small" else "large"} to be labeled as structure."
+                        ).withStyle(ChatFormatting.YELLOW)
+                    },
                     false,
                 )
             }
         } else if (structure == StructDo.CREATE && structureId != null) {
-            ctx.source.sendSuccess(Component.literal("Created structure of $count blocks with ID $structureId."), true)
+            ctx.source.sendSuccess({ Component.literal("Created structure of $count blocks with ID $structureId.") }, true)
         } else if (structure == StructDo.CREATE /* && structureId == null */) {
             ctx.source.sendSuccess(
-                Component.literal("Warning: Build too large to be labeled as structure.")
-                    .withStyle(ChatFormatting.YELLOW),
+                {
+                    Component.literal("Warning: Build too large to be labeled as structure.")
+                        .withStyle(ChatFormatting.YELLOW)
+                },
                 false,
             )
         } else if (structure == StructDo.DELETE) {
-            ctx.source.sendSuccess(Component.literal("Removed structure ID from $count blocks."), true)
+            ctx.source.sendSuccess({ Component.literal("Removed structure ID from $count blocks.") }, true)
         } else if (structure == StructDo.AUTO) {
-            ctx.source.sendSuccess(Component.literal("Created ${structureMap!!.size} structures within $count blocks."), true)
-            if (structureMap.size <= 0) {
-                ctx.source.sendSuccess(
+            ctx.source.sendSuccess({ Component.literal("Created ${structureMap!!.size} structures within $count blocks.") }, true)
+            if (structureMap?.isEmpty() != false) {
+                ctx.source.sendSuccess({
                     Component.literal(
-                    "Note that unsigned bit blocks will not be grouped by //bitstructure auto."
-                ).withStyle(ChatFormatting.RED), false)
+                        "Note that unsigned bit blocks will not be grouped by //bitstructure auto."
+                    ).withStyle(ChatFormatting.RED)
+                }, false)
             }
         } else {
-            ctx.source.sendSuccess(
+            ctx.source.sendSuccess({
                 Component.literal(
-                "Inconsistency detected. Please report to admin that function 'sign' was called with no arguments."
-            ).withStyle(ChatFormatting.RED), true)
+                    "Inconsistency detected. Please report to admin that function 'sign' was called with no arguments."
+                ).withStyle(ChatFormatting.RED)
+            }, true)
         }
 
         if (hasMissed.isNotEmpty()) {
-            ctx.source.sendSuccess(
+            ctx.source.sendSuccess({
                 Component.literal(
-                if (hasMissed.size < 4) {
-                    "Warning: ${hasMissed.joinToString(", ") { "(${it.toShortString()})" }} weren't bit blocks or air."
-                } else {
-                    "Warning: Selection contained ${hasMissed.size} blocks that weren't bit blocks or air."
-                }
-            ).withStyle(ChatFormatting.YELLOW), false)
+                    if (hasMissed.size < 4) {
+                        "Warning: ${hasMissed.joinToString(", ") { "(${it.toShortString()})" }} weren't bit blocks or air."
+                    } else {
+                        "Warning: Selection contained ${hasMissed.size} blocks that weren't bit blocks or air."
+                    }
+                ).withStyle(ChatFormatting.YELLOW)
+            }, false)
         }
         SINGLE_SUCCESS
-    } catch (e: IncompleteRegionException) {
+    } catch (_: IncompleteRegionException) {
         -1
     } catch (e: Exception) {
         e.printStackTrace()

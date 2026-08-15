@@ -69,7 +69,7 @@ class BitStructureItem(settings: Properties) : Item(settings) {
             if (tag.isEmpty) continue
             if (index >= OFFSETS.size) return InteractionResult.FAIL
             val bitBlockPos = blockPos.offset(OFFSETS[index].rotate(rotation))
-            if (!world.getBlockState(bitBlockPos).material.isReplaceable) return InteractionResult.FAIL
+            if (!world.getBlockState(bitBlockPos).canBeReplaced()) return InteractionResult.FAIL
             if (!world.isUnobstructed(BitsAndChisels.BITS_BLOCK.defaultBlockState(), bitBlockPos, CollisionContext.of(playerEntity))) {
                 return InteractionResult.FAIL
             }

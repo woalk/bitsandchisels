@@ -1,11 +1,15 @@
 package com.woalk.mods.bitsandchisels;
 
+import com.mojang.serialization.MapCodec;
+import com.mojang.serialization.codecs.RecordCodecBuilder;
 import com.woalk.mods.bitsandchisels.api.BitUtils;
 import com.woalk.mods.bitsandchisels.blocks.BitStructureItem;
 import com.woalk.mods.bitsandchisels.registry.ModItems;
 import com.woalk.mods.bitsandchisels.utils.DirectionUtilsKt;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.world.level.LevelReader;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.RenderShape;
 import net.minecraft.world.level.block.BaseEntityBlock;
@@ -38,7 +42,6 @@ import net.minecraft.world.phys.HitResult;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.Vec3i;
-import net.minecraft.core.Registry;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.level.BlockGetter;
@@ -48,6 +51,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 public class BitsBlock extends BaseEntityBlock implements SimpleWaterloggedBlock {
+    private static final MapCodec<BitsBlock> CODEC = simpleCodec(BitsBlock::new);
 
     public static final IntegerProperty LIGHT_LEVEL = IntegerProperty.create("light_level", 0, 16);
     public static final IntegerProperty SHADER_TYPE = IntegerProperty.create("shader_type", 0, 16);
@@ -60,6 +64,11 @@ public class BitsBlock extends BaseEntityBlock implements SimpleWaterloggedBlock
     public BitsBlock(Properties settings) {
         super(settings);
         this.registerDefaultState(stateDefinition.any().setValue(LIGHT_LEVEL, 0).setValue(BlockStateProperties.WATERLOGGED, false).setValue(SHADER_TYPE, 0));
+    }
+
+    @Override
+    protected MapCodec<? extends BaseEntityBlock> codec() {
+        return CODEC;
     }
 
     @Override
@@ -86,7 +95,7 @@ public class BitsBlock extends BaseEntityBlock implements SimpleWaterloggedBlock
     }
 
     @Override
-    public void playerWillDestroy(Level world, BlockPos pos, BlockState state, Player player) {
+    public BlockState playerWillDestroy(Level world, BlockPos pos, BlockState state, Player player) {
         BitsBlockEntity blockEntity = world.getBlockEntity(pos, BitsAndChisels.BITS_BLOCK_ENTITY).orElse(null);
         if (!world.isClientSide && blockEntity != null) {
             ItemStack dropStack = getDropItem(world, pos, state, blockEntity, player, true);
@@ -94,6 +103,11 @@ public class BitsBlock extends BaseEntityBlock implements SimpleWaterloggedBlock
                 popResource(world, pos, dropStack);
             }
         }
+        return playerWillDestroyBlock(world, pos, state, player);
+    }
+
+    protected BlockState playerWillDestroyBlock(Level world, BlockPos pos, BlockState state, Player player) {
+        return super.playerWillDestroy(world, pos, state, player);
     }
 
     @Nullable
@@ -213,7 +227,7 @@ public class BitsBlock extends BaseEntityBlock implements SimpleWaterloggedBlock
     }
 
     @Override
-    public ItemStack getCloneItemStack(BlockGetter world, BlockPos pos, BlockState state) {
+    public ItemStack getCloneItemStack(LevelReader world, BlockPos pos, BlockState state) {
         if (!(world instanceof ServerLevel)) {
             final var bitStack = pickBitClient(world, pos, state);
             if (bitStack != null) return bitStack;
@@ -231,7 +245,7 @@ public class BitsBlock extends BaseEntityBlock implements SimpleWaterloggedBlock
         Minecraft client = Minecraft.getInstance();
         Player player = client.player;
         if (player != null && Screen.hasShiftDown()) {
-            if (player.getMainHandItem().is(TagKey.create(Registry.ITEM_REGISTRY, new ResourceLocation(BitsAndChisels.MODID, "chisel")))) {
+            if (player.getMainHandItem().is(TagKey.create(Registries.ITEM, new ResourceLocation(BitsAndChisels.MODID, "chisel")))) {
                 HitResult hit = client.hitResult;
                 if (hit != null && hit.getType() == HitResult.Type.BLOCK && world instanceof Level) {
                     Direction direction = ((BlockHitResult) hit).getDirection();

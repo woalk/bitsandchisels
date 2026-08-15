@@ -7,10 +7,11 @@ import com.woalk.mods.bitsandchisels.chisel.DuplicationKit
 import net.fabricmc.fabric.api.item.v1.FabricItemSettings
 import net.minecraft.world.item.Item
 import net.minecraft.core.Registry
+import net.minecraft.core.registries.BuiltInRegistries
 
 @Suppress("unused")
-object ModItems: ModRegister<Item, Item>(Registry.ITEM) {
-    private fun itemSettings() = FabricItemSettings().tab(BitsAndChisels.ITEM_GROUP)
+object ModItems: ModRegister<Item, Item>(BuiltInRegistries.ITEM) {
+    private fun itemSettings() = FabricItemSettings()
 
     //region item declarations
     val animationWand = register("animation_wand", AnimationWand(itemSettings()))

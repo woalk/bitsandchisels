@@ -7,6 +7,7 @@ import net.fabricmc.fabric.api.`object`.builder.v1.block.entity.FabricBlockEntit
 import net.minecraft.world.level.block.entity.BlockEntityType
 import net.minecraft.resources.ResourceLocation
 import net.minecraft.core.Registry
+import net.minecraft.core.registries.BuiltInRegistries
 
 object ModBlockEntities : IModRegister {
     lateinit var animatedBitsBlockEntity: BlockEntityType<AnimatedBitsBlockEntity>
@@ -14,7 +15,7 @@ object ModBlockEntities : IModRegister {
 
     override fun registerAll() {
         animatedBitsBlockEntity = Registry.register(
-            Registry.BLOCK_ENTITY_TYPE,
+            BuiltInRegistries.BLOCK_ENTITY_TYPE,
             ResourceLocation(BitsAndChisels.MODID, "animated_bits_block"),
             FabricBlockEntityTypeBuilder.create(
                 ::AnimatedBitsBlockEntity,
@@ -22,7 +23,7 @@ object ModBlockEntities : IModRegister {
             ).build()
         )
         coloredBlockEntity = Registry.register(
-            Registry.BLOCK_ENTITY_TYPE,
+            BuiltInRegistries.BLOCK_ENTITY_TYPE,
             ResourceLocation(BitsAndChisels.MODID, "coloured_block"),
             FabricBlockEntityTypeBuilder.create(
                 ::ColoredBlockEntity,
