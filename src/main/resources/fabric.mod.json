@@ -36,7 +36,11 @@
     "bitsandchisels.mixins.json"
   ],
   "depends": {
-    "fabricloader": ">=0.7.4",
-    "minecraft": "*"
+    "fabricloader": ">=0.19.3",
+    "minecraft": "*",
+    "fabric-api": "*"
+  },
+  "recommends": {
+    "worldedit": "*"
   }
 }
