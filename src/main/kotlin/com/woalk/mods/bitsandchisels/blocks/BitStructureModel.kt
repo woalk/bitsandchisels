@@ -9,32 +9,32 @@ import com.woalk.mods.bitsandchisels.blocks.BitStructureItem.Companion.OFFSETS
 import net.fabricmc.fabric.api.renderer.v1.RendererAccess
 import net.fabricmc.fabric.api.renderer.v1.mesh.Mesh
 import net.fabricmc.fabric.api.renderer.v1.render.RenderContext
-import net.minecraft.block.BlockState
-import net.minecraft.item.ItemStack
-import net.minecraft.nbt.NbtCompound
-import net.minecraft.nbt.NbtElement
-import net.minecraft.util.math.Vec3f
-import net.minecraft.util.math.random.Random
+import net.minecraft.world.level.block.state.BlockState
+import net.minecraft.world.item.ItemStack
+import net.minecraft.nbt.CompoundTag
+import net.minecraft.nbt.Tag
+import com.mojang.math.Vector3f
+import net.minecraft.util.RandomSource
 import java.util.function.Supplier
 import kotlin.math.max
 
 class BitStructureModel: AbstractBitsBlockModel() {
     companion object {
-        private val cache = LRUCache<NbtCompound, Pair<Mesh, Int>>(100)
+        private val cache = LRUCache<CompoundTag, Pair<Mesh, Int>>(100)
     }
 
-    override fun emitItemQuads(stack: ItemStack, randomSupplier: Supplier<Random?>?, context: RenderContext) {
-        val fullTag = stack.nbt ?: return
+    override fun emitItemQuads(stack: ItemStack, randomSupplier: Supplier<RandomSource?>?, context: RenderContext) {
+        val fullTag = stack.tag ?: return
         val mesh = cache.computeIfAbsent(fullTag) { _ ->
             val builder = RendererAccess.INSTANCE.renderer!!.meshBuilder()
             val emitter = builder.emitter
-            val tmp = Vec3f()
+            val tmp = Vector3f()
             var maxX = 0
             var maxY = 0
             var maxZ = 0
-            for ((index, nbtElement) in fullTag.getList(NBT_BIT_BLOCK_TAGS, NbtElement.COMPOUND_TYPE.toInt()).withIndex()) {
+            for ((index, nbtElement) in fullTag.getList(NBT_BIT_BLOCK_TAGS, Tag.TAG_COMPOUND.toInt()).withIndex()) {
                 if (index >= OFFSETS.size) break // too many blocks to render
-                val tag = nbtElement as NbtCompound
+                val tag = nbtElement as CompoundTag
                 if (tag.isEmpty) continue
                 val bits = Array(16) { Array(16) { arrayOfNulls<BlockState>(16) } }
                 if (BitNbtUtil.read3DBitArray(tag, bits)) {
@@ -49,9 +49,9 @@ class BitStructureModel: AbstractBitsBlockModel() {
         }
 
         context.pushTransform {
-            val pos = Vec3f()
+            val pos = Vector3f()
             for (i in 0 until 4) {
-                it.pos(i, it.copyPos(i, pos).apply { scale(0.75f / mesh.second) })
+                it.pos(i, it.copyPos(i, pos).apply { mul(0.75f / mesh.second) })
             }
             true
         }

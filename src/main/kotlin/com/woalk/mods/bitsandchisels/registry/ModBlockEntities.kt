@@ -4,9 +4,9 @@ import com.woalk.mods.bitsandchisels.BitsAndChisels
 import com.woalk.mods.bitsandchisels.blocks.AnimatedBitsBlockEntity
 import com.woalk.mods.bitsandchisels.blocks.ColoredBlockEntity
 import net.fabricmc.fabric.api.`object`.builder.v1.block.entity.FabricBlockEntityTypeBuilder
-import net.minecraft.block.entity.BlockEntityType
-import net.minecraft.util.Identifier
-import net.minecraft.util.registry.Registry
+import net.minecraft.world.level.block.entity.BlockEntityType
+import net.minecraft.resources.ResourceLocation
+import net.minecraft.core.Registry
 
 object ModBlockEntities : IModRegister {
     lateinit var animatedBitsBlockEntity: BlockEntityType<AnimatedBitsBlockEntity>
@@ -15,7 +15,7 @@ object ModBlockEntities : IModRegister {
     override fun registerAll() {
         animatedBitsBlockEntity = Registry.register(
             Registry.BLOCK_ENTITY_TYPE,
-            Identifier(BitsAndChisels.MODID, "animated_bits_block"),
+            ResourceLocation(BitsAndChisels.MODID, "animated_bits_block"),
             FabricBlockEntityTypeBuilder.create(
                 ::AnimatedBitsBlockEntity,
                 ModBlocks.animatedBitsBlock,
@@ -23,7 +23,7 @@ object ModBlockEntities : IModRegister {
         )
         coloredBlockEntity = Registry.register(
             Registry.BLOCK_ENTITY_TYPE,
-            Identifier(BitsAndChisels.MODID, "coloured_block"),
+            ResourceLocation(BitsAndChisels.MODID, "coloured_block"),
             FabricBlockEntityTypeBuilder.create(
                 ::ColoredBlockEntity,
                 ModBlocks.coloredBlock

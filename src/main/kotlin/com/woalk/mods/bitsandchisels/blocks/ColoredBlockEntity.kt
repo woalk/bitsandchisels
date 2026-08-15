@@ -1,14 +1,14 @@
 package com.woalk.mods.bitsandchisels.blocks
 
 import com.woalk.mods.bitsandchisels.registry.ModBlockEntities
-import net.minecraft.block.BlockState
-import net.minecraft.block.entity.BlockEntity
-import net.minecraft.item.DyeableItem
-import net.minecraft.nbt.NbtCompound
-import net.minecraft.network.Packet
-import net.minecraft.network.listener.ClientPlayPacketListener
-import net.minecraft.network.packet.s2c.play.BlockEntityUpdateS2CPacket
-import net.minecraft.util.math.BlockPos
+import net.minecraft.world.level.block.state.BlockState
+import net.minecraft.world.level.block.entity.BlockEntity
+import net.minecraft.world.item.DyeableLeatherItem
+import net.minecraft.nbt.CompoundTag
+import net.minecraft.network.protocol.Packet
+import net.minecraft.network.protocol.game.ClientGamePacketListener
+import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket
+import net.minecraft.core.BlockPos
 
 class ColoredBlockEntity(pos: BlockPos, state: BlockState) :
     BlockEntity(ModBlockEntities.coloredBlockEntity, pos, state) {
@@ -19,19 +19,19 @@ class ColoredBlockEntity(pos: BlockPos, state: BlockState) :
             color = value and 0xFFFFFF
         }
 
-    override fun writeNbt(nbt: NbtCompound) {
-        nbt.putInt(DyeableItem.COLOR_KEY, color)
-        super.writeNbt(nbt)
+    override fun saveAdditional(nbt: CompoundTag) {
+        nbt.putInt(DyeableLeatherItem.TAG_COLOR, color)
+        super.saveAdditional(nbt)
     }
 
-    override fun readNbt(nbt: NbtCompound) {
-        super.readNbt(nbt)
-        if (nbt.contains(DyeableItem.COLOR_KEY)) {
-            color = nbt.getInt(DyeableItem.COLOR_KEY)
+    override fun load(nbt: CompoundTag) {
+        super.load(nbt)
+        if (nbt.contains(DyeableLeatherItem.TAG_COLOR)) {
+            color = nbt.getInt(DyeableLeatherItem.TAG_COLOR)
         }
     }
 
-    override fun toUpdatePacket(): Packet<ClientPlayPacketListener>? = BlockEntityUpdateS2CPacket.create(this)
+    override fun getUpdatePacket(): Packet<ClientGamePacketListener>? = ClientboundBlockEntityDataPacket.create(this)
 
-    override fun toInitialChunkDataNbt(): NbtCompound = createNbt()
+    override fun getUpdateTag(): CompoundTag = saveWithoutMetadata()
 }

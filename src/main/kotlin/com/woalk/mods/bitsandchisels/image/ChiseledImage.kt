@@ -1,8 +1,8 @@
 package com.woalk.mods.bitsandchisels.image
 
 import net.fabricmc.loader.api.FabricLoader
-import net.minecraft.block.Block
-import net.minecraft.block.BlockState
+import net.minecraft.world.level.block.Block
+import net.minecraft.world.level.block.state.BlockState
 import java.awt.image.BufferedImage
 import java.awt.image.DataBufferByte
 import java.awt.image.Raster
@@ -76,7 +76,7 @@ class ChiseledImage(private val imageFilePath: String, withSkinColors: Boolean =
     }
 
     override fun getStateForPixel(x: Int, y: Int, palette: PaletteIdentifier?): BlockState =
-        getBlockForPixel(x, y, palette!!).defaultState
+        getBlockForPixel(x, y, palette!!).defaultBlockState()
 
     override fun getImageName(): String = imageFilePath.substringAfterLast('/').substringBeforeLast('.')
 }

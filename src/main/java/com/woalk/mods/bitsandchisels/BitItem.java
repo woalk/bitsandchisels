@@ -8,35 +8,36 @@ import me.lucko.fabric.api.permissions.v0.Permissions;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.networking.v1.PacketSender;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
-import net.minecraft.block.BlockState;
-import net.minecraft.block.Blocks;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.item.TooltipContext;
-import net.minecraft.item.Item;
-import net.minecraft.item.ItemStack;
-import net.minecraft.item.ItemUsageContext;
-import net.minecraft.nbt.NbtCompound;
-import net.minecraft.network.PacketByteBuf;
+import net.minecraft.world.item.Item.Properties;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.client.Minecraft;
+import net.minecraft.world.item.TooltipFlag;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.context.UseOnContext;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.network.ServerPlayNetworkHandler;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.text.Text;
-import net.minecraft.util.ActionResult;
-import net.minecraft.util.Formatting;
-import net.minecraft.util.Hand;
-import net.minecraft.util.Identifier;
-import net.minecraft.util.hit.BlockHitResult;
-import net.minecraft.util.hit.HitResult;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Direction;
-import net.minecraft.world.World;
+import net.minecraft.server.network.ServerGamePacketListenerImpl;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.network.chat.Component;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.ChatFormatting;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.HitResult;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.world.level.Level;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 
 public class BitItem extends Item implements ServerPlayNetworking.PlayChannelHandler {
 
-    public static final Identifier PACKET_ID = new Identifier("bitsandchisels", "bit_packet");
+    public static final ResourceLocation PACKET_ID = new ResourceLocation("bitsandchisels", "bit_packet");
 
     BlockPos block = null;
 
@@ -46,13 +47,13 @@ public class BitItem extends Item implements ServerPlayNetworking.PlayChannelHan
 
     public boolean haspos1 = false;
 
-    public BitItem(Settings settings) {
+    public BitItem(Properties settings) {
         super(settings);
         ServerPlayNetworking.registerGlobalReceiver(PACKET_ID, this);
     }
 
     @Override
-    public void receive(MinecraftServer server, ServerPlayerEntity player, ServerPlayNetworkHandler handler, PacketByteBuf buf, PacketSender responseSender) {
+    public void receive(MinecraftServer server, ServerPlayer player, ServerGamePacketListenerImpl handler, FriendlyByteBuf buf, PacketSender responseSender) {
         if (!Permissions.check(player, ModPermissions.USE_BIT, true)) return;
         BlockPos pos = buf.readBlockPos();
         int x1 = buf.readInt();
@@ -61,18 +62,18 @@ public class BitItem extends Item implements ServerPlayNetworking.PlayChannelHan
         int x2 = buf.readInt();
         int y2 = buf.readInt();
         int z2 = buf.readInt();
-        Hand hand = buf.readBoolean() ? Hand.MAIN_HAND : Hand.OFF_HAND;
+        InteractionHand hand = buf.readBoolean() ? InteractionHand.MAIN_HAND : InteractionHand.OFF_HAND;
         server.execute(() -> {
             // Execute on the main thread
             if (
-                player.getStackInHand(hand).getItem() == BitsAndChisels.BIT_ITEM &&
-                player.getBlockPos().getSquaredDistance(pos) < 81 &&
+                player.getItemInHand(hand).getItem() == BitsAndChisels.BIT_ITEM &&
+                player.blockPosition().distSqr(pos) < 81 &&
                 x1 <= x2 && y1 <= y2 && z1 <= z2 &&
                 ((x2 - x1) * (x2 - x1)) + ((y2 - y1) * (y2 - y1)) + ((z2 - z1) * (z2 - z1)) <= 1000000
             ) {
-                World world = player.world;
-                BlockPos.Mutable mut = new BlockPos.Mutable();
-                ItemStack stack = player.getStackInHand(hand);
+                Level world = player.level;
+                BlockPos.MutableBlockPos mut = new BlockPos.MutableBlockPos();
+                ItemStack stack = player.getItemInHand(hand);
                 BlockState state = BitUtils.getBit(stack);
                 placeloop:
                 for (int i = x1; i <= x2; i++) {
@@ -82,12 +83,12 @@ public class BitItem extends Item implements ServerPlayNetworking.PlayChannelHan
                             int x = Math.floorMod(i, 16);
                             int y = Math.floorMod(j, 16);
                             int z = Math.floorMod(k, 16);
-                            if (world.canSetBlock(mut) && !BitUtils.exists(BitUtils.getBit(world, mut, x, y, z))) {
+                            if (world.isLoaded(mut) && !BitUtils.exists(BitUtils.getBit(world, mut, x, y, z))) {
                                 boolean b = BitUtils.setBit(world, mut, x, y, z, state);
-                                if (b && !player.isCreative()) stack.decrement(1);
+                                if (b && !player.isCreative()) stack.shrink(1);
                                 if (stack.isEmpty()) {
-                                    for (int a = 0; a < player.getInventory().size(); a++) {
-                                        ItemStack teststack = player.getInventory().getStack(a);
+                                    for (int a = 0; a < player.getInventory().getContainerSize(); a++) {
+                                        ItemStack teststack = player.getInventory().getItem(a);
                                         if (!teststack.isEmpty() && teststack.getItem() == BitsAndChisels.BIT_ITEM) {
                                             BlockState itemState = BitUtils.getBit(teststack);
                                             if (itemState == state) {
@@ -124,38 +125,38 @@ public class BitItem extends Item implements ServerPlayNetworking.PlayChannelHan
 
     public void initClient() {
         RedBoxCallback.EVENT.register((redBoxDrawer, matrixStack, vertexConsumer, worldoffsetx, worldoffsety, worldoffsetz) -> {
-            MinecraftClient client = MinecraftClient.getInstance();
-            if (client.player.getMainHandStack().getItem() == BitsAndChisels.BIT_ITEM) {
-                HitResult hit = client.crosshairTarget;
+            Minecraft client = Minecraft.getInstance();
+            if (client.player.getMainHandItem().getItem() == BitsAndChisels.BIT_ITEM) {
+                HitResult hit = client.hitResult;
                 if (hit.getType() == HitResult.Type.BLOCK) {
-                    Direction direction = ((BlockHitResult)hit).getSide();
+                    Direction direction = ((BlockHitResult)hit).getDirection();
                     BlockPos pos = ((BlockHitResult)hit).getBlockPos();
-                    int x = ((int) Math.floor(((hit.getPos().getX() - pos.getX()) * 16) + (direction.getOffsetX() * -0.5d))) + direction.getOffsetX();
-                    int y = ((int) Math.floor(((hit.getPos().getY() - pos.getY()) * 16) + (direction.getOffsetY() * -0.5d))) + direction.getOffsetY();
-                    int z = ((int) Math.floor(((hit.getPos().getZ() - pos.getZ()) * 16) + (direction.getOffsetZ() * -0.5d))) + direction.getOffsetZ();
+                    int x = ((int) Math.floor(((hit.getLocation().x() - pos.getX()) * 16) + (direction.getStepX() * -0.5d))) + direction.getStepX();
+                    int y = ((int) Math.floor(((hit.getLocation().y() - pos.getY()) * 16) + (direction.getStepY() * -0.5d))) + direction.getStepY();
+                    int z = ((int) Math.floor(((hit.getLocation().z() - pos.getZ()) * 16) + (direction.getStepZ() * -0.5d))) + direction.getStepZ();
 
                     if (x > 15) {
-                        pos = pos.add(1, 0, 0);
+                        pos = pos.offset(1, 0, 0);
                         x -= 16;
                     }
                     if (y > 15) {
-                        pos = pos.add(0, 1, 0);
+                        pos = pos.offset(0, 1, 0);
                         y -= 16;
                     }
                     if (z > 15) {
-                        pos = pos.add(0, 0, 1);
+                        pos = pos.offset(0, 0, 1);
                         z -= 16;
                     }
                     if (x < 0) {
-                        pos = pos.add(-1, 0, 0);
+                        pos = pos.offset(-1, 0, 0);
                         x += 16;
                     }
                     if (y < 0) {
-                        pos = pos.add(0, -1, 0);
+                        pos = pos.offset(0, -1, 0);
                         y += 16;
                     }
                     if (z < 0) {
-                        pos = pos.add(0, 0, -1);
+                        pos = pos.offset(0, 0, -1);
                         z += 16;
                     }
 
@@ -182,47 +183,47 @@ public class BitItem extends Item implements ServerPlayNetworking.PlayChannelHan
     }
 
     @Override
-    public ActionResult useOnBlock(ItemUsageContext context) {
-        if (!context.getWorld().isClient) return ActionResult.CONSUME;
-        BlockPos pos = context.getBlockPos();
-        MinecraftClient client = MinecraftClient.getInstance();
-        HitResult hit = client.crosshairTarget;
+    public InteractionResult useOn(UseOnContext context) {
+        if (!context.getLevel().isClientSide) return InteractionResult.CONSUME;
+        BlockPos pos = context.getClickedPos();
+        Minecraft client = Minecraft.getInstance();
+        HitResult hit = client.hitResult;
             
         if (hit.getType() == HitResult.Type.BLOCK) {
-            Direction direction = ((BlockHitResult)hit).getSide();
-            int x = ((int) Math.floor(((hit.getPos().getX() - pos.getX()) * 16) + (direction.getOffsetX() * -0.5d))) + direction.getOffsetX();
-            int y = ((int) Math.floor(((hit.getPos().getY() - pos.getY()) * 16) + (direction.getOffsetY() * -0.5d))) + direction.getOffsetY();
-            int z = ((int) Math.floor(((hit.getPos().getZ() - pos.getZ()) * 16) + (direction.getOffsetZ() * -0.5d))) + direction.getOffsetZ();
+            Direction direction = ((BlockHitResult)hit).getDirection();
+            int x = ((int) Math.floor(((hit.getLocation().x() - pos.getX()) * 16) + (direction.getStepX() * -0.5d))) + direction.getStepX();
+            int y = ((int) Math.floor(((hit.getLocation().y() - pos.getY()) * 16) + (direction.getStepY() * -0.5d))) + direction.getStepY();
+            int z = ((int) Math.floor(((hit.getLocation().z() - pos.getZ()) * 16) + (direction.getStepZ() * -0.5d))) + direction.getStepZ();
 
             if (x > 15) {
-                pos = pos.add(1, 0, 0);
+                pos = pos.offset(1, 0, 0);
                 x -= 16;
             }
             if (y > 15) {
-                pos = pos.add(0, 1, 0);
+                pos = pos.offset(0, 1, 0);
                 y -= 16;
             }
             if (z > 15) {
-                pos = pos.add(0, 0, 1);
+                pos = pos.offset(0, 0, 1);
                 z -= 16;
             }
             if (x < 0) {
-                pos = pos.add(-1, 0, 0);
+                pos = pos.offset(-1, 0, 0);
                 x += 16;
             }
             if (y < 0) {
-                pos = pos.add(0, -1, 0);
+                pos = pos.offset(0, -1, 0);
                 y += 16;
             }
             if (z < 0) {
-                pos = pos.add(0, 0, -1);
+                pos = pos.offset(0, 0, -1);
                 z += 16;
             }
 
             if (BitUtils.canPlace(context.getPlayer(), pos, x, y, z)) {
-                if (context.getPlayer().isSneaking()) {
+                if (context.getPlayer().isShiftKeyDown()) {
                     if (haspos1) {
-                        PacketByteBuf passedData = new PacketByteBuf(Unpooled.buffer());
+                        FriendlyByteBuf passedData = new FriendlyByteBuf(Unpooled.buffer());
 
                         int blockXOffset = pos.getX() - block.getX();
                         int blockYOffset = pos.getY() - block.getY();
@@ -243,10 +244,10 @@ public class BitItem extends Item implements ServerPlayNetworking.PlayChannelHan
                         passedData.writeInt(maxx);
                         passedData.writeInt(maxy);
                         passedData.writeInt(maxz);
-                        passedData.writeBoolean(context.getHand().equals(Hand.MAIN_HAND));
+                        passedData.writeBoolean(context.getHand().equals(InteractionHand.MAIN_HAND));
                         ClientPlayNetworking.send(PACKET_ID, passedData);
                         haspos1 = false;
-                        return ActionResult.SUCCESS;
+                        return InteractionResult.SUCCESS;
                     } else {
                         this.block = pos;
                         bitx = x;
@@ -255,7 +256,7 @@ public class BitItem extends Item implements ServerPlayNetworking.PlayChannelHan
                         haspos1 = true;
                     }
                 } else {
-                    PacketByteBuf passedData = new PacketByteBuf(Unpooled.buffer());
+                    FriendlyByteBuf passedData = new FriendlyByteBuf(Unpooled.buffer());
                     passedData.writeBlockPos(pos);
                     passedData.writeInt(x);
                     passedData.writeInt(y);
@@ -263,34 +264,34 @@ public class BitItem extends Item implements ServerPlayNetworking.PlayChannelHan
                     passedData.writeInt(x);
                     passedData.writeInt(y);
                     passedData.writeInt(z);
-                    passedData.writeBoolean(context.getHand().equals(Hand.MAIN_HAND));
+                    passedData.writeBoolean(context.getHand().equals(InteractionHand.MAIN_HAND));
                     ClientPlayNetworking.send(PACKET_ID, passedData);
-                    return ActionResult.SUCCESS;
+                    return InteractionResult.SUCCESS;
                 }
                 
             }
             
         }
-        return ActionResult.PASS;
+        return InteractionResult.PASS;
     }
 
     @Override
-    public Text getName(ItemStack stack) {
-        BlockState state = stack.getSubNbt("bit") != null ? BitNbtUtil.toBlockState(stack.getSubNbt("bit")) : Blocks.AIR.getDefaultState();
-        return Text.translatable(this.getTranslationKey(stack), Text.translatable(state.getBlock().getTranslationKey()));
+    public Component getName(ItemStack stack) {
+        BlockState state = stack.getTagElement("bit") != null ? BitNbtUtil.toBlockState(stack.getTagElement("bit")) : Blocks.AIR.defaultBlockState();
+        return Component.translatable(this.getDescriptionId(stack), Component.translatable(state.getBlock().getDescriptionId()));
     }
 
     @Override
-    public void appendTooltip(ItemStack stack, @Nullable World world, List<Text> tooltip, TooltipContext context) {
-        super.appendTooltip(stack, world, tooltip, context);
+    public void appendHoverText(ItemStack stack, @Nullable Level world, List<Component> tooltip, TooltipFlag context) {
+        super.appendHoverText(stack, world, tooltip, context);
         if (context.isAdvanced()) {
-            final NbtCompound blockState = stack.getSubNbt("bit");
+            final CompoundTag blockState = stack.getTagElement("bit");
             if (blockState != null) {
-                tooltip.add(Text.literal(blockState.getString("Name")).formatted(Formatting.DARK_PURPLE));
-                final NbtCompound remainder = blockState.copy();
+                tooltip.add(Component.literal(blockState.getString("Name")).withStyle(ChatFormatting.DARK_PURPLE));
+                final CompoundTag remainder = blockState.copy();
                 remainder.remove("Name");
                 if (!remainder.isEmpty()) {
-                    tooltip.add(Text.literal(remainder.asString()).formatted(Formatting.DARK_GREEN));
+                    tooltip.add(Component.literal(remainder.getAsString()).withStyle(ChatFormatting.DARK_GREEN));
                 }
             }
         }

@@ -15,47 +15,47 @@ import net.fabricmc.fabric.api.client.command.v2.ClientCommandManager
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback
 import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback
-import net.minecraft.block.BlockState
-import net.minecraft.command.argument.BlockStateArgumentType
-import net.minecraft.command.argument.EntityArgumentType
-import net.minecraft.item.BlockItem
-import net.minecraft.server.command.CommandManager.argument
-import net.minecraft.server.command.CommandManager.literal
-import net.minecraft.server.command.ServerCommandSource
-import net.minecraft.server.network.ServerPlayerEntity
-import net.minecraft.text.Text
-import net.minecraft.util.Formatting
-import net.minecraft.util.math.BlockPos
-import net.minecraft.util.math.Direction
+import net.minecraft.world.level.block.state.BlockState
+import net.minecraft.commands.arguments.blocks.BlockStateArgument
+import net.minecraft.commands.arguments.EntityArgument
+import net.minecraft.world.item.BlockItem
+import net.minecraft.commands.Commands.argument
+import net.minecraft.commands.Commands.literal
+import net.minecraft.commands.CommandSourceStack
+import net.minecraft.server.level.ServerPlayer
+import net.minecraft.network.chat.Component
+import net.minecraft.ChatFormatting
+import net.minecraft.core.BlockPos
+import net.minecraft.core.Direction
 
 object ModCommands : IModRegister {
     private fun giveBit(
-        ctx: CommandContext<ServerCommandSource>,
-        player: ServerPlayerEntity?,
+        ctx: CommandContext<CommandSourceStack>,
+        player: ServerPlayer?,
         block: BlockState?,
         count: Int = 1
     ): Int {
         if (player == null) {
-            ctx.source.sendFeedback(
-                Text.literal("No target player given").formatted(Formatting.RED),
+            ctx.source.sendSuccess(
+                Component.literal("No target player given").withStyle(ChatFormatting.RED),
                 false
             )
             return -1
         }
         if (block == null) {
-            ctx.source.sendFeedback(
-                Text.literal("No block given").formatted(Formatting.RED),
+            ctx.source.sendSuccess(
+                Component.literal("No block given").withStyle(ChatFormatting.RED),
                 false
             )
             return -2
         }
         val bit = BitUtils.getBitItemStack(block)
         bit.count = count
-        player.giveItemStack(bit)
-        ctx.source.sendFeedback(
-            Text.literal("Gave $count ")
+        player.addItem(bit)
+        ctx.source.sendSuccess(
+            Component.literal("Gave $count ")
                 .append(block.block.name)
-                .append(Text.literal(" bit to "))
+                .append(Component.literal(" bit to "))
                 .append(player.displayName),
             true
         )
@@ -63,32 +63,32 @@ object ModCommands : IModRegister {
     }
 
     private fun giveColoredBlockBit(
-        ctx: CommandContext<ServerCommandSource>,
-        player: ServerPlayerEntity? = ctx.source.player,
+        ctx: CommandContext<CommandSourceStack>,
+        player: ServerPlayer? = ctx.source.player,
         colorString: String,
         count: Int = 1
     ): Int {
         if (player == null) {
-            ctx.source.sendFeedback(
-                Text.literal("No target player given").formatted(Formatting.RED),
+            ctx.source.sendSuccess(
+                Component.literal("No target player given").withStyle(ChatFormatting.RED),
                 false
             )
             return -1
         }
         val color = colorString.toColor()
         if (color == null || color <= -1) {
-            ctx.source.sendFeedback(
-                Text.literal("Invalid color").formatted(Formatting.RED),
+            ctx.source.sendSuccess(
+                Component.literal("Invalid color").withStyle(ChatFormatting.RED),
                 false
             )
             return -2
         }
         val bit = BitUtils.getBitItemStack(ColoredBlockState(color))
         bit.count = count
-        player.giveItemStack(bit)
-        ctx.source.sendFeedback(
-            Text.literal("Gave $count ")
-                .append(Text.literal("colored bits in #$colorString to "))
+        player.addItem(bit)
+        ctx.source.sendSuccess(
+            Component.literal("Gave $count ")
+                .append(Component.literal("colored bits in #$colorString to "))
                 .append(player.displayName),
             true
         )
@@ -96,17 +96,17 @@ object ModCommands : IModRegister {
     }
 
     private fun image2chisel(
-        ctx: CommandContext<ServerCommandSource>,
+        ctx: CommandContext<CommandSourceStack>,
         image: String,
         zMin: Int = 0,
         zMax: Int = 0,
-        direction: Direction = ctx.source.entity?.let { Direction.getEntityFacingOrder(it).first() } ?: Direction.SOUTH,
+        direction: Direction = ctx.source.entity?.let { Direction.orderedByNearest(it).first() } ?: Direction.SOUTH,
         paletteWildcard: String? = null,
         replaceAir: Boolean = true
     ): Int {
         if (zMin !in 0 until 16 || zMax !in 0 until 16) {
-            ctx.source.sendFeedback(
-                Text.literal("Z not in range").formatted(Formatting.RED),
+            ctx.source.sendSuccess(
+                Component.literal("Z not in range").withStyle(ChatFormatting.RED),
                 false
             )
             return -1
@@ -117,32 +117,33 @@ object ModCommands : IModRegister {
             if (paletteWildcard != null) {
                 val chiseledImage = ChiseledImage(image, paletteWildcard.contains('+'))
 
-                ctx.source.sendFeedback(Text.literal("image2chisel: Loaded $image"), true)
+                ctx.source.sendSuccess(Component.literal("image2chisel: Loaded $image"), true)
 
-                if (!chiseledImage.canPlace(ctx.source.playerOrThrow, blockPos, direction)) {
+                if (!chiseledImage.canPlace(ctx.source.playerOrException, blockPos, direction)) {
                     throw IllegalArgumentException("You cannot modify blocks in the target area")
                 }
                 val palette = PaletteIdentifier.fromString(paletteWildcard)
-                chiseledImage.place(ctx.source.world, blockPos, zMin..zMax1, direction, palette, replaceAir)
+                chiseledImage.place(ctx.source.level, blockPos, zMin..zMax1, direction, palette, replaceAir)
             } else {
                 val chiseledImage = ChiseledImage24(image)
 
-                ctx.source.sendFeedback(Text.literal("image2chisel24: Loaded $image"), true)
+                ctx.source.sendSuccess(Component.literal("image2chisel24: Loaded $image"), true)
 
-                if (!chiseledImage.canPlace(ctx.source.playerOrThrow, blockPos, direction)) {
+                if (!chiseledImage.canPlace(ctx.source.playerOrException, blockPos, direction)) {
                     throw IllegalArgumentException("You cannot modify blocks in the target area")
                 }
 
-                chiseledImage.place(ctx.source.world, blockPos, zMin..zMax1, direction, PaletteIdentifier(), replaceAir)
+                chiseledImage.place(ctx.source.level, blockPos, zMin..zMax1, direction, PaletteIdentifier(), replaceAir)
             }
 
-            ctx.source.sendFeedback(Text.literal(
+            ctx.source.sendSuccess(
+                Component.literal(
                 "image2chisel: Placed $image at (${blockPos.toShortString()})"),
                 true
             )
         } catch (e: Exception) {
-            ctx.source.sendFeedback(
-                Text.literal(e.message).formatted(Formatting.RED),
+            ctx.source.sendSuccess(
+                Component.literal(e.message).withStyle(ChatFormatting.RED),
                 false
             )
             return -2
@@ -152,14 +153,15 @@ object ModCommands : IModRegister {
     }
 
     private fun bitShaderHelp(ctx: CommandContext<FabricClientCommandSource>): Int {
-        ctx.source.sendFeedback(Text.empty().apply {
-            append(Text.translatable("gui.bitsandchisels.shader_types").formatted(Formatting.BOLD))
+        ctx.source.sendFeedback(Component.empty().apply {
+            append(Component.translatable("gui.bitsandchisels.shader_types").withStyle(ChatFormatting.BOLD))
             for (i in 0..16) {
-                append(Text.translatable(
+                append(
+                    Component.translatable(
                     "gui.bitsandchisels.shader_type.explain",
                     "%2d".format(i),
-                    Text.translatable("gui.bitsandchisels.shader_type.$i").formatted(Formatting.GOLD)
-                ).formatted(Formatting.RESET))
+                    Component.translatable("gui.bitsandchisels.shader_type.$i").withStyle(ChatFormatting.GOLD)
+                ).withStyle(ChatFormatting.RESET))
             }
         })
 
@@ -175,18 +177,18 @@ object ModCommands : IModRegister {
                         return@executes giveBit(
                             ctx,
                             ctx.source.player,
-                            (ctx.source.player?.mainHandStack?.item as? BlockItem)?.block?.defaultState
+                            (ctx.source.player?.mainHandItem?.item as? BlockItem)?.block?.defaultBlockState()
                         )
                     }
                     .then(
-                        argument("player", EntityArgumentType.player())
+                        argument("player", EntityArgument.player())
                             .then(
-                                argument("block", BlockStateArgumentType.blockState(commandRegistryAccess))
+                                argument("block", BlockStateArgument.block(commandRegistryAccess))
                                     .executes { ctx ->
                                         return@executes giveBit(
                                             ctx,
                                             ctx.source.player,
-                                            BlockStateArgumentType.getBlockState(ctx, "block").blockState
+                                            BlockStateArgument.getBlock(ctx, "block").state
                                         )
                                     }
                             )
@@ -202,12 +204,12 @@ object ModCommands : IModRegister {
                             )
                     )
                     .then(
-                        argument("block", BlockStateArgumentType.blockState(commandRegistryAccess))
+                        argument("block", BlockStateArgument.block(commandRegistryAccess))
                             .executes { ctx ->
                                 return@executes giveBit(
                                     ctx,
                                     ctx.source.player,
-                                    BlockStateArgumentType.getBlockState(ctx, "block").blockState
+                                    BlockStateArgument.getBlock(ctx, "block").state
                                 )
                             }
                     )
@@ -230,7 +232,8 @@ object ModCommands : IModRegister {
                     .then(
                         literal("help")
                             .executes { ctx ->
-                                ctx.source.sendFeedback(Text.literal(
+                                ctx.source.sendSuccess(
+                                    Component.literal(
                                     "Usage: /image2chisel <file name, must end with .png> " +
                                             "[z_min] [z_max or thickness] [north, south, east, west, up, down] " +
                                             "[palette, default \"minecraft:*_concrete\"] " +

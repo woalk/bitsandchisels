@@ -5,11 +5,11 @@ import com.mojang.serialization.Decoder
 import com.mojang.serialization.Encoder
 import com.mojang.serialization.MapCodec
 import com.woalk.mods.bitsandchisels.registry.ModBlocks
-import net.minecraft.block.Block
-import net.minecraft.block.BlockState
-import net.minecraft.state.property.Property
-import net.minecraft.util.math.BlockPos
-import net.minecraft.world.WorldView
+import net.minecraft.world.level.block.Block
+import net.minecraft.world.level.block.state.BlockState
+import net.minecraft.world.level.block.state.properties.Property
+import net.minecraft.core.BlockPos
+import net.minecraft.world.level.LevelReader
 
 class ColoredBlockState(
     block: Block?,
@@ -18,10 +18,10 @@ class ColoredBlockState(
     val wrapped: BlockState,
     val color: Int = 0xFFFFFF
 ) : BlockState(block, immutableMap, mapCodec) {
-    constructor(state: BlockState, world: WorldView, pos: BlockPos) :
+    constructor(state: BlockState, world: LevelReader, pos: BlockPos) :
             this(
                 state.block,
-                state.entries,
+                state.values,
                 MapCodec.of(Encoder.empty(), Decoder.unit { null }),
                 state,
                 (world.getBlockEntity(pos) as ColoredBlockEntity).color
@@ -29,9 +29,9 @@ class ColoredBlockState(
 
     constructor(color: Int) : this(
         ModBlocks.coloredBlock,
-        ModBlocks.coloredBlock.defaultState.entries,
+        ModBlocks.coloredBlock.defaultBlockState().values,
         MapCodec.of(Encoder.empty(), Decoder.unit { null }),
-        ModBlocks.coloredBlock.defaultState,
+        ModBlocks.coloredBlock.defaultBlockState(),
         color
     )
 

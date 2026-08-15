@@ -1,8 +1,8 @@
 package com.woalk.mods.bitsandchisels.utils
 
 import com.sk89q.worldedit.math.Vector3
-import net.minecraft.util.math.Direction
-import net.minecraft.util.math.Vec3i
+import net.minecraft.core.Direction
+import net.minecraft.core.Vec3i
 import kotlin.math.abs
 import kotlin.math.atan2
 

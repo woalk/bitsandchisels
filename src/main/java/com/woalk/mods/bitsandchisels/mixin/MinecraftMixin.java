@@ -6,18 +6,18 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.item.Item;
-import net.minecraft.item.ItemStack;
-import net.minecraft.util.hit.HitResult;
+import net.minecraft.client.Minecraft;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.phys.HitResult;
 
-@Mixin(MinecraftClient.class)
-public class MinecraftClientMixin {
-    @Inject(method = "doAttack()Z", at = @At("TAIL"))
+@Mixin(Minecraft.class)
+public class MinecraftMixin {
+    @Inject(method = "startAttack()Z", at = @At("TAIL"))
     void doAttack(CallbackInfoReturnable<Boolean> c) {
-        MinecraftClient thiz = (MinecraftClient) (Object) this;
-        if (thiz.crosshairTarget.getType() == HitResult.Type.MISS) {
-            ItemStack stack = thiz.player.getMainHandStack();
+        Minecraft thiz = (Minecraft) (Object) this;
+        if (thiz.hitResult.getType() == HitResult.Type.MISS) {
+            ItemStack stack = thiz.player.getMainHandItem();
             Item item = stack.getItem();
             if (item instanceof AirSwingItem) {
                 ((AirSwingItem)item).airSwing(thiz.player, stack);

@@ -5,25 +5,25 @@ import com.sk89q.worldedit.math.transform.AffineTransform
 import com.woalk.mods.bitsandchisels.blocks.BitStructureItem.Companion.NBT_ROTATION
 import com.woalk.mods.bitsandchisels.compat.ChiselExtent
 import com.woalk.mods.bitsandchisels.utils.toYaw
-import net.minecraft.block.Block
-import net.minecraft.client.item.TooltipContext
-import net.minecraft.item.BlockItem
-import net.minecraft.item.ItemPlacementContext
-import net.minecraft.item.ItemStack
-import net.minecraft.nbt.NbtElement
-import net.minecraft.text.Text
-import net.minecraft.util.ActionResult
-import net.minecraft.util.Formatting
-import net.minecraft.util.math.Direction
-import net.minecraft.world.World
+import net.minecraft.world.level.block.Block
+import net.minecraft.world.item.TooltipFlag
+import net.minecraft.world.item.BlockItem
+import net.minecraft.world.item.context.BlockPlaceContext
+import net.minecraft.world.item.ItemStack
+import net.minecraft.nbt.Tag
+import net.minecraft.network.chat.Component
+import net.minecraft.world.InteractionResult
+import net.minecraft.ChatFormatting
+import net.minecraft.core.Direction
+import net.minecraft.world.level.Level
 import kotlin.math.roundToInt
 
-class BitsBlockItem(block: Block, settings: Settings) : BlockItem(block, settings) {
-    override fun place(context: ItemPlacementContext): ActionResult? {
-        val nbt = getBlockEntityNbt(context.stack)?.copy()?.apply {
-            if (!context.world.isClient && this.contains(NBT_ROTATION)) {
+class BitsBlockItem(block: Block, settings: Properties) : BlockItem(block, settings) {
+    override fun place(context: BlockPlaceContext): InteractionResult? {
+        val nbt = getBlockEntityData(context.itemInHand)?.copy()?.apply {
+            if (!context.level.isClientSide && this.contains(NBT_ROTATION)) {
                 val rotation =
-                    ((Direction.byId(this.getInt(NBT_ROTATION)).vector.toYaw() - context.playerYaw) / 90).roundToInt()
+                    ((Direction.from3DDataValue(this.getInt(NBT_ROTATION)).normal.toYaw() - context.rotation) / 90).roundToInt()
                 val weConvertedNbt = NBTConverter.fromNative(this)
                 val rotatedNbt = NBTConverter.toNative(
                     ChiselExtent.apply(AffineTransform().rotateY(rotation * 90.0), weConvertedNbt)
@@ -32,40 +32,41 @@ class BitsBlockItem(block: Block, settings: Settings) : BlockItem(block, setting
                 this.put("palette", rotatedNbt.get("palette"))
             }
         }
-        val newContext = ItemPlacementContext(context.world, context.player, context.hand, context.stack.copy().apply {
-            setSubNbt("BlockEntityTag", nbt)
+        val newContext = BlockPlaceContext(context.level, context.player, context.hand, context.itemInHand.copy().apply {
+            addTagElement("BlockEntityTag", nbt)
         }, context.hitResult)
         return super.place(newContext)
     }
 
-    override fun appendTooltip(
+    override fun appendHoverText(
         stack: ItemStack,
-        world: World?,
-        tooltip: MutableList<Text>,
-        context: TooltipContext
+        world: Level?,
+        tooltip: MutableList<Component>,
+        context: TooltipFlag
     ) {
-        super.appendTooltip(stack, world, tooltip, context)
+        super.appendHoverText(stack, world, tooltip, context)
         if (context.isAdvanced) {
-            stack.getSubNbt("BlockStateTag")?.getInt("shader_type")?.let {
-                tooltip.add(Text.translatable(
+            stack.getTagElement("BlockStateTag")?.getInt("shader_type")?.let {
+                tooltip.add(
+                    Component.translatable(
                     "gui.bitsandchisels.shader_type.tooltip",
-                    Text.translatable("gui.bitsandchisels.shader_type.$it")
-                        .formatted(Formatting.GOLD, Formatting.ITALIC)
-                ).formatted(Formatting.GRAY))
+                    Component.translatable("gui.bitsandchisels.shader_type.$it")
+                        .withStyle(ChatFormatting.GOLD, ChatFormatting.ITALIC)
+                ).withStyle(ChatFormatting.GRAY))
             }
-            stack.getSubNbt("BlockEntityTag")?.getList("palette", NbtElement.COMPOUND_TYPE.toInt())?.let {
+            stack.getTagElement("BlockEntityTag")?.getList("palette", Tag.TAG_COMPOUND.toInt())?.let {
                 if (it.isNotEmpty()) {
                     tooltip.add(
-                        Text.translatable("gui.bitsandchisels.palette.tooltip", it.size)
-                            .formatted(Formatting.GRAY)
+                        Component.translatable("gui.bitsandchisels.palette.tooltip", it.size)
+                            .withStyle(ChatFormatting.GRAY)
                     )
                 }
             }
-            stack.getSubNbt("BlockEntityTag")?.getList("frames", NbtElement.COMPOUND_TYPE.toInt())?.let {
+            stack.getTagElement("BlockEntityTag")?.getList("frames", Tag.TAG_COMPOUND.toInt())?.let {
                 if (it.isNotEmpty()) {
                     tooltip.add(
-                        Text.translatable("gui.bitsandchisels.frames.tooltip", it.size)
-                            .formatted(Formatting.GRAY)
+                        Component.translatable("gui.bitsandchisels.frames.tooltip", it.size)
+                            .withStyle(ChatFormatting.GRAY)
                     )
                 }
             }

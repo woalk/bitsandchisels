@@ -6,12 +6,12 @@ import com.woalk.mods.bitsandchisels.BitsAndChisels
 import com.woalk.mods.bitsandchisels.BitsBlockEntity
 import com.woalk.mods.bitsandchisels.registry.ModBlockEntities
 import net.fabricmc.fabric.api.renderer.v1.mesh.Mesh
-import net.minecraft.block.BlockState
-import net.minecraft.block.Blocks
-import net.minecraft.nbt.NbtCompound
-import net.minecraft.nbt.NbtElement
-import net.minecraft.nbt.NbtList
-import net.minecraft.util.math.BlockPos
+import net.minecraft.world.level.block.state.BlockState
+import net.minecraft.world.level.block.Blocks
+import net.minecraft.nbt.CompoundTag
+import net.minecraft.nbt.Tag
+import net.minecraft.nbt.ListTag
+import net.minecraft.core.BlockPos
 import java.util.*
 
 class AnimatedBitsBlockEntity(pos: BlockPos, val state: BlockState) : BitsBlockEntity(
@@ -28,47 +28,47 @@ class AnimatedBitsBlockEntity(pos: BlockPos, val state: BlockState) : BitsBlockE
 
     private var frameCounter = 0
 
-    override fun writeBitNbt(tag: NbtCompound) {
+    override fun writeBitNbt(tag: CompoundTag) {
         if (nbtCache == null) {
             BitsAndChisels.LOGGER.error("NbtCache should not be null!")
             writeFrames(tag)
-        } else tag.copyFrom(nbtCache)
+        } else tag.merge(nbtCache)
         tag.putInt(FRAME_TIME_KEY, frametime)
     }
 
-    override fun writeNbt(tag: NbtCompound) {
-        super.writeNbt(tag)
+    override fun saveAdditional(tag: CompoundTag) {
+        super.saveAdditional(tag)
         tag.putInt(FRAME_TIME_KEY, frametime)
     }
 
     override fun rebuildNbtCache() {
-        val c = NbtCompound()
+        val c = CompoundTag()
         writeFrames(c)
         nbtCache = c
     }
 
-    private fun writeFrames(tag: NbtCompound) {
-        val list = NbtList()
+    private fun writeFrames(tag: CompoundTag) {
+        val list = ListTag()
         for (states in frames) {
-            val frameTag = NbtCompound()
+            val frameTag = CompoundTag()
             BitNbtUtil.write3DBitArray(frameTag, states)
             list.add(frameTag)
         }
         tag.put(FRAMES_KEY, list)
     }
 
-    override fun readNbt(tag: NbtCompound) {
-        super.readNbt(tag)
+    override fun load(tag: CompoundTag) {
+        super.load(tag)
         frametime = tag.getInt(FRAME_TIME_KEY).coerceAtLeast(1)
     }
 
-    override fun readBitNbt(tag: NbtCompound) {
-        val list = tag.getList(FRAMES_KEY, NbtElement.COMPOUND_TYPE.toInt())
+    override fun readBitNbt(tag: CompoundTag) {
+        val list = tag.getList(FRAMES_KEY, Tag.TAG_COMPOUND.toInt())
         frames.clear()
-        val air = Blocks.AIR.defaultState
+        val air = Blocks.AIR.defaultBlockState()
         for (frameTag in list) {
             val states = Array(16) { Array(16) { Array(16) { air } } }
-            BitNbtUtil.read3DBitArray(frameTag as NbtCompound, states)
+            BitNbtUtil.read3DBitArray(frameTag as CompoundTag, states)
             frames.add(states)
         }
         frames.firstOrNull()?.let { states = it }
@@ -77,7 +77,7 @@ class AnimatedBitsBlockEntity(pos: BlockPos, val state: BlockState) : BitsBlockE
     override fun rebuildMesh() {
         meshes.clear()
         for (states in frames) {
-            meshes.add(BitMeshes.createMesh(states, world, pos, null))
+            meshes.add(BitMeshes.createMesh(states, level, worldPosition, null))
         }
         mesh = meshes.firstOrNull()
     }

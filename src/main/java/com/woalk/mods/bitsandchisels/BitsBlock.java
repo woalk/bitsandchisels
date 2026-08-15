@@ -6,102 +6,103 @@ import com.woalk.mods.bitsandchisels.registry.ModItems;
 import com.woalk.mods.bitsandchisels.utils.DirectionUtilsKt;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
-import net.minecraft.block.Block;
-import net.minecraft.block.BlockRenderType;
-import net.minecraft.block.BlockWithEntity;
-import net.minecraft.block.BlockState;
-import net.minecraft.block.ShapeContext;
-import net.minecraft.block.Waterloggable;
-import net.minecraft.block.entity.BlockEntity;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.entity.LivingEntity;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.fluid.FluidState;
-import net.minecraft.fluid.Fluids;
-import net.minecraft.item.BlockItem;
-import net.minecraft.item.ItemPlacementContext;
-import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NbtCompound;
-import net.minecraft.nbt.NbtElement;
-import net.minecraft.nbt.NbtInt;
-import net.minecraft.nbt.NbtList;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.state.StateManager.Builder;
-import net.minecraft.state.property.IntProperty;
-import net.minecraft.state.property.Properties;
-import net.minecraft.tag.TagKey;
-import net.minecraft.util.Identifier;
-import net.minecraft.util.hit.BlockHitResult;
-import net.minecraft.util.hit.HitResult;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Direction;
-import net.minecraft.util.math.Vec3i;
-import net.minecraft.util.registry.Registry;
-import net.minecraft.util.shape.VoxelShape;
-import net.minecraft.util.shape.VoxelShapes;
-import net.minecraft.world.BlockView;
-import net.minecraft.world.World;
-import net.minecraft.world.WorldAccess;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.RenderShape;
+import net.minecraft.world.level.block.BaseEntityBlock;
+import net.minecraft.world.level.block.state.BlockBehaviour.Properties;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.shapes.CollisionContext;
+import net.minecraft.world.level.block.SimpleWaterloggedBlock;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.level.material.FluidState;
+import net.minecraft.world.level.material.Fluids;
+import net.minecraft.world.item.BlockItem;
+import net.minecraft.world.item.context.BlockPlaceContext;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.Tag;
+import net.minecraft.nbt.IntTag;
+import net.minecraft.nbt.ListTag;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.level.block.state.StateDefinition.Builder;
+import net.minecraft.world.level.block.state.properties.IntegerProperty;
+import net.minecraft.world.level.block.state.properties.BlockStateProperties;
+import net.minecraft.tags.TagKey;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.HitResult;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.core.Vec3i;
+import net.minecraft.core.Registry;
+import net.minecraft.world.phys.shapes.VoxelShape;
+import net.minecraft.world.phys.shapes.Shapes;
+import net.minecraft.world.level.BlockGetter;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.LevelAccessor;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public class BitsBlock extends BlockWithEntity implements Waterloggable {
+public class BitsBlock extends BaseEntityBlock implements SimpleWaterloggedBlock {
 
-    public static final IntProperty LIGHT_LEVEL = IntProperty.of("light_level", 0, 16);
-    public static final IntProperty SHADER_TYPE = IntProperty.of("shader_type", 0, 16);
+    public static final IntegerProperty LIGHT_LEVEL = IntegerProperty.create("light_level", 0, 16);
+    public static final IntegerProperty SHADER_TYPE = IntegerProperty.create("shader_type", 0, 16);
 
     @Override
-    public BlockRenderType getRenderType(BlockState state) {
-        return BlockRenderType.MODEL;
+    public RenderShape getRenderShape(BlockState state) {
+        return RenderShape.MODEL;
     }
 
-    public BitsBlock(Settings settings) {
+    public BitsBlock(Properties settings) {
         super(settings);
-        this.setDefaultState(stateManager.getDefaultState().with(LIGHT_LEVEL, 0).with(Properties.WATERLOGGED, false).with(SHADER_TYPE, 0));
+        this.registerDefaultState(stateDefinition.any().setValue(LIGHT_LEVEL, 0).setValue(BlockStateProperties.WATERLOGGED, false).setValue(SHADER_TYPE, 0));
     }
 
     @Override
-    public BlockState getPlacementState(ItemPlacementContext ctx) {
-        return getDefaultState().with(Properties.WATERLOGGED, ctx.getWorld().getFluidState(ctx.getBlockPos()).getFluid() == Fluids.WATER);
+    public BlockState getStateForPlacement(BlockPlaceContext ctx) {
+        return defaultBlockState().setValue(BlockStateProperties.WATERLOGGED, ctx.getLevel().getFluidState(ctx.getClickedPos()).getType() == Fluids.WATER);
     }
 
     @Override
-    public BlockState getStateForNeighborUpdate(BlockState state, Direction direction, BlockState neighborState, WorldAccess world, BlockPos pos, BlockPos neighborPos) {
-        if (state.get(Properties.WATERLOGGED).booleanValue()) {
-            world.createAndScheduleFluidTick(pos, Fluids.WATER, Fluids.WATER.getTickRate(world));
+    public BlockState updateShape(BlockState state, Direction direction, BlockState neighborState, LevelAccessor world, BlockPos pos, BlockPos neighborPos) {
+        if (state.getValue(BlockStateProperties.WATERLOGGED).booleanValue()) {
+            world.scheduleTick(pos, Fluids.WATER, Fluids.WATER.getTickDelay(world));
         }
-        return super.getStateForNeighborUpdate(state, direction, neighborState, world, pos, neighborPos);
+        return super.updateShape(state, direction, neighborState, world, pos, neighborPos);
     }
 
     @Override
     public FluidState getFluidState(BlockState state) {
-        return Boolean.TRUE.equals(state.get(Properties.WATERLOGGED)) ? Fluids.WATER.getStill(false) : super.getFluidState(state);
+        return Boolean.TRUE.equals(state.getValue(BlockStateProperties.WATERLOGGED)) ? Fluids.WATER.getSource(false) : super.getFluidState(state);
     }
 
     @Override
-    protected void appendProperties(Builder<Block, BlockState> builder) {
-        builder.add(LIGHT_LEVEL, Properties.WATERLOGGED, SHADER_TYPE);
+    protected void createBlockStateDefinition(Builder<Block, BlockState> builder) {
+        builder.add(LIGHT_LEVEL, BlockStateProperties.WATERLOGGED, SHADER_TYPE);
     }
 
     @Override
-    public void onBreak(World world, BlockPos pos, BlockState state, PlayerEntity player) {
+    public void playerWillDestroy(Level world, BlockPos pos, BlockState state, Player player) {
         BitsBlockEntity blockEntity = world.getBlockEntity(pos, BitsAndChisels.BITS_BLOCK_ENTITY).orElse(null);
-        if (!world.isClient && blockEntity != null) {
+        if (!world.isClientSide && blockEntity != null) {
             ItemStack dropStack = getDropItem(world, pos, state, blockEntity, player, true);
             if (dropStack != null) {
-                dropStack(world, pos, dropStack);
+                popResource(world, pos, dropStack);
             }
         }
     }
 
     @Nullable
     public ItemStack getDropItem(
-            @NotNull World world,
+            @NotNull Level world,
             @NotNull BlockPos pos,
             @NotNull BlockState state,
             @Nullable BitsBlockEntity blockEntity,
-            @Nullable PlayerEntity player,
+            @Nullable Player player,
             boolean breakBlock
     ) {
         if (blockEntity == null) {
@@ -110,31 +111,31 @@ public class BitsBlock extends BlockWithEntity implements Waterloggable {
                 return null;
             }
         }
-        if (blockEntity.getStructureId() != null && (player == null || !player.isSneaking())) {
+        if (blockEntity.getStructureId() != null && (player == null || !player.isShiftKeyDown())) {
             return tryGetStructure(world, pos, blockEntity, player, breakBlock);
         } else {
             // no structure ID, or drop not successful
             final var stack = ItemHelpers.blockToItem(this, state, blockEntity);
             if (player != null) {
-                final var rotation = DirectionUtilsKt.getNearestDirectionForVector(pos.subtract(player.getBlockPos()));
-                stack.getOrCreateSubNbt("BlockEntityTag").putInt(BitStructureItem.NBT_ROTATION, rotation.getId());
+                final var rotation = DirectionUtilsKt.getNearestDirectionForVector(pos.subtract(player.blockPosition()));
+                stack.getOrCreateTagElement("BlockEntityTag").putInt(BitStructureItem.NBT_ROTATION, rotation.get3DDataValue());
             }
             return stack;
         }
     }
 
     /** @return {@code true} on success, {@code false} if a normal {@code BitsBlockItem} should be dropped instead. */
-    private boolean tryDropStructure(World world, BlockPos pos, BitsBlockEntity blockEntity) {
+    private boolean tryDropStructure(Level world, BlockPos pos, BitsBlockEntity blockEntity) {
         final var stack = tryGetStructure(world, pos, blockEntity, null, true);
         if (stack == null) {
             return false;
         }
-        dropStack(world, pos, stack);
+        popResource(world, pos, stack);
         return true;
     }
 
     @Nullable
-    private ItemStack tryGetStructure(World world, BlockPos pos, BitsBlockEntity blockEntity, @Nullable PlayerEntity player, boolean breakBlock) {
+    private ItemStack tryGetStructure(Level world, BlockPos pos, BitsBlockEntity blockEntity, @Nullable Player player, boolean breakBlock) {
         int minX = pos.getX(), minY = pos.getY(), minZ = pos.getZ();
         for (var offset : BitStructureItem.Companion.createOffsets(BitStructureItem.MAX_DIAMETER * 2 - 1, -BitStructureItem.MAX_DIAMETER + 1)) {
             final var pos2 = pos.subtract(offset);
@@ -147,18 +148,18 @@ public class BitsBlock extends BlockWithEntity implements Waterloggable {
             }
         }
         var pos1 = new BlockPos(minX, minY, minZ);
-        final var nbts = new NbtList();
+        final var nbts = new ListTag();
         boolean moreThanPos1 = false;
         for (var offset : BitStructureItem.Companion.getOFFSETS()) {
-            final var pos2 = pos1.add(offset);
+            final var pos2 = pos1.offset(offset);
             final var blockEntity2 =
                     world.getBlockEntity(pos2, BitsAndChisels.BITS_BLOCK_ENTITY).orElse(null);
-            final var nbt = new NbtCompound();
+            final var nbt = new CompoundTag();
             if (blockEntity2 != null && blockEntity.getStructureId() != null && blockEntity.getStructureId().equals(blockEntity2.getStructureId())) {
                 blockEntity2.writeBitNbt(nbt);
-                nbt.putInt("shader_type", world.getBlockState(pos2).get(BitsBlock.SHADER_TYPE));
+                nbt.putInt("shader_type", world.getBlockState(pos2).getValue(BitsBlock.SHADER_TYPE));
                 if (breakBlock) {
-                    world.breakBlock(pos2, false);
+                    world.destroyBlock(pos2, false);
                 }
                 if (!offset.equals(Vec3i.ZERO)) {
                     moreThanPos1 = true;
@@ -167,53 +168,53 @@ public class BitsBlock extends BlockWithEntity implements Waterloggable {
             nbts.add(nbt);
         }
         if (!moreThanPos1) return null;
-        final var stack = ModItems.INSTANCE.getBitStructureItem().getDefaultStack();
-        stack.setSubNbt(BitStructureItem.NBT_BIT_BLOCK_TAGS, nbts);
+        final var stack = ModItems.INSTANCE.getBitStructureItem().getDefaultInstance();
+        stack.addTagElement(BitStructureItem.NBT_BIT_BLOCK_TAGS, nbts);
         if (player != null) {
-            final var rotation = DirectionUtilsKt.getNearestDirectionForVector(pos.subtract(player.getBlockPos()));
-            stack.setSubNbt(
+            final var rotation = DirectionUtilsKt.getNearestDirectionForVector(pos.subtract(player.blockPosition()));
+            stack.addTagElement(
                     BitStructureItem.NBT_ROTATION,
-                    NbtInt.of(rotation.getId())
+                    IntTag.valueOf(rotation.get3DDataValue())
             );
         }
-        final var displayNbt = new NbtCompound();
+        final var displayNbt = new CompoundTag();
         blockEntity.writeNameNbt(displayNbt);
         if (!displayNbt.isEmpty()) {
-            final var lore = displayNbt.getList("Lore", NbtElement.STRING_TYPE);
+            final var lore = displayNbt.getList("Lore", Tag.TAG_STRING);
             if (lore.getString(lore.size() - 1).matches("^\\{\"color\":\"dark_gray\",\"text\":\"\\(\\d+, \\d+, \\d+\\)\"}$")) {
                 lore.remove(lore.size() - 1);
             }
-            stack.setSubNbt("display", displayNbt);
+            stack.addTagElement("display", displayNbt);
         }
         return stack;
     }
 
     @Override
-    public void onPlaced(World world, BlockPos pos, BlockState state, @Nullable LivingEntity placer, ItemStack itemStack) {
-        super.onPlaced(world, pos, state, placer, itemStack);
+    public void setPlacedBy(Level world, BlockPos pos, BlockState state, @Nullable LivingEntity placer, ItemStack itemStack) {
+        super.setPlacedBy(world, pos, state, placer, itemStack);
         BitsBlockEntity blockEntity = world.getBlockEntity(pos, BitsAndChisels.BITS_BLOCK_ENTITY).orElse(null);
         if (blockEntity == null) return;
-        if (itemStack.hasCustomName()) {
-            blockEntity.setCustomName(itemStack.getName());
+        if (itemStack.hasCustomHoverName()) {
+            blockEntity.setCustomName(itemStack.getHoverName());
         }
-        if (itemStack.getOrCreateNbt().contains("StructureId")) {
-            assert itemStack.getNbt() != null;
-            blockEntity.setStructureId(itemStack.getNbt().getUuid("StructureId"));
+        if (itemStack.getOrCreateTag().contains("StructureId")) {
+            assert itemStack.getTag() != null;
+            blockEntity.setStructureId(itemStack.getTag().getUUID("StructureId"));
         }
-        NbtCompound displayNbt = itemStack.getSubNbt("display");
+        CompoundTag displayNbt = itemStack.getTagElement("display");
         if (displayNbt != null && displayNbt.contains("Lore")) {
-            blockEntity.readLoreText(displayNbt.getList("Lore", NbtElement.STRING_TYPE));
+            blockEntity.readLoreText(displayNbt.getList("Lore", Tag.TAG_STRING));
         }
     }
 
     @Override
-    public BlockEntity createBlockEntity(BlockPos pos, BlockState state) {
+    public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
         return new BitsBlockEntity(pos, state);
     }
 
     @Override
-    public ItemStack getPickStack(BlockView world, BlockPos pos, BlockState state) {
-        if (!(world instanceof ServerWorld)) {
+    public ItemStack getCloneItemStack(BlockGetter world, BlockPos pos, BlockState state) {
+        if (!(world instanceof ServerLevel)) {
             final var bitStack = pickBitClient(world, pos, state);
             if (bitStack != null) return bitStack;
         }
@@ -226,33 +227,33 @@ public class BitsBlock extends BlockWithEntity implements Waterloggable {
     }
 
     @Environment(EnvType.CLIENT)
-    private ItemStack pickBitClient(BlockView world, BlockPos pos, BlockState state) {
-        MinecraftClient client = MinecraftClient.getInstance();
-        PlayerEntity player = client.player;
+    private ItemStack pickBitClient(BlockGetter world, BlockPos pos, BlockState state) {
+        Minecraft client = Minecraft.getInstance();
+        Player player = client.player;
         if (player != null && Screen.hasShiftDown()) {
-            if (player.getMainHandStack().isIn(TagKey.of(Registry.ITEM_KEY, new Identifier(BitsAndChisels.MODID, "chisel")))) {
-                HitResult hit = client.crosshairTarget;
-                if (hit != null && hit.getType() == HitResult.Type.BLOCK && world instanceof World) {
-                    Direction direction = ((BlockHitResult) hit).getSide();
-                    int x = (int) Math.floor(((hit.getPos().getX() - pos.getX()) * 16) + (direction.getOffsetX() * -0.5d));
-                    int y = (int) Math.floor(((hit.getPos().getY() - pos.getY()) * 16) + (direction.getOffsetY() * -0.5d));
-                    int z = (int) Math.floor(((hit.getPos().getZ() - pos.getZ()) * 16) + (direction.getOffsetZ() * -0.5d));
-                    BlockState bit = BitUtils.getBit((World) world, pos, x, y, z);
+            if (player.getMainHandItem().is(TagKey.create(Registry.ITEM_REGISTRY, new ResourceLocation(BitsAndChisels.MODID, "chisel")))) {
+                HitResult hit = client.hitResult;
+                if (hit != null && hit.getType() == HitResult.Type.BLOCK && world instanceof Level) {
+                    Direction direction = ((BlockHitResult) hit).getDirection();
+                    int x = (int) Math.floor(((hit.getLocation().x() - pos.getX()) * 16) + (direction.getStepX() * -0.5d));
+                    int y = (int) Math.floor(((hit.getLocation().y() - pos.getY()) * 16) + (direction.getStepY() * -0.5d));
+                    int z = (int) Math.floor(((hit.getLocation().z() - pos.getZ()) * 16) + (direction.getStepZ() * -0.5d));
+                    BlockState bit = BitUtils.getBit((Level) world, pos, x, y, z);
                     if (BitUtils.exists(bit)) {
                         return BitUtils.getBitItemStack(bit);
                     }
                 }
             }
-        } else if (world instanceof World) {
+        } else if (world instanceof Level) {
             final var blockEntity = world.getBlockEntity(pos, BitsAndChisels.BITS_BLOCK_ENTITY).orElse(null);
             if (blockEntity != null) {
-                if (blockEntity.getStructureId() != null && (player == null || !player.isSneaking())) {
-                    return tryGetStructure((World) world, pos, blockEntity, player, false);
+                if (blockEntity.getStructureId() != null && (player == null || !player.isShiftKeyDown())) {
+                    return tryGetStructure((Level) world, pos, blockEntity, player, false);
                 } else {
                     final var stack = ItemHelpers.blockToItem(this, state, blockEntity);
                     if (player != null) {
-                        final var rotation = DirectionUtilsKt.getNearestDirectionForVector(pos.subtract(player.getBlockPos()));
-                        stack.getOrCreateSubNbt("BlockEntityTag").putInt(BitStructureItem.NBT_ROTATION, rotation.getId());
+                        final var rotation = DirectionUtilsKt.getNearestDirectionForVector(pos.subtract(player.blockPosition()));
+                        stack.getOrCreateTagElement("BlockEntityTag").putInt(BitStructureItem.NBT_ROTATION, rotation.get3DDataValue());
                     }
                     return stack;
                 }
@@ -262,12 +263,12 @@ public class BitsBlock extends BlockWithEntity implements Waterloggable {
     }
     
     @Override
-    public VoxelShape getOutlineShape(BlockState state, BlockView world, BlockPos pos, ShapeContext context) {
+    public VoxelShape getShape(BlockState state, BlockGetter world, BlockPos pos, CollisionContext context) {
         BlockEntity bruhWhyMustMcBeLikeThisAhhhhh = world.getBlockEntity(pos);
         if (bruhWhyMustMcBeLikeThisAhhhhh instanceof BitsBlockEntity) {
             return ((BitsBlockEntity)bruhWhyMustMcBeLikeThisAhhhhh).shape;
         }
-        return VoxelShapes.empty();
+        return Shapes.empty();
     }
 
 }

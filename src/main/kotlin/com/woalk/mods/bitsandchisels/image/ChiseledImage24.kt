@@ -2,7 +2,7 @@ package com.woalk.mods.bitsandchisels.image
 
 import com.woalk.mods.bitsandchisels.blocks.ColoredBlockState
 import net.fabricmc.loader.api.FabricLoader
-import net.minecraft.block.BlockState
+import net.minecraft.world.level.block.state.BlockState
 import java.awt.image.BufferedImage
 import java.awt.image.DataBufferByte
 import java.io.File

@@ -1,12 +1,12 @@
 package com.woalk.mods.bitsandchisels;
 
-import net.minecraft.block.Block;
-import net.minecraft.block.BlockState;
-import net.minecraft.block.entity.BlockEntity;
-import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NbtCompound;
-import net.minecraft.nbt.NbtList;
-import net.minecraft.nbt.NbtString;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.StringTag;
 
 public class ItemHelpers {
     private ItemHelpers(){}
@@ -17,23 +17,23 @@ public class ItemHelpers {
 
     public static ItemStack addBlockEntityNbt(ItemStack stack, BlockEntity blockEntity) {
         if (blockEntity instanceof BitsBlockEntity) {
-            NbtCompound compoundTag = new NbtCompound();
+            CompoundTag compoundTag = new CompoundTag();
             ((BitsBlockEntity) blockEntity).writeBitNbt(compoundTag);
-            NbtCompound compoundTag3;
-            stack.setSubNbt("BlockEntityTag", compoundTag);
-            compoundTag3 = new NbtCompound();
+            CompoundTag compoundTag3;
+            stack.addTagElement("BlockEntityTag", compoundTag);
+            compoundTag3 = new CompoundTag();
             ((BitsBlockEntity) blockEntity).writeNameNbt(compoundTag3);
-            stack.setSubNbt("display", compoundTag3);
+            stack.addTagElement("display", compoundTag3);
         }
         return stack;
     }
 
     public static ItemStack addBlockStateNbt(ItemStack stack, BlockState state) {
-        int shaderType = state.get(BitsBlock.SHADER_TYPE);
+        int shaderType = state.getValue(BitsBlock.SHADER_TYPE);
         if (shaderType != 0) {
-            NbtCompound compountTag2 = new NbtCompound();
+            CompoundTag compountTag2 = new CompoundTag();
             compountTag2.putInt("shader_type", shaderType);
-            stack.setSubNbt("BlockStateTag", compountTag2);
+            stack.addTagElement("BlockStateTag", compountTag2);
         }
         return stack;
     }

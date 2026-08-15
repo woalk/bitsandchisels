@@ -11,37 +11,40 @@ import net.fabricmc.fabric.api.blockrenderlayer.v1.BlockRenderLayerMap
 import net.fabricmc.fabric.api.client.rendering.v1.ColorProviderRegistry
 import net.fabricmc.fabric.api.item.v1.FabricItemSettings
 import net.fabricmc.fabric.api.`object`.builder.v1.block.FabricBlockSettings
-import net.minecraft.block.*
-import net.minecraft.client.color.block.BlockColorProvider
-import net.minecraft.client.color.item.ItemColorProvider
-import net.minecraft.client.render.RenderLayer
-import net.minecraft.entity.EntityType
-import net.minecraft.item.BlockItem
-import net.minecraft.item.DyeableItem
-import net.minecraft.util.Identifier
-import net.minecraft.util.Rarity
-import net.minecraft.util.math.BlockPos
-import net.minecraft.util.registry.Registry
-import net.minecraft.world.BlockView
+import net.minecraft.world.level.block.*
+import net.minecraft.client.color.block.BlockColor
+import net.minecraft.client.color.item.ItemColor
+import net.minecraft.client.renderer.RenderType
+import net.minecraft.world.entity.EntityType
+import net.minecraft.world.item.BlockItem
+import net.minecraft.world.item.DyeableLeatherItem
+import net.minecraft.resources.ResourceLocation
+import net.minecraft.world.item.Rarity
+import net.minecraft.core.BlockPos
+import net.minecraft.core.Registry
+import net.minecraft.world.level.BlockGetter
+import net.minecraft.world.level.block.state.BlockState
+import net.minecraft.world.level.material.Material
 
 @Suppress("unused")
 object ModBlocks : ModRegister<Pair<Block, (() -> FabricItemSettings)?>, Block>(Registry.BLOCK) {
     //region block declarations
     val animatedBitsBlock = register("animated_bits_block", Pair(AnimatedBitsBlock(
         FabricBlockSettings.of(Material.METAL)
-            .nonOpaque()
-            .dynamicBounds()
-            .hardness(4.0f)
-            .luminance { s -> s.get(BitsBlock.LIGHT_LEVEL) }
+            .noOcclusion()
+            .dynamicShape()
+            .destroyTime(4.0f)
+            .lightLevel { s -> s.getValue(BitsBlock.LIGHT_LEVEL) }
     )) { FabricItemSettings().maxCount(16) }).first
 
     val coloredBlock = register("coloured_block", ColoredBlock(
         FabricBlockSettings.copy(Blocks.WHITE_CONCRETE)
     ))
-    val barrierBlock = register("barrier", Pair(Block(
+    val barrierBlock = register("barrier", Pair(
+        Block(
         FabricBlockSettings.of(Material.BARRIER)
-            .nonOpaque()
-            .hardness(0.3f)
+            .noOcclusion()
+            .destroyTime(0.3f)
     ), ::FabricItemSettings)).first
     //endregion
 
@@ -51,7 +54,7 @@ object ModBlocks : ModRegister<Pair<Block, (() -> FabricItemSettings)?>, Block>(
             .rarity(Rarity.EPIC)
             .apply {
                 if (WoalkItemsMod.isAdmin) {
-                    group(WoalkItemGroups.WOALK_ITEMS)
+                    tab(WoalkItemGroups.WOALK_ITEMS)
                 }
             }
     }
@@ -68,7 +71,7 @@ object ModBlocks : ModRegister<Pair<Block, (() -> FabricItemSettings)?>, Block>(
         if (toRegister.second != null) {
             Registry.register(
                 Registry.ITEM,
-                Identifier(getNamespace(id), id),
+                ResourceLocation(getNamespace(id), id),
                 when (id) {
                     "coloured_block" -> ColoredBlockItem(toRegister.first, toRegister.second!!.invoke())
                     "animated_bits_block" -> BitsBlockItem(toRegister.first, toRegister.second!!.invoke())
@@ -79,18 +82,18 @@ object ModBlocks : ModRegister<Pair<Block, (() -> FabricItemSettings)?>, Block>(
     }
 
     @Suppress("UNUSED_PARAMETER")
-    private fun never(state: BlockState, world: BlockView, pos: BlockPos, type: EntityType<*>? = null) = false
+    private fun never(state: BlockState, world: BlockGetter, pos: BlockPos, type: EntityType<*>? = null) = false
 
     @Environment(EnvType.CLIENT)
     fun registerAllClient() {
-        ColorProviderRegistry.BLOCK.register(BlockColorProvider { _, world, pos, _ ->
+        ColorProviderRegistry.BLOCK.register(BlockColor { _, world, pos, _ ->
             (world?.getBlockEntity(pos) as? ColoredBlockEntity)?.colorWithAlpha ?: 0xFFFFFFFFU.toInt()
         }, coloredBlock)
-        ColorProviderRegistry.ITEM.register(ItemColorProvider { stack, _ ->
-            stack.nbt?.getCompound(DyeableItem.DISPLAY_KEY)?.getInt(DyeableItem.COLOR_KEY) ?: 0xFFFFFF
+        ColorProviderRegistry.ITEM.register(ItemColor { stack, _ ->
+            stack.tag?.getCompound(DyeableLeatherItem.TAG_DISPLAY)?.getInt(DyeableLeatherItem.TAG_COLOR) ?: 0xFFFFFF
         }, coloredBlock.asItem())
 
-        BlockRenderLayerMap.INSTANCE.putBlock(barrierBlock, RenderLayer.getTranslucent())
+        BlockRenderLayerMap.INSTANCE.putBlock(barrierBlock, RenderType.translucent())
     }
     //endregion
 }

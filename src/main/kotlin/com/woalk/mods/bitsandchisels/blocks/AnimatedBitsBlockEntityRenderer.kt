@@ -1,33 +1,33 @@
 package com.woalk.mods.bitsandchisels.blocks
 
 import com.woalk.mods.bitsandchisels.registry.ModBlocks
-import net.minecraft.client.render.RenderLayers
-import net.minecraft.client.render.VertexConsumerProvider
-import net.minecraft.client.render.block.entity.BlockEntityRenderer
-import net.minecraft.client.render.block.entity.BlockEntityRendererFactory
-import net.minecraft.client.util.math.MatrixStack
+import net.minecraft.client.renderer.ItemBlockRenderTypes
+import net.minecraft.client.renderer.MultiBufferSource
+import net.minecraft.client.renderer.blockentity.BlockEntityRenderer
+import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider
+import com.mojang.blaze3d.vertex.PoseStack
 
-class AnimatedBitsBlockEntityRenderer(private val ctx: BlockEntityRendererFactory.Context): BlockEntityRenderer<AnimatedBitsBlockEntity> {
-    private val model = ctx.renderManager.getModel(ModBlocks.animatedBitsBlock.defaultState)
+class AnimatedBitsBlockEntityRenderer(private val ctx: BlockEntityRendererProvider.Context): BlockEntityRenderer<AnimatedBitsBlockEntity> {
+    private val model = ctx.blockRenderDispatcher.getBlockModel(ModBlocks.animatedBitsBlock.defaultBlockState())
 
     override fun render(
         entity: AnimatedBitsBlockEntity,
         tickDelta: Float,
-        matrices: MatrixStack,
-        vertexConsumers: VertexConsumerProvider,
+        matrices: PoseStack,
+        vertexConsumers: MultiBufferSource,
         light: Int,
         overlay: Int
     ) {
         // requires Indium renderer to look pretty
-        ctx.renderManager.modelRenderer.render(
-            entity.world,
+        ctx.blockRenderDispatcher.modelRenderer.tesselateBlock(
+            entity.level,
             model,
             entity.state,
-            entity.pos,
+            entity.blockPos,
             matrices,
-            vertexConsumers.getBuffer(RenderLayers.getBlockLayer(entity.state)),
+            vertexConsumers.getBuffer(ItemBlockRenderTypes.getChunkRenderType(entity.state)),
             false,
-            entity.world?.random,
+            entity.level?.random,
             0,
             overlay,
         )

@@ -1,8 +1,8 @@
 package com.woalk.mods.bitsandchisels.registry
 
 import com.woalk.mods.bitsandchisels.BitsAndChisels
-import net.minecraft.util.Identifier
-import net.minecraft.util.registry.Registry
+import net.minecraft.resources.ResourceLocation
+import net.minecraft.core.Registry
 import java.util.*
 
 abstract class ModRegister<T, V>(private val targetRegistry: Registry<V>) : IModRegister {
@@ -18,7 +18,7 @@ abstract class ModRegister<T, V>(private val targetRegistry: Registry<V>) : IMod
     protected open fun getNamespace(id: String) = BitsAndChisels.MODID
 
     protected open fun registerNow(id: String, toRegister: T) {
-        Registry.register(targetRegistry, Identifier(getNamespace(id), id), onRegister(toRegister))
+        Registry.register(targetRegistry, ResourceLocation(getNamespace(id), id), onRegister(toRegister))
     }
 
     override fun registerAll() {

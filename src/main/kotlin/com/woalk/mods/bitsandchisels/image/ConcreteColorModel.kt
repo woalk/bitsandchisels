@@ -1,8 +1,8 @@
 package com.woalk.mods.bitsandchisels.image
 
-import net.minecraft.block.Block
-import net.minecraft.block.Blocks
-import net.minecraft.util.registry.Registry
+import net.minecraft.world.level.block.Block
+import net.minecraft.world.level.block.Blocks
+import net.minecraft.core.Registry
 import java.awt.image.IndexColorModel
 
 @OptIn(ExperimentalUnsignedTypes::class)

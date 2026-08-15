@@ -22,25 +22,26 @@ import com.woalk.mods.bitsandchisels.registry.ModPermissions
 import com.woalk.mods.bitsandchisels.utils.DirectionArgumentType
 import me.lucko.fabric.api.permissions.v0.Permissions
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback
-import net.minecraft.block.*
-import net.minecraft.command.argument.BlockStateArgumentType
-import net.minecraft.server.command.CommandManager.argument
-import net.minecraft.server.command.CommandManager.literal
-import net.minecraft.server.command.ServerCommandSource
-import net.minecraft.text.Text
-import net.minecraft.util.Formatting
-import net.minecraft.util.Identifier
-import net.minecraft.util.math.BlockPos
-import net.minecraft.util.math.Direction
-import net.minecraft.util.math.Vec3i
-import net.minecraft.util.registry.Registry
+import net.minecraft.world.level.block.*
+import net.minecraft.world.level.block.state.BlockState
+import net.minecraft.commands.arguments.blocks.BlockStateArgument
+import net.minecraft.commands.Commands.argument
+import net.minecraft.commands.Commands.literal
+import net.minecraft.commands.CommandSourceStack
+import net.minecraft.network.chat.Component
+import net.minecraft.ChatFormatting
+import net.minecraft.resources.ResourceLocation
+import net.minecraft.core.BlockPos
+import net.minecraft.core.Direction
+import net.minecraft.core.Vec3i
+import net.minecraft.core.Registry
 import java.util.*
 import kotlin.math.ceil
 
 object WorldEditCommands : IModRegister {
 
     private fun minify(
-        ctx: CommandContext<ServerCommandSource>,
+        ctx: CommandContext<CommandSourceStack>,
         onlyFullBlocks: Boolean = true,
         fullBlockHeuristic: Boolean = true
     ): Int = try {
@@ -73,22 +74,22 @@ object WorldEditCommands : IModRegister {
                                 val block = FabricAdapter.adapt(
                                     clipboard.getBlock(blockMinPos.add(BlockVector3.at(i, j, k)))
                                 )
-                                val blockId = block.registryEntry.key.get().value
+                                val blockId = block.blockHolder.unwrapKey().get().location()
                                 val fullBlock = findBlock(block, blockId, fullBlockHeuristic)
                                 bitsOut[i][j][k] = if (onlyFullBlocks) if (
-                                    fullBlock.renderType != BlockRenderType.MODEL ||
-                                    fullBlock.block.hasDynamicBounds() ||
-                                    fullBlock.hasSidedTransparency() ||
-                                    fullBlock.block is WallMountedBlock ||
+                                    fullBlock.renderShape != RenderShape.MODEL ||
+                                    fullBlock.block.hasDynamicShape() ||
+                                    fullBlock.useShapeForLightOcclusion() ||
+                                    fullBlock.block is FaceAttachedHorizontalDirectionalBlock ||
                                     fullBlock.block is LeavesBlock ||
-                                    !fullBlock.isFullCube(ctx.source.world, ctx.source.player!!.blockPos)
-                                ) Blocks.AIR.defaultState else fullBlock else block
+                                    !fullBlock.isCollisionShapeFullBlock(ctx.source.level, ctx.source.player!!.blockPosition())
+                                ) Blocks.AIR.defaultBlockState() else fullBlock else block
                             }
                         }
                     }
                     newClipboard.setBlock(
                         clipboard.minimumPoint.add(vec),
-                        FabricAdapter.adapt(BitsAndChisels.BITS_BLOCK.defaultState)
+                        FabricAdapter.adapt(BitsAndChisels.BITS_BLOCK.defaultBlockState())
                             .toBaseBlock(BitCompoundUtil.write3DBitArray(bitsOut))
                     )
                 }
@@ -106,9 +107,9 @@ object WorldEditCommands : IModRegister {
         -2
     }
 
-    private fun findBlock(block: BlockState, id: Identifier, fullBlockHeuristic: Boolean): BlockState {
+    private fun findBlock(block: BlockState, id: ResourceLocation, fullBlockHeuristic: Boolean): BlockState {
         val blockId = if (id.namespace == "minekea") {
-            Identifier.of(
+            ResourceLocation.tryBuild(
                 if (id.path.startsWith("betterend") || id.path.startsWith("betternether") || id.path.startsWith("byg")) {
                     id.path.split("/").first()
                 } else id.namespace,
@@ -160,21 +161,21 @@ object WorldEditCommands : IModRegister {
                 findBlock("minecraft", blockId.path.split("/").last()) ?:
                 findBlock("minecraft", blockId.path.split("/").last() + "s") ?:
                 findBlock("minecraft", blockId.path.split("/").last() + "_block") ?:
-                Blocks.BOOKSHELF.defaultState
+                Blocks.BOOKSHELF.defaultBlockState()
             } else if (blockId.path.startsWith("containers/")) {
                 findBlock("minecraft", blockId.path.split("/").last() + "_planks")
             } else if (blockId.path.endsWith("leaves") || blockId.path.endsWith("_crop")) {
-                Blocks.MOSS_BLOCK.defaultState
+                Blocks.MOSS_BLOCK.defaultBlockState()
             } else block
         } else { block } ?: block
     }
-    private fun findBlock(ns: Identifier, path: String): BlockState? = findBlock(ns.namespace, path)
+    private fun findBlock(ns: ResourceLocation, path: String): BlockState? = findBlock(ns.namespace, path)
     private fun findBlock(ns: String, path: String): BlockState? =
-        Registry.BLOCK.get(Identifier(ns, path)).defaultState.let { if (it.isAir) null else it }
+        Registry.BLOCK.get(ResourceLocation(ns, path)).defaultBlockState().let { if (it.isAir) null else it }
 
-    private fun replace(ctx: CommandContext<ServerCommandSource>, from: BlockState, to: BlockState): Int = try {
+    private fun replace(ctx: CommandContext<CommandSourceStack>, from: BlockState, to: BlockState): Int = try {
         val actor = FabricAdapter.adaptPlayer(ctx.source.player)
-        val world = FabricAdapter.adapt(ctx.source.world)
+        val world = FabricAdapter.adapt(ctx.source.level)
         val localSession = WorldEdit.getInstance().sessionManager.get(actor)
 
         val selection = localSession.getSelection(world)
@@ -184,8 +185,8 @@ object WorldEditCommands : IModRegister {
                     for (z in 0 until selection.length) {
                         val vec = selection.minimumPoint.add(BlockVector3.at(x, y, z))
                         val blockPos = BlockPos(vec.x, vec.y, vec.z)
-                        if (ctx.source.world.getBlockState(blockPos).block == BitsAndChisels.BITS_BLOCK) {
-                            val entity = ctx.source.world.getBlockEntity(blockPos) as? BitsBlockEntity ?: continue
+                        if (ctx.source.level.getBlockState(blockPos).block == BitsAndChisels.BITS_BLOCK) {
+                            val entity = ctx.source.level.getBlockEntity(blockPos) as? BitsBlockEntity ?: continue
                             val bits: Block3D = entity.states
                             var hasChanged = false
                             for (i in 0..15) {
@@ -220,49 +221,49 @@ object WorldEditCommands : IModRegister {
     }
 
     private fun shift(
-        ctx: CommandContext<ServerCommandSource>,
-        direction: Direction = Direction.getEntityFacingOrder(ctx.source.entityOrThrow).first(),
+        ctx: CommandContext<CommandSourceStack>,
+        direction: Direction = Direction.orderedByNearest(ctx.source.entityOrException).first(),
         amount: Int = 1,
         merge: Boolean = false,
     ): Int = try {
         val actor = FabricAdapter.adaptPlayer(ctx.source.player)
-        val world = FabricAdapter.adapt(ctx.source.world)
+        val world = FabricAdapter.adapt(ctx.source.level)
         val localSession = WorldEdit.getInstance().sessionManager.get(actor)
 
-        val directionVectorInverted = direction.vector.multiply(-1)
-        val translateBy = direction.vector.multiply(amount)
+        val directionVectorInverted = direction.normal.multiply(-1)
+        val translateBy = direction.normal.multiply(amount)
         val translateByInverted = translateBy.multiply(-1)
         val selection = localSession.getSelection(world)
         val changes = localSession.createEditSession(actor).use { editSession ->
-            val (from, to) = if (direction.vector.x < 0 || direction.vector.y < 0 || direction.vector.z < 0) {
-                Pair(direction.vector, Vec3i(selection.width, selection.height, selection.length))
-            } else Pair(Vec3i.ZERO, direction.vector.add(selection.width, selection.height, selection.length))
+            val (from, to) = if (direction.normal.x < 0 || direction.normal.y < 0 || direction.normal.z < 0) {
+                Pair(direction.normal, Vec3i(selection.width, selection.height, selection.length))
+            } else Pair(Vec3i.ZERO, direction.normal.offset(selection.width, selection.height, selection.length))
             for (x in from.x until to.x) {
                 for (y in from.y until to.y) {
                     for (z in from.z until to.z) {
                         val vec = selection.minimumPoint.add(BlockVector3.at(x, y, z))
-                        val newBlock = FabricAdapter.adapt(BitsAndChisels.BITS_BLOCK.defaultState).toBaseBlock()
+                        val newBlock = FabricAdapter.adapt(BitsAndChisels.BITS_BLOCK.defaultBlockState()).toBaseBlock()
                         val bits = BitCompoundUtil.Block3D()
                         var hasChanged = false
                         for (i in 0..15) {
                             for (j in 0..15) {
                                 for (k in 0..15) {
-                                    val sourceBitPos = translateByInverted.add(i, j, k)
+                                    val sourceBitPos = translateByInverted.offset(i, j, k)
                                     val bit = if (sourceBitPos.x < 0 || sourceBitPos.x > 15 ||
                                         sourceBitPos.y < 0 || sourceBitPos.y > 15 ||
                                         sourceBitPos.z < 0 || sourceBitPos.z > 15
                                     ) {
-                                        val neighborPos = directionVectorInverted.add(vec.x, vec.y, vec.z)
+                                        val neighborPos = directionVectorInverted.offset(vec.x, vec.y, vec.z)
                                         if (!merge && !selection.contains(BlockVector3.at(neighborPos.x, neighborPos.y, neighborPos.z))) {
                                             null
-                                        } else if (ctx.source.world.getBlockState(BlockPos(neighborPos)).block == BitsAndChisels.BITS_BLOCK) {
-                                            val entity = ctx.source.world.getBlockEntity(BlockPos(neighborPos)) as? BitsBlockEntity
+                                        } else if (ctx.source.level.getBlockState(BlockPos(neighborPos)).block == BitsAndChisels.BITS_BLOCK) {
+                                            val entity = ctx.source.level.getBlockEntity(BlockPos(neighborPos)) as? BitsBlockEntity
                                             val oldBits = entity?.states
                                             val oldBitPos = BlockPos(sourceBitPos.x.mod(16), sourceBitPos.y.mod(16), sourceBitPos.z.mod(16))
                                             val oldBit = oldBits?.get(oldBitPos.x)?.get(oldBitPos.y)?.get(oldBitPos.z)
                                             if (oldBit?.isAir != false) {
                                                 val blockPos = BlockPos(vec.x, vec.y, vec.z)
-                                                val entity = ctx.source.world.getBlockEntity(blockPos) as? BitsBlockEntity
+                                                val entity = ctx.source.level.getBlockEntity(blockPos) as? BitsBlockEntity
                                                 val oldBits = entity?.states
                                                 oldBits?.get(i)?.get(j)?.get(k)
                                             } else oldBit
@@ -270,11 +271,11 @@ object WorldEditCommands : IModRegister {
                                     } else {
                                         val blockPos = BlockPos(vec.x, vec.y, vec.z)
                                         if (!selection.contains(BlockVector3.at(blockPos.x, blockPos.y, blockPos.z))) {
-                                            val entity = ctx.source.world.getBlockEntity(blockPos) as? BitsBlockEntity
+                                            val entity = ctx.source.level.getBlockEntity(blockPos) as? BitsBlockEntity
                                             val oldBits = entity?.states
                                             oldBits?.get(i)?.get(j)?.get(k)
-                                        } else if (ctx.source.world.getBlockState(blockPos).block == BitsAndChisels.BITS_BLOCK) {
-                                            val entity = ctx.source.world.getBlockEntity(blockPos) as? BitsBlockEntity
+                                        } else if (ctx.source.level.getBlockState(blockPos).block == BitsAndChisels.BITS_BLOCK) {
+                                            val entity = ctx.source.level.getBlockEntity(blockPos) as? BitsBlockEntity
                                             val oldBits = entity?.states
                                             oldBits?.get(sourceBitPos.x)?.get(sourceBitPos.y)?.get(sourceBitPos.z)
                                         } else null
@@ -282,13 +283,13 @@ object WorldEditCommands : IModRegister {
                                     bits[i][j][k] = if (bit != null) {
                                         hasChanged = true
                                         bit
-                                    } else Blocks.AIR.defaultState
+                                    } else Blocks.AIR.defaultBlockState()
                                 }
                             }
                         }
                         if (hasChanged) {
                             editSession.setBlock(vec, newBlock.toBaseBlock(BitCompoundUtil.write3DBitArray(bits)))
-                            (ctx.source.world.getBlockEntity(BlockPos(vec.x, vec.y, vec.z)) as? BitsBlockEntity)?.sync()
+                            (ctx.source.level.getBlockEntity(BlockPos(vec.x, vec.y, vec.z)) as? BitsBlockEntity)?.sync()
                         }
                     }
                 }
@@ -315,14 +316,14 @@ object WorldEditCommands : IModRegister {
     private fun Boolean.structDo(): StructDo = if (this) StructDo.CREATE else StructDo.NOTHING
 
     private fun sign(
-        ctx: CommandContext<ServerCommandSource>,
+        ctx: CommandContext<CommandSourceStack>,
         name: String? = null,
-        author: String? = ctx.source.name,
+        author: String? = ctx.source.textName,
         structure: StructDo = StructDo.CREATE,
         allowSingleBlockStructure: Boolean = false,
     ): Int = try {
         val actor = FabricAdapter.adaptPlayer(ctx.source.player)
-        val world = FabricAdapter.adapt(ctx.source.world)
+        val world = FabricAdapter.adapt(ctx.source.level)
         val localSession = WorldEdit.getInstance().sessionManager.get(actor)
 
         val selection = localSession.getSelection(world)
@@ -341,17 +342,17 @@ object WorldEditCommands : IModRegister {
             for (y in 0 until selection.height) {
                 for (z in 0 until selection.length) {
                     val pos = BlockPos(origin.x + x, origin.y + y, origin.z + z)
-                    val be = ctx.source.world.getBlockEntity(pos) as? BitsBlockEntity
+                    val be = ctx.source.level.getBlockEntity(pos) as? BitsBlockEntity
                     if (be == null) {
-                        if (!ctx.source.world.getBlockState(pos).isAir) {
+                        if (!ctx.source.level.getBlockState(pos).isAir) {
                             hasMissed.add(pos)
                         }
                     } else {
-                        name?.let { be.customName = Text.literal(it) }
+                        name?.let { be.customName = Component.literal(it) }
                         if (author != null) {
-                            val loreText = mutableListOf<Text>(Text.literal("Created by $author"))
+                            val loreText = mutableListOf<Component>(Component.literal("Created by $author"))
                             if (selection.width * selection.height * selection.length > 1) loreText.add(
-                                Text.literal("($x, $y, $z)").formatted(Formatting.DARK_GRAY)
+                                Component.literal("($x, $y, $z)").withStyle(ChatFormatting.DARK_GRAY)
                             )
                             be.setLoreText(loreText)
                         }
@@ -362,53 +363,56 @@ object WorldEditCommands : IModRegister {
                         } else if (structure == StructDo.AUTO) be.customName?.let {
                             be.structureId = structureMap!!.getOrPut(it.string, UUID::randomUUID)
                         }
-                        BitUtils.update(ctx.source.world, pos)
+                        BitUtils.update(ctx.source.level, pos)
                         count++
                     }
                 }
             }
         }
         if (author != null) {
-            ctx.source.sendFeedback(Text.literal("Updated $count blocks with signature"), true)
+            ctx.source.sendSuccess(Component.literal("Updated $count blocks with signature"), true)
             if (structure == StructDo.CREATE && structureId == null) {
-                ctx.source.sendFeedback(
-                    Text.literal(
+                ctx.source.sendSuccess(
+                    Component.literal(
                         "Warning: Build too ${if (isSingleBlock) "small" else "large"} to be labeled as structure."
-                    ).formatted(Formatting.YELLOW),
+                    ).withStyle(ChatFormatting.YELLOW),
                     false,
                 )
             }
         } else if (structure == StructDo.CREATE && structureId != null) {
-            ctx.source.sendFeedback(Text.literal("Created structure of $count blocks with ID $structureId."), true)
+            ctx.source.sendSuccess(Component.literal("Created structure of $count blocks with ID $structureId."), true)
         } else if (structure == StructDo.CREATE /* && structureId == null */) {
-            ctx.source.sendFeedback(
-                Text.literal("Warning: Build too large to be labeled as structure.")
-                    .formatted(Formatting.YELLOW),
+            ctx.source.sendSuccess(
+                Component.literal("Warning: Build too large to be labeled as structure.")
+                    .withStyle(ChatFormatting.YELLOW),
                 false,
             )
         } else if (structure == StructDo.DELETE) {
-            ctx.source.sendFeedback(Text.literal("Removed structure ID from $count blocks."), true)
+            ctx.source.sendSuccess(Component.literal("Removed structure ID from $count blocks."), true)
         } else if (structure == StructDo.AUTO) {
-            ctx.source.sendFeedback(Text.literal("Created ${structureMap!!.size} structures within $count blocks."), true)
+            ctx.source.sendSuccess(Component.literal("Created ${structureMap!!.size} structures within $count blocks."), true)
             if (structureMap.size <= 0) {
-                ctx.source.sendFeedback(Text.literal(
+                ctx.source.sendSuccess(
+                    Component.literal(
                     "Note that unsigned bit blocks will not be grouped by //bitstructure auto."
-                ).formatted(Formatting.RED), false)
+                ).withStyle(ChatFormatting.RED), false)
             }
         } else {
-            ctx.source.sendFeedback(Text.literal(
+            ctx.source.sendSuccess(
+                Component.literal(
                 "Inconsistency detected. Please report to admin that function 'sign' was called with no arguments."
-            ).formatted(Formatting.RED), true)
+            ).withStyle(ChatFormatting.RED), true)
         }
 
         if (hasMissed.isNotEmpty()) {
-            ctx.source.sendFeedback(Text.literal(
+            ctx.source.sendSuccess(
+                Component.literal(
                 if (hasMissed.size < 4) {
                     "Warning: ${hasMissed.joinToString(", ") { "(${it.toShortString()})" }} weren't bit blocks or air."
                 } else {
                     "Warning: Selection contained ${hasMissed.size} blocks that weren't bit blocks or air."
                 }
-            ).formatted(Formatting.YELLOW), false)
+            ).withStyle(ChatFormatting.YELLOW), false)
         }
         SINGLE_SUCCESS
     } catch (e: IncompleteRegionException) {
@@ -441,14 +445,14 @@ object WorldEditCommands : IModRegister {
                 literal("/bitreplace")
                     .requires(Permissions.require(ModPermissions.COMMAND_WORLDEDIT_REPLACE, 4))
                     .then(
-                        argument("from", BlockStateArgumentType.blockState(commandRegistryAccess))
+                        argument("from", BlockStateArgument.block(commandRegistryAccess))
                             .then(
-                                argument("to", BlockStateArgumentType.blockState(commandRegistryAccess))
+                                argument("to", BlockStateArgument.block(commandRegistryAccess))
                                     .executes { ctx ->
                                         replace(
                                             ctx,
-                                            BlockStateArgumentType.getBlockState(ctx, "from").blockState,
-                                            BlockStateArgumentType.getBlockState(ctx, "to").blockState
+                                            BlockStateArgument.getBlock(ctx, "from").state,
+                                            BlockStateArgument.getBlock(ctx, "to").state
                                         )
                                     }
                             )

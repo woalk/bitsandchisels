@@ -2,8 +2,8 @@ package com.woalk.mods.bitsandchisels.image
 
 import com.woalk.mods.bitsandchisels.BitsAndChisels
 import com.woalk.mods.bitsandchisels.BitsBlock
-import net.minecraft.block.BlockState
-import net.minecraft.util.Identifier
+import net.minecraft.world.level.block.state.BlockState
+import net.minecraft.resources.ResourceLocation
 import java.lang.IllegalArgumentException
 
 data class PaletteIdentifier(
@@ -30,10 +30,10 @@ data class PaletteIdentifier(
     }
 
     val bitBlockState: BlockState = if (blockWildcard.contains("glass")) {
-        BitsAndChisels.BITS_BLOCK.defaultState.with(BitsBlock.SHADER_TYPE, 3)
-    } else BitsAndChisels.BITS_BLOCK.defaultState
+        BitsAndChisels.BITS_BLOCK.defaultBlockState().setValue(BitsBlock.SHADER_TYPE, 3)
+    } else BitsAndChisels.BITS_BLOCK.defaultBlockState()
 
-    fun toIdentifier(wildcardInsert: String) = Identifier(
+    fun toIdentifier(wildcardInsert: String) = ResourceLocation(
         namespace,
         blockWildcard.replace(if (withSkinColors) "+" else "*", wildcardInsert)
     )

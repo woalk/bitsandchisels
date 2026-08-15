@@ -3,38 +3,38 @@ package com.woalk.mods.bitsandchisels.image
 import com.woalk.mods.bitsandchisels.BitsBlock
 import com.woalk.mods.bitsandchisels.BitsBlockEntity
 import com.woalk.mods.bitsandchisels.api.BitUtils
-import net.minecraft.entity.player.PlayerEntity
-import net.minecraft.text.Text
-import net.minecraft.util.Formatting
-import net.minecraft.util.math.BlockPos
-import net.minecraft.util.math.Direction
-import net.minecraft.world.World
+import net.minecraft.world.entity.player.Player
+import net.minecraft.network.chat.Component
+import net.minecraft.ChatFormatting
+import net.minecraft.core.BlockPos
+import net.minecraft.core.Direction
+import net.minecraft.world.level.Level
 import java.util.*
 
-fun IChiseledImage.canPlace(player: PlayerEntity, startingPosInput: BlockPos, direction: Direction): Boolean {
+fun IChiseledImage.canPlace(player: Player, startingPosInput: BlockPos, direction: Direction): Boolean {
     val startingPos = when (direction) {
         Direction.NORTH, Direction.WEST, Direction.DOWN, Direction.SOUTH -> startingPosInput
-        Direction.EAST -> startingPosInput.add(0, 0, 1 - blockWidth)
-        Direction.UP -> startingPosInput.add(blockWidth - 1, 0, 0)
+        Direction.EAST -> startingPosInput.offset(0, 0, 1 - blockWidth)
+        Direction.UP -> startingPosInput.offset(blockWidth - 1, 0, 0)
     }
     for (blockXOffset in 0 until blockWidth) {
         for (blockYOffset in 0 until blockHeight) {
             val offsetPos = when (direction) {
-                Direction.SOUTH -> startingPos.add(blockXOffset, blockYOffset, 0)
-                Direction.NORTH -> startingPos.add(-blockXOffset, blockYOffset, 0)
-                Direction.WEST  -> startingPos.add(0, blockYOffset, blockXOffset)
-                Direction.EAST  -> startingPos.add(0, blockYOffset, -blockXOffset)
-                Direction.DOWN  -> startingPos.add(blockXOffset, 0, blockYOffset)
-                Direction.UP    -> startingPos.add(-blockXOffset, 0, blockYOffset)
+                Direction.SOUTH -> startingPos.offset(blockXOffset, blockYOffset, 0)
+                Direction.NORTH -> startingPos.offset(-blockXOffset, blockYOffset, 0)
+                Direction.WEST  -> startingPos.offset(0, blockYOffset, blockXOffset)
+                Direction.EAST  -> startingPos.offset(0, blockYOffset, -blockXOffset)
+                Direction.DOWN  -> startingPos.offset(blockXOffset, 0, blockYOffset)
+                Direction.UP    -> startingPos.offset(-blockXOffset, 0, blockYOffset)
             }
-            if (!player.world.canSetBlock(offsetPos)) return false
+            if (!player.level.isLoaded(offsetPos)) return false
         }
     }
     return true
 }
 
 fun IChiseledImage.place(
-    world: World,
+    world: Level,
     startingPosInput: BlockPos,
     zRange: IntRange,
     direction: Direction,
@@ -43,18 +43,18 @@ fun IChiseledImage.place(
 ) {
     val startingPos = when (direction) {
         Direction.NORTH, Direction.WEST, Direction.DOWN, Direction.SOUTH -> startingPosInput
-        Direction.EAST -> startingPosInput.add(0, 0, 1 - blockWidth)
-        Direction.UP -> startingPosInput.add(blockWidth - 1, 0, 0)
+        Direction.EAST -> startingPosInput.offset(0, 0, 1 - blockWidth)
+        Direction.UP -> startingPosInput.offset(blockWidth - 1, 0, 0)
     }
     for (blockYOffset in 0 until blockHeight) {
         for (blockXOffset in 0 until blockWidth) {
             val offsetPos = when (direction) {
-                Direction.SOUTH -> startingPos.add(blockXOffset, blockYOffset, 0)
-                Direction.NORTH -> startingPos.add(-blockXOffset, blockYOffset, 0)
-                Direction.WEST  -> startingPos.add(0, blockYOffset, blockXOffset)
-                Direction.EAST  -> startingPos.add(0, blockYOffset, blockXOffset)
-                Direction.DOWN  -> startingPos.add(blockXOffset, 0, blockYOffset)
-                Direction.UP    -> startingPos.add(-blockXOffset, 0, blockYOffset)
+                Direction.SOUTH -> startingPos.offset(blockXOffset, blockYOffset, 0)
+                Direction.NORTH -> startingPos.offset(-blockXOffset, blockYOffset, 0)
+                Direction.WEST  -> startingPos.offset(0, blockYOffset, blockXOffset)
+                Direction.EAST  -> startingPos.offset(0, blockYOffset, blockXOffset)
+                Direction.DOWN  -> startingPos.offset(blockXOffset, 0, blockYOffset)
+                Direction.UP    -> startingPos.offset(-blockXOffset, 0, blockYOffset)
             }
             placeInBlock(
                 world,
@@ -71,7 +71,7 @@ fun IChiseledImage.place(
 }
 
 private fun IChiseledImage.placeInBlock(
-    world: World,
+    world: Level,
     blockPos: BlockPos,
     xOffset: Int,
     yOffset: Int,
@@ -106,23 +106,23 @@ private fun IChiseledImage.placeInBlock(
         }
     }
     if (palette.blockWildcard.contains("glass")) {
-        world.setBlockState(blockPos, world.getBlockState(blockPos).with(BitsBlock.SHADER_TYPE, 3))
+        world.setBlockAndUpdate(blockPos, world.getBlockState(blockPos).setValue(BitsBlock.SHADER_TYPE, 3))
     }
     getImageName()?.let { imageName ->
         val byIndex = imageName.indexOf(" by ")
         (world.getBlockEntity(blockPos) as? BitsBlockEntity)?.apply {
-            val loreText = LinkedList<Text>()
+            val loreText = LinkedList<Component>()
             if (byIndex > -1) {
                 val name = imageName.substring(0, byIndex).ifEmpty { "Chiseled Image Block" }
                 val author = imageName.substring(byIndex + 4)
-                customName = Text.literal(name)
-                loreText.add(Text.literal("Created by $author"))
+                customName = Component.literal(name)
+                loreText.add(Component.literal("Created by $author"))
             } else {
-                customName = Text.literal(imageName).styled {
+                customName = Component.literal(imageName).withStyle {
                     style -> style.withItalic(false)
                 }
             }
-            loreText.add(Text.literal("(${xOffset / 16}, ${yOffset / 16})").formatted(Formatting.DARK_GRAY))
+            loreText.add(Component.literal("(${xOffset / 16}, ${yOffset / 16})").withStyle(ChatFormatting.DARK_GRAY))
             setLoreText(loreText)
         }
     }

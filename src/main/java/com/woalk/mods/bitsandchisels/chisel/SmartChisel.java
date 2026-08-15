@@ -13,27 +13,28 @@ import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.event.player.AttackBlockCallback;
 import net.fabricmc.fabric.api.networking.v1.PacketSender;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.network.ClientPlayerEntity;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.item.Item;
-import net.minecraft.item.ItemStack;
-import net.minecraft.item.ToolItem;
-import net.minecraft.item.ToolMaterials;
-import net.minecraft.network.PacketByteBuf;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.Item.Properties;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.TieredItem;
+import net.minecraft.world.item.Tiers;
+import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.network.ServerPlayNetworkHandler;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.util.ActionResult;
-import net.minecraft.util.Identifier;
-import net.minecraft.util.hit.BlockHitResult;
-import net.minecraft.util.hit.HitResult;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Direction;
-import net.minecraft.world.World;
+import net.minecraft.server.network.ServerGamePacketListenerImpl;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.HitResult;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.world.level.Level;
 
-public class SmartChisel extends ToolItem implements ServerPlayNetworking.PlayChannelHandler, AirSwingItem {
-    public static final Identifier PACKET_ID = new Identifier("bitsandchisels", "smart_chisel_packet");
+public class SmartChisel extends TieredItem implements ServerPlayNetworking.PlayChannelHandler, AirSwingItem {
+    public static final ResourceLocation PACKET_ID = new ResourceLocation("bitsandchisels", "smart_chisel_packet");
 
     BlockPos block = null;
 
@@ -45,32 +46,32 @@ public class SmartChisel extends ToolItem implements ServerPlayNetworking.PlayCh
 
     private long lastBreakTick = 0;
 
-    public SmartChisel(Settings settings) {
-        super(ToolMaterials.IRON, settings);
+    public SmartChisel(Properties settings) {
+        super(Tiers.IRON, settings);
         ServerPlayNetworking.registerGlobalReceiver(PACKET_ID, this);
         AttackBlockCallback.EVENT.register((player, world, hand, pos, direction) -> {
-            Item i = player.getStackInHand(hand).getItem();
+            Item i = player.getItemInHand(hand).getItem();
             if (i instanceof SmartChisel) {
-                if (!world.isClient) return ActionResult.FAIL;
+                if (!world.isClientSide) return InteractionResult.FAIL;
                 return ((SmartChisel)i).interactBreakBlockClient(player, world, pos);
             }
-            return ActionResult.PASS;
+            return InteractionResult.PASS;
         });
     }
 
     public void initClient() {
         RedBoxCallback.EVENT.register((redBoxDrawer, matrixStack, vertexConsumer, worldoffsetx, worldoffsety, worldoffsetz) -> {
-            MinecraftClient client = MinecraftClient.getInstance();
-            if (client.player.getMainHandStack().getItem() == BitsAndChisels.SMART_CHISEL) {
+            Minecraft client = Minecraft.getInstance();
+            if (client.player.getMainHandItem().getItem() == BitsAndChisels.SMART_CHISEL) {
                 if (haspos1) {
-                    HitResult hit = client.crosshairTarget;
+                    HitResult hit = client.hitResult;
                     if (hit.getType() == HitResult.Type.BLOCK) {
-                        Direction direction = ((BlockHitResult)hit).getSide();
+                        Direction direction = ((BlockHitResult)hit).getDirection();
                         BlockPos pos = ((BlockHitResult)hit).getBlockPos();
-                        if (pos.getSquaredDistance(block) > 9) return;
-                        int x = (int) Math.floor(((hit.getPos().getX() - pos.getX()) * 16) + (direction.getOffsetX() * -0.5d));
-                        int y = (int) Math.floor(((hit.getPos().getY() - pos.getY()) * 16) + (direction.getOffsetY() * -0.5d));
-                        int z = (int) Math.floor(((hit.getPos().getZ() - pos.getZ()) * 16) + (direction.getOffsetZ() * -0.5d));
+                        if (pos.distSqr(block) > 9) return;
+                        int x = (int) Math.floor(((hit.getLocation().x() - pos.getX()) * 16) + (direction.getStepX() * -0.5d));
+                        int y = (int) Math.floor(((hit.getLocation().y() - pos.getY()) * 16) + (direction.getStepY() * -0.5d));
+                        int z = (int) Math.floor(((hit.getLocation().z() - pos.getZ()) * 16) + (direction.getStepZ() * -0.5d));
                         
                         int blockXOffset = pos.getX() - block.getX();
                         int blockYOffset = pos.getY() - block.getY();
@@ -87,13 +88,13 @@ public class SmartChisel extends ToolItem implements ServerPlayNetworking.PlayCh
                         redBoxDrawer.drawRedBox(matrixStack, vertexConsumer, block, minx, miny, minz, maxx + 1, maxy + 1, maxz + 1, worldoffsetx, worldoffsety, worldoffsetz);
                     }
                 } else {
-                    HitResult hit = client.crosshairTarget;
+                    HitResult hit = client.hitResult;
                     if (hit.getType() == HitResult.Type.BLOCK) {
-                        Direction direction = ((BlockHitResult)hit).getSide();
+                        Direction direction = ((BlockHitResult)hit).getDirection();
                         BlockPos pos = ((BlockHitResult)hit).getBlockPos();
-                        int x = (int) Math.floor(((hit.getPos().getX() - pos.getX()) * 16) + (direction.getOffsetX() * -0.5d));
-                        int y = (int) Math.floor(((hit.getPos().getY() - pos.getY()) * 16) + (direction.getOffsetY() * -0.5d));
-                        int z = (int) Math.floor(((hit.getPos().getZ() - pos.getZ()) * 16) + (direction.getOffsetZ() * -0.5d));
+                        int x = (int) Math.floor(((hit.getLocation().x() - pos.getX()) * 16) + (direction.getStepX() * -0.5d));
+                        int y = (int) Math.floor(((hit.getLocation().y() - pos.getY()) * 16) + (direction.getStepY() * -0.5d));
+                        int z = (int) Math.floor(((hit.getLocation().z() - pos.getZ()) * 16) + (direction.getStepZ() * -0.5d));
                         redBoxDrawer.drawRedBox(matrixStack, vertexConsumer, pos, x, y, z, x + 1, y + 1, z + 1, worldoffsetx, worldoffsety, worldoffsetz);
                     }
                 }
@@ -102,7 +103,7 @@ public class SmartChisel extends ToolItem implements ServerPlayNetworking.PlayCh
     }
 
     @Override
-    public void receive(MinecraftServer server, ServerPlayerEntity player, ServerPlayNetworkHandler handler, PacketByteBuf buf, PacketSender responseSender) {
+    public void receive(MinecraftServer server, ServerPlayer player, ServerGamePacketListenerImpl handler, FriendlyByteBuf buf, PacketSender responseSender) {
         if (!Permissions.check(player, ModPermissions.USE_CHISEL_SMART, true)) return;
         BlockPos pos = buf.readBlockPos();
         int x1 = buf.readInt();
@@ -113,8 +114,8 @@ public class SmartChisel extends ToolItem implements ServerPlayNetworking.PlayCh
         int z2 = buf.readInt();
         server.execute(() -> {
             if (
-                player.getMainHandStack().getItem() == BitsAndChisels.SMART_CHISEL &&
-                player.getBlockPos().getSquaredDistance(pos) < 81 &&
+                player.getMainHandItem().getItem() == BitsAndChisels.SMART_CHISEL &&
+                player.blockPosition().distSqr(pos) < 81 &&
                 x1 <= x2 && y1 <= y2 && z1 <= z2 &&
                 ((x2 - x1) * (x2 - x1)) + ((y2 - y1) * (y2 - y1)) + ((z2 - z1) * (z2 - z1)) <= 1000000
             ) {
@@ -123,26 +124,26 @@ public class SmartChisel extends ToolItem implements ServerPlayNetworking.PlayCh
         });
     }
 
-    public ActionResult interactBreakBlockClient(PlayerEntity player, World world, BlockPos pos) {
-        if (getTime() - lastBreakTick < 5) return ActionResult.CONSUME;
-        MinecraftClient client = MinecraftClient.getInstance();
-        HitResult hit = client.crosshairTarget;
+    public InteractionResult interactBreakBlockClient(Player player, Level world, BlockPos pos) {
+        if (getTime() - lastBreakTick < 5) return InteractionResult.CONSUME;
+        Minecraft client = Minecraft.getInstance();
+        HitResult hit = client.hitResult;
 
         if (hit.getType() == HitResult.Type.BLOCK) {
-            Direction direction = ((BlockHitResult)hit).getSide();
-            int x = (int) Math.floor(((hit.getPos().getX() - pos.getX()) * 16) + (direction.getOffsetX() * -0.5d));
-            int y = (int) Math.floor(((hit.getPos().getY() - pos.getY()) * 16) + (direction.getOffsetY() * -0.5d));
-            int z = (int) Math.floor(((hit.getPos().getZ() - pos.getZ()) * 16) + (direction.getOffsetZ() * -0.5d));
+            Direction direction = ((BlockHitResult)hit).getDirection();
+            int x = (int) Math.floor(((hit.getLocation().x() - pos.getX()) * 16) + (direction.getStepX() * -0.5d));
+            int y = (int) Math.floor(((hit.getLocation().y() - pos.getY()) * 16) + (direction.getStepY() * -0.5d));
+            int z = (int) Math.floor(((hit.getLocation().z() - pos.getZ()) * 16) + (direction.getStepZ() * -0.5d));
             lastBreakTick = getTime();
             if (BitUtils.exists(BitUtils.getBit(world, pos, x, y, z))) {
-                if (!haspos1 || pos.getSquaredDistance(block) > 9) {
+                if (!haspos1 || pos.distSqr(block) > 9) {
                     block = pos;
                     bitx = x;
                     bity = y;
                     bitz = z;
                     haspos1 = true;
                 } else {
-                    PacketByteBuf passedData = new PacketByteBuf(Unpooled.buffer());
+                    FriendlyByteBuf passedData = new FriendlyByteBuf(Unpooled.buffer());
 
                     int blockXOffset = pos.getX() - block.getX();
                     int blockYOffset = pos.getY() - block.getY();
@@ -166,10 +167,10 @@ public class SmartChisel extends ToolItem implements ServerPlayNetworking.PlayCh
                     ClientPlayNetworking.send(PACKET_ID, passedData);
                     haspos1 = false;
                 }
-                return ActionResult.SUCCESS;
+                return InteractionResult.SUCCESS;
             }
         }
-        return ActionResult.CONSUME;
+        return InteractionResult.CONSUME;
     }
 
     private static long getTime() {
@@ -178,7 +179,7 @@ public class SmartChisel extends ToolItem implements ServerPlayNetworking.PlayCh
 
     @Environment(EnvType.CLIENT)
     @Override
-    public void airSwing(ClientPlayerEntity player, ItemStack stack) {
+    public void airSwing(LocalPlayer player, ItemStack stack) {
         this.haspos1 = false;
     }
 }

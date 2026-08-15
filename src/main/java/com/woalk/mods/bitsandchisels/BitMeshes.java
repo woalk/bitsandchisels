@@ -4,8 +4,8 @@ import java.util.Arrays;
 import java.util.Objects;
 
 import com.woalk.mods.bitsandchisels.blocks.ColoredBlockState;
-import net.minecraft.block.Blocks;
-import net.minecraft.util.math.Vec3i;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.core.Vec3i;
 import org.jetbrains.annotations.Nullable;
 
 import com.woalk.mods.bitsandchisels.duck.CubeRenderStuff;
@@ -15,17 +15,17 @@ import net.fabricmc.fabric.api.renderer.v1.mesh.MeshBuilder;
 import net.fabricmc.fabric.api.renderer.v1.mesh.MutableQuadView;
 import net.fabricmc.fabric.api.renderer.v1.mesh.QuadEmitter;
 import net.fabricmc.fabric.api.renderer.v1.model.SpriteFinder;
-import net.minecraft.block.BlockState;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.render.RenderLayer;
-import net.minecraft.client.render.RenderLayers;
-import net.minecraft.client.render.model.BakedQuad;
-import net.minecraft.client.texture.Sprite;
-import net.minecraft.client.texture.SpriteAtlasTexture;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Direction;
-import net.minecraft.util.math.Vec3f;
-import net.minecraft.world.World;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.RenderType;
+import net.minecraft.client.renderer.ItemBlockRenderTypes;
+import net.minecraft.client.renderer.block.model.BakedQuad;
+import net.minecraft.client.renderer.texture.TextureAtlasSprite;
+import net.minecraft.client.renderer.texture.TextureAtlas;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import com.mojang.math.Vector3f;
+import net.minecraft.world.level.Level;
 
 public class BitMeshes {
     private static final Direction[] X_DIRECTIONS = {Direction.EAST, Direction.WEST};
@@ -37,17 +37,17 @@ public class BitMeshes {
 
     private BitMeshes() { }
 
-    public static Mesh createMesh(BlockState[][][] states, @Nullable World world, @Nullable BlockPos pos, @Nullable Vec3i offset) {
+    public static Mesh createMesh(BlockState[][][] states, @Nullable Level world, @Nullable BlockPos pos, @Nullable Vec3i offset) {
         if (builder == null) {
             builder = Objects.requireNonNull(RendererAccess.INSTANCE.getRenderer()).meshBuilder();
         }
         QuadEmitter emitter = builder.getEmitter();
-        Vec3f tmp = new Vec3f();
+        Vector3f tmp = new Vector3f();
         prepareMesh(states, world, pos, emitter, tmp, offset);
         return builder.build();
     }
 
-    public static void prepareMesh(BlockState[][][] states, @Nullable World world, @Nullable BlockPos pos, QuadEmitter emitter, Vec3f tmp, @Nullable Vec3i offset) {
+    public static void prepareMesh(BlockState[][][] states, @Nullable Level world, @Nullable BlockPos pos, QuadEmitter emitter, Vector3f tmp, @Nullable Vec3i offset) {
         boolean[][] used = new boolean[16][16];
         //X
         for (Direction d : X_DIRECTIONS) {
@@ -167,21 +167,21 @@ public class BitMeshes {
         }
     }
 
-    private static void doQuad(@Nullable World world, @Nullable BlockPos pos, QuadEmitter emitter, Vec3f tmp, Direction d, BlockState state, int minx, int miny, int minz, int maxx, int maxy, int maxz, @Nullable Vec3i offset) {
+    private static void doQuad(@Nullable Level world, @Nullable BlockPos pos, QuadEmitter emitter, Vector3f tmp, Direction d, BlockState state, int minx, int miny, int minz, int maxx, int maxy, int maxz, @Nullable Vec3i offset) {
         boolean isColoredBlock = state instanceof ColoredBlockState;
         CubeRenderStuff cubeRenderStuff = CubeRenderStuff.of(
                 isColoredBlock ? ((ColoredBlockState) state).getWrapped() : state
         );
-        for (int z = 0; z < cubeRenderStuff.getQuads(d.getId()).length; z++) {
-            BakedQuad vanillaQuad = cubeRenderStuff.getQuads(d.getId())[z];
-            MutableQuadView quad = emitter.fromVanilla(vanillaQuad, cubeRenderStuff.getMaterials(d.getId())[z], d);
+        for (int z = 0; z < cubeRenderStuff.getQuads(d.get3DDataValue()).length; z++) {
+            BakedQuad vanillaQuad = cubeRenderStuff.getQuads(d.get3DDataValue())[z];
+            MutableQuadView quad = emitter.fromVanilla(vanillaQuad, cubeRenderStuff.getMaterials(d.get3DDataValue())[z], d);
             transform(quad, d, minx, miny, minz, maxx, maxy, maxz, tmp);
             //noinspection ConstantConditions
             if (isColoredBlock) {
                 int color = ((ColoredBlockState) state).getColor();
                 quad.spriteColor(0, color, color, color, color);
-            } else if (vanillaQuad.hasColor()) {
-                int color = 0xFF000000 | ColorPolice.getBlockColor(state, world, pos, vanillaQuad.getColorIndex());
+            } else if (vanillaQuad.isTinted()) {
+                int color = 0xFF000000 | ColorPolice.getBlockColor(state, world, pos, vanillaQuad.getTintIndex());
                 quad.spriteColor(0, color, color, color, color);
             }
             if (!canCull(d, minx, miny, minz)) quad.cullFace(null);
@@ -199,29 +199,29 @@ public class BitMeshes {
     private static boolean quadNeeded(BlockState[][][] states, Direction d, int x, int y, int z) {
         switch (d) {
             case UP:
-                if (y <= 14) return isEmpty(states[x][y + 1][z]) || (RenderLayers.getBlockLayer(states[x][y + 1][z]) != RenderLayer.getSolid() && states[x][y][z] != states[x][y + 1][z]);
+                if (y <= 14) return isEmpty(states[x][y + 1][z]) || (ItemBlockRenderTypes.getChunkRenderType(states[x][y + 1][z]) != RenderType.solid() && states[x][y][z] != states[x][y + 1][z]);
                 return true;
             case DOWN:
-                if (y >= 1) return isEmpty(states[x][y - 1][z]) || (RenderLayers.getBlockLayer(states[x][y - 1][z]) != RenderLayer.getSolid() && states[x][y][z] != states[x][y - 1][z]);
+                if (y >= 1) return isEmpty(states[x][y - 1][z]) || (ItemBlockRenderTypes.getChunkRenderType(states[x][y - 1][z]) != RenderType.solid() && states[x][y][z] != states[x][y - 1][z]);
                 return true;
             case SOUTH:
-                if (z <= 14) return isEmpty(states[x][y][z + 1]) || (RenderLayers.getBlockLayer(states[x][y][z + 1]) != RenderLayer.getSolid() && states[x][y][z] != states[x][y][z + 1]);
+                if (z <= 14) return isEmpty(states[x][y][z + 1]) || (ItemBlockRenderTypes.getChunkRenderType(states[x][y][z + 1]) != RenderType.solid() && states[x][y][z] != states[x][y][z + 1]);
                 return true;
             case NORTH:
-                if (z >= 1) return isEmpty(states[x][y][z - 1]) || (RenderLayers.getBlockLayer(states[x][y][z - 1]) != RenderLayer.getSolid() && states[x][y][z] != states[x][y][z - 1]);
+                if (z >= 1) return isEmpty(states[x][y][z - 1]) || (ItemBlockRenderTypes.getChunkRenderType(states[x][y][z - 1]) != RenderType.solid() && states[x][y][z] != states[x][y][z - 1]);
                 return true;
             case EAST:
-                if (x <= 14) return isEmpty(states[x + 1][y][z]) || (RenderLayers.getBlockLayer(states[x + 1][y][z]) != RenderLayer.getSolid() && states[x][y][z] != states[x + 1][y][z]);
+                if (x <= 14) return isEmpty(states[x + 1][y][z]) || (ItemBlockRenderTypes.getChunkRenderType(states[x + 1][y][z]) != RenderType.solid() && states[x][y][z] != states[x + 1][y][z]);
                 return true;
             case WEST:
-                if (x >= 1) return isEmpty(states[x - 1][y][z]) || (RenderLayers.getBlockLayer(states[x - 1][y][z]) != RenderLayer.getSolid() && states[x][y][z] != states[x - 1][y][z]);
+                if (x >= 1) return isEmpty(states[x - 1][y][z]) || (ItemBlockRenderTypes.getChunkRenderType(states[x - 1][y][z]) != RenderType.solid() && states[x][y][z] != states[x - 1][y][z]);
                 return true;
         }
         return true;
     }
 
     private static boolean isEmpty(BlockState state) {
-        return state.isAir() || state.isOf(Blocks.BARRIER);
+        return state.isAir() || state.is(Blocks.BARRIER);
     }
 
     private static void clear(boolean[][] a) {
@@ -248,19 +248,19 @@ public class BitMeshes {
         return false;
     }
 
-    private static void transform(MutableQuadView quad, Direction direction, int minx, int miny, int minz, int maxx, int maxy, int maxz, Vec3f tmp) {
-        Sprite sprite = SpriteFinder.get(MinecraftClient.getInstance().getBakedModelManager().getAtlas(SpriteAtlasTexture.BLOCK_ATLAS_TEXTURE)).find(quad, 0);
+    private static void transform(MutableQuadView quad, Direction direction, int minx, int miny, int minz, int maxx, int maxy, int maxz, Vector3f tmp) {
+        TextureAtlasSprite sprite = SpriteFinder.get(Minecraft.getInstance().getModelManager().getAtlas(TextureAtlas.LOCATION_BLOCKS)).find(quad, 0);
         transform0(minx * ONE_PIXEL, (maxx + 1) * ONE_PIXEL, miny * ONE_PIXEL, (maxy + 1) * ONE_PIXEL, minz * ONE_PIXEL, (maxz + 1) * ONE_PIXEL, quad, tmp);
         int bake_flags = MutableQuadView.BAKE_LOCK_UV;
         quad.spriteBake(0, sprite, bake_flags);
     }
 
-    private static void transform0(float minx, float maxx, float miny, float maxy, float minz, float maxz, MutableQuadView quad, Vec3f tmp) {
+    private static void transform0(float minx, float maxx, float miny, float maxy, float minz, float maxz, MutableQuadView quad, Vector3f tmp) {
         for (int i = 0; i < 4; i++) {
             quad.copyPos(i, tmp);
-            float _x = tmp.getX();
-            float _y = tmp.getY();
-            float _z = tmp.getZ();
+            float _x = tmp.x();
+            float _y = tmp.y();
+            float _z = tmp.z();
 
             if (approxEqual(_x, 0)) {
                 _x = minx;

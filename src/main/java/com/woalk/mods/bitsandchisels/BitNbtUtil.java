@@ -3,29 +3,29 @@ package com.woalk.mods.bitsandchisels;
 import java.util.ArrayList;
 
 import com.woalk.mods.bitsandchisels.blocks.ColoredBlockState;
-import net.minecraft.item.DyeableItem;
+import net.minecraft.world.item.DyeableLeatherItem;
 import org.jetbrains.annotations.Nullable;
 
-import net.minecraft.block.BlockState;
-import net.minecraft.block.Blocks;
-import net.minecraft.nbt.NbtByteArray;
-import net.minecraft.nbt.NbtCompound;
-import net.minecraft.nbt.NbtElement;
-import net.minecraft.nbt.NbtHelper;
-import net.minecraft.nbt.NbtList;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.nbt.ByteArrayTag;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.Tag;
+import net.minecraft.nbt.NbtUtils;
+import net.minecraft.nbt.ListTag;
 
 public class BitNbtUtil {
     private BitNbtUtil() { }
 
-    public static boolean read3DBitArray(NbtCompound tag, BlockState[][][] out) {
+    public static boolean read3DBitArray(CompoundTag tag, BlockState[][][] out) {
         ArrayList<BlockState> palette = new ArrayList<>();
-        NbtList paletteTag = (NbtList) tag.get("palette");
+        ListTag paletteTag = (ListTag) tag.get("palette");
         if (paletteTag == null) return false;
-        for (NbtElement statetag : paletteTag) {
-            palette.add(BitNbtUtil.toBlockState((NbtCompound) statetag));
+        for (Tag statetag : paletteTag) {
+            palette.add(BitNbtUtil.toBlockState((CompoundTag) statetag));
         }
-        NbtList bits = (NbtList) tag.get("bits");
-        NbtByteArray bits2 = (NbtByteArray) tag.get("bits_v2");
+        ListTag bits = (ListTag) tag.get("bits");
+        ByteArrayTag bits2 = (ByteArrayTag) tag.get("bits_v2");
         int index = 0;
         if (bits != null) {
             for (int i = 0; i < 16; i++) {
@@ -37,7 +37,7 @@ public class BitNbtUtil {
                 }
             }
         } else if (bits2 != null) {
-            byte[] bitsBytes = bits2.getByteArray();
+            byte[] bitsBytes = bits2.getAsByteArray();
             for (int i = 0; i < 16; i++) {
                 for (int j = 0; j < 16; j++) {
                     for (int k = 0; k < 16; k++) {
@@ -52,7 +52,7 @@ public class BitNbtUtil {
         return true;
     }
 
-    public static void write3DBitArray(NbtCompound tag, BlockState[][][] in) {
+    public static void write3DBitArray(CompoundTag tag, BlockState[][][] in) {
         ArrayList<BlockState> palette = new ArrayList<>();
         byte[] bits = new byte[8192];
         int arrayIndex = 0;
@@ -71,33 +71,33 @@ public class BitNbtUtil {
                 }
             }
         }
-        tag.put("bits_v2", new NbtByteArray(bits));
-        NbtList paletteTag = new NbtList();
+        tag.put("bits_v2", new ByteArrayTag(bits));
+        ListTag paletteTag = new ListTag();
         for (BlockState state : palette) {
             paletteTag.add(BitNbtUtil.fromBlockState(state));
         }
         tag.put("palette", paletteTag);
     }
 
-    public static BlockState toBlockState(@Nullable NbtCompound tag) {
+    public static BlockState toBlockState(@Nullable CompoundTag tag) {
         if (tag == null) {
-            return Blocks.AIR.getDefaultState();
-        } else if (tag.contains(DyeableItem.COLOR_KEY)) {
-            return new ColoredBlockState(tag.getInt(DyeableItem.COLOR_KEY));
+            return Blocks.AIR.defaultBlockState();
+        } else if (tag.contains(DyeableLeatherItem.TAG_COLOR)) {
+            return new ColoredBlockState(tag.getInt(DyeableLeatherItem.TAG_COLOR));
         } else {
-            return NbtHelper.toBlockState(tag);
+            return NbtUtils.readBlockState(tag);
         }
     }
 
-    public static NbtCompound fromBlockState(@Nullable BlockState state) {
+    public static CompoundTag fromBlockState(@Nullable BlockState state) {
         if (state == null) {
-            return NbtHelper.fromBlockState(Blocks.AIR.getDefaultState());
+            return NbtUtils.writeBlockState(Blocks.AIR.defaultBlockState());
         } else if (state instanceof ColoredBlockState) {
-            NbtCompound nbt = NbtHelper.fromBlockState(state);
-            nbt.putInt(DyeableItem.COLOR_KEY, ((ColoredBlockState) state).getColor());
+            CompoundTag nbt = NbtUtils.writeBlockState(state);
+            nbt.putInt(DyeableLeatherItem.TAG_COLOR, ((ColoredBlockState) state).getColor());
             return nbt;
         } else {
-            return NbtHelper.fromBlockState(state);
+            return NbtUtils.writeBlockState(state);
         }
     }
 }

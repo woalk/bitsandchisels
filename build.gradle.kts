@@ -1,5 +1,5 @@
 plugins {
-    id("fabric-loom")
+    id("net.fabricmc.fabric-loom-remap")
     val kotlinVersion: String by System.getProperties()
     kotlin("jvm").version(kotlinVersion)
 }
@@ -17,30 +17,26 @@ repositories {
 }
 dependencies {
     val minecraftVersion: String by project
-    minecraft("com.mojang", "minecraft", minecraftVersion)
-    val yarnMappings: String by project
-    mappings("net.fabricmc", "yarn", yarnMappings, null, "v2")
+    minecraft("com.mojang:minecraft:$minecraftVersion")
+    mappings(loom.officialMojangMappings())
     val loaderVersion: String by project
-    modImplementation("net.fabricmc", "fabric-loader", loaderVersion)
+    modImplementation("net.fabricmc:fabric-loader:$loaderVersion")
     val fabricVersion: String by project
-    modImplementation("net.fabricmc.fabric-api", "fabric-api", fabricVersion)
+    modImplementation("net.fabricmc.fabric-api:fabric-api:$fabricVersion")
     val fabricKotlinVersion: String by project
-    modImplementation("net.fabricmc", "fabric-language-kotlin", fabricKotlinVersion)
+    modImplementation("net.fabricmc:fabric-language-kotlin:$fabricKotlinVersion")
 
     val fabricPermissionsApiVersion: String by project
-    include(modImplementation(files("libs/fabric-permissions-api-${fabricPermissionsApiVersion}.jar"))!!)
+    include(modImplementation("me.lucko:fabric-permissions-api:${fabricPermissionsApiVersion}")!!)
 
     val worldEditVersion: String by project
-    modImplementation("com.sk89q.worldedit", "worldedit-fabric-mc1.19.2", worldEditVersion)
+    modImplementation("com.sk89q.worldedit:worldedit-fabric-mc${minecraftVersion}:$worldEditVersion")
 }
 tasks {
     val javaVersion = JavaVersion.VERSION_17
     withType<JavaCompile> {
         options.encoding = "UTF-8"
         options.release.set(javaVersion.toString().toInt())
-    }
-    withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
-        kotlinOptions { jvmTarget = javaVersion.toString() }
     }
     jar { from("LICENSE") { rename { "${it}_${base.archivesName}" } } }
     processResources {

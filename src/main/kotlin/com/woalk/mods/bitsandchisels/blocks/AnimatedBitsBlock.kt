@@ -1,32 +1,30 @@
 package com.woalk.mods.bitsandchisels.blocks
 
-import com.woalk.mods.bitsandchisels.BitsAndChisels
 import com.woalk.mods.bitsandchisels.BitsBlock
 import com.woalk.mods.bitsandchisels.ItemHelpers
 import com.woalk.mods.bitsandchisels.registry.ModBlockEntities
-import net.minecraft.block.BlockRenderType
-import net.minecraft.block.BlockState
-import net.minecraft.block.entity.BlockEntity
-import net.minecraft.block.entity.BlockEntityTicker
-import net.minecraft.block.entity.BlockEntityType
-import net.minecraft.entity.player.PlayerEntity
-import net.minecraft.item.ItemStack
-import net.minecraft.server.world.ServerWorld
-import net.minecraft.util.math.BlockPos
-import net.minecraft.world.BlockView
-import net.minecraft.world.World
+import net.minecraft.world.level.block.RenderShape
+import net.minecraft.world.level.block.state.BlockState
+import net.minecraft.world.level.block.entity.BlockEntity
+import net.minecraft.world.level.block.entity.BlockEntityTicker
+import net.minecraft.world.level.block.entity.BlockEntityType
+import net.minecraft.world.entity.player.Player
+import net.minecraft.world.item.ItemStack
+import net.minecraft.core.BlockPos
+import net.minecraft.world.level.BlockGetter
+import net.minecraft.world.level.Level
 
-class AnimatedBitsBlock(settings: Settings?) : BitsBlock(settings) {
-    override fun createBlockEntity(pos: BlockPos, state: BlockState): BlockEntity = AnimatedBitsBlockEntity(pos, state)
+class AnimatedBitsBlock(settings: Properties?) : BitsBlock(settings) {
+    override fun newBlockEntity(pos: BlockPos, state: BlockState): BlockEntity = AnimatedBitsBlockEntity(pos, state)
 
-    override fun getRenderType(state: BlockState?): BlockRenderType = BlockRenderType.ENTITYBLOCK_ANIMATED
+    override fun getRenderShape(state: BlockState?): RenderShape = RenderShape.ENTITYBLOCK_ANIMATED
 
-    override fun onBreak(world: World, pos: BlockPos?, state: BlockState?, player: PlayerEntity) {
+    override fun playerWillDestroy(world: Level, pos: BlockPos?, state: BlockState?, player: Player) {
         val blockEntity = world.getBlockEntity(pos, ModBlockEntities.animatedBitsBlockEntity).orElse(null)
-        dropStack(world, pos, ItemHelpers.blockToItem(this, state, blockEntity))
+        popResource(world, pos, ItemHelpers.blockToItem(this, state, blockEntity))
     }
 
-    override fun getPickStack(world: BlockView, pos: BlockPos?, state: BlockState?): ItemStack {
+    override fun getCloneItemStack(world: BlockGetter, pos: BlockPos?, state: BlockState?): ItemStack {
         val blockEntity = world.getBlockEntity(pos, ModBlockEntities.animatedBitsBlockEntity).orElse(null)
         return if (blockEntity != null) {
             ItemHelpers.blockToItem(this, state, blockEntity)
@@ -36,14 +34,14 @@ class AnimatedBitsBlock(settings: Settings?) : BitsBlock(settings) {
     }
 
     override fun <T : BlockEntity?> getTicker(
-        world: World,
+        world: Level,
         state: BlockState,
         type: BlockEntityType<T>
     ): BlockEntityTicker<T>? {
-        if (!world.isClient) {
+        if (!world.isClientSide) {
             return null
         }
-        return checkType(type, ModBlockEntities.animatedBitsBlockEntity) { _, _, _, be ->
+        return createTickerHelper(type, ModBlockEntities.animatedBitsBlockEntity) { _, _, _, be ->
             be.tick()
         }
     }

@@ -6,12 +6,12 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import com.woalk.mods.bitsandchisels.BitsAndChisels;
-import net.minecraft.client.network.ClientPlayerEntity;
+import net.minecraft.client.player.LocalPlayer;
 
-@Mixin(ClientPlayerEntity.class)
-public class ClientPlayerEntityMixin {
-    @Inject(method = "tickMovement", at = @At("RETURN"))
+@Mixin(LocalPlayer.class)
+public class LocalPlayerMixin {
+    @Inject(method = "aiStep", at = @At("RETURN"))
     void e(CallbackInfo funniVarName) {
-        if (!(((ClientPlayerEntity)(Object)this).isSneaking())) BitsAndChisels.BIT_ITEM.haspos1 = false;
+        if (!(((LocalPlayer)(Object)this).isShiftKeyDown())) BitsAndChisels.BIT_ITEM.haspos1 = false;
     }
 }

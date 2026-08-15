@@ -4,41 +4,42 @@ import com.woalk.mods.bitsandchisels.BitsAndChisels;
 import com.woalk.mods.bitsandchisels.BitsBlockEntity;
 import com.woalk.mods.bitsandchisels.registry.ModPermissions;
 import me.lucko.fabric.api.permissions.v0.Permissions;
-import net.minecraft.block.BlockState;
-import net.minecraft.block.entity.BlockEntity;
-import net.minecraft.item.Item;
-import net.minecraft.item.ItemUsageContext;
-import net.minecraft.util.ActionResult;
-import net.minecraft.util.math.Direction.Axis;
+import net.minecraft.world.item.Item.Properties;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.context.UseOnContext;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.core.Direction.Axis;
 
 import java.util.Objects;
 
 public class WrenchItem extends Item {
 
-    public WrenchItem(Settings settings) {
+    public WrenchItem(Properties settings) {
         super(settings);
     }
 
     @Override
-    public ActionResult useOnBlock(ItemUsageContext context) {
-        if (!context.getWorld().isClient &&
-                context.getWorld().getBlockState(context.getBlockPos()).isOf(BitsAndChisels.BITS_BLOCK) &&
+    public InteractionResult useOn(UseOnContext context) {
+        if (!context.getLevel().isClientSide &&
+                context.getLevel().getBlockState(context.getClickedPos()).is(BitsAndChisels.BITS_BLOCK) &&
                 Permissions.check(Objects.requireNonNull(context.getPlayer()),
                         ModPermissions.USE_WRENCH, true)) {
-            BlockEntity e1 = context.getWorld().getBlockEntity(context.getBlockPos());
+            BlockEntity e1 = context.getLevel().getBlockEntity(context.getClickedPos());
             if (e1 instanceof BitsBlockEntity) {
                 BitsBlockEntity e = (BitsBlockEntity) e1;
-                if (context.getPlayer().isSneaking()){
-                    invert(context.getSide().getAxis(), e);
+                if (context.getPlayer().isShiftKeyDown()){
+                    invert(context.getClickedFace().getAxis(), e);
                 }
                 else {
-                    rotate(context.getSide().getAxis(), e);
+                    rotate(context.getClickedFace().getAxis(), e);
                 }
 
-                return ActionResult.SUCCESS;
+                return InteractionResult.SUCCESS;
             }
         }
-        return ActionResult.PASS;
+        return InteractionResult.PASS;
     }
     void invert(Axis axis, BitsBlockEntity e) {
         BlockState[][][] rotated = new BlockState[16][16][16];

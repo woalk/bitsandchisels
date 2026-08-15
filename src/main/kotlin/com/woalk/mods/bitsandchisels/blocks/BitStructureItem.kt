@@ -7,32 +7,32 @@ import com.woalk.mods.bitsandchisels.BitsBlock
 import com.woalk.mods.bitsandchisels.compat.ChiselExtent
 import com.woalk.mods.bitsandchisels.utils.rotate
 import com.woalk.mods.bitsandchisels.utils.toYaw
-import net.minecraft.advancement.criterion.Criteria
-import net.minecraft.block.BlockState
-import net.minecraft.block.ShapeContext
-import net.minecraft.client.item.TooltipContext
-import net.minecraft.fluid.Fluids
-import net.minecraft.item.Item
-import net.minecraft.item.ItemPlacementContext
-import net.minecraft.item.ItemStack
-import net.minecraft.item.ItemUsageContext
-import net.minecraft.nbt.NbtCompound
-import net.minecraft.nbt.NbtElement
-import net.minecraft.nbt.NbtString
-import net.minecraft.server.network.ServerPlayerEntity
-import net.minecraft.sound.SoundCategory
-import net.minecraft.state.property.Properties
-import net.minecraft.text.Text
-import net.minecraft.util.ActionResult
-import net.minecraft.util.Formatting
-import net.minecraft.util.math.Direction
-import net.minecraft.util.math.Vec3i
-import net.minecraft.world.World
-import net.minecraft.world.event.GameEvent
+import net.minecraft.advancements.CriteriaTriggers
+import net.minecraft.world.level.block.state.BlockState
+import net.minecraft.world.phys.shapes.CollisionContext
+import net.minecraft.world.item.TooltipFlag
+import net.minecraft.world.level.material.Fluids
+import net.minecraft.world.item.Item
+import net.minecraft.world.item.context.BlockPlaceContext
+import net.minecraft.world.item.ItemStack
+import net.minecraft.world.item.context.UseOnContext
+import net.minecraft.nbt.CompoundTag
+import net.minecraft.nbt.Tag
+import net.minecraft.nbt.StringTag
+import net.minecraft.server.level.ServerPlayer
+import net.minecraft.sounds.SoundSource
+import net.minecraft.world.level.block.state.properties.BlockStateProperties
+import net.minecraft.network.chat.Component
+import net.minecraft.world.InteractionResult
+import net.minecraft.ChatFormatting
+import net.minecraft.core.Direction
+import net.minecraft.core.Vec3i
+import net.minecraft.world.level.Level
+import net.minecraft.world.level.gameevent.GameEvent
 import java.util.*
 import kotlin.math.roundToInt
 
-class BitStructureItem(settings: Settings) : Item(settings) {
+class BitStructureItem(settings: Properties) : Item(settings) {
     companion object {
         const val NBT_BIT_BLOCK_TAGS = "BitBlockTags"
         const val NBT_ROTATION = "Rotation"
@@ -44,107 +44,107 @@ class BitStructureItem(settings: Settings) : Item(settings) {
         }
     }
 
-    override fun useOnBlock(context: ItemUsageContext): ActionResult {
-        if (context.world.isClient) return ActionResult.SUCCESS
-        val actionResult = this.place(ItemPlacementContext(context))
-        if (!actionResult.isAccepted && this.isFood) {
-            val actionResult2 = use(context.world, context.player, context.hand).result
-            return if (actionResult2 == ActionResult.CONSUME) ActionResult.CONSUME_PARTIAL else actionResult2
+    override fun useOn(context: UseOnContext): InteractionResult {
+        if (context.level.isClientSide) return InteractionResult.SUCCESS
+        val actionResult = this.place(BlockPlaceContext(context))
+        if (!actionResult.consumesAction() && this.isEdible) {
+            val actionResult2 = use(context.level, context.player, context.hand).result
+            return if (actionResult2 == InteractionResult.CONSUME) InteractionResult.CONSUME_PARTIAL else actionResult2
         }
         return actionResult
     }
 
-    private fun place(context: ItemPlacementContext): ActionResult {
-        if (!context.canPlace()) return ActionResult.FAIL
-        val blockPos = context.blockPos
-        val world = context.world
+    private fun place(context: BlockPlaceContext): InteractionResult {
+        if (!context.canPlace()) return InteractionResult.FAIL
+        val blockPos = context.clickedPos
+        val world = context.level
         val playerEntity = context.player
-        val itemStack = context.stack
-        val fullTag = itemStack.nbt ?: return ActionResult.FAIL
+        val itemStack = context.itemInHand
+        val fullTag = itemStack.tag ?: return InteractionResult.FAIL
         var bitBlockState: BlockState? = null
         val structureId = UUID.randomUUID()
-        val rotation = ((Direction.byId(fullTag.getInt(NBT_ROTATION)).vector.toYaw() - (playerEntity?.yaw ?: 0f)) / 90).roundToInt() * 90
-        for ((index, nbtElement) in fullTag.getList(NBT_BIT_BLOCK_TAGS, NbtElement.COMPOUND_TYPE.toInt()).withIndex()) {
-            val tag = nbtElement as NbtCompound
+        val rotation = ((Direction.from3DDataValue(fullTag.getInt(NBT_ROTATION)).normal.toYaw() - (playerEntity?.yRot ?: 0f)) / 90).roundToInt() * 90
+        for ((index, nbtElement) in fullTag.getList(NBT_BIT_BLOCK_TAGS, Tag.TAG_COMPOUND.toInt()).withIndex()) {
+            val tag = nbtElement as CompoundTag
             if (tag.isEmpty) continue
-            if (index >= OFFSETS.size) return ActionResult.FAIL
-            val bitBlockPos = blockPos.add(OFFSETS[index].rotate(rotation))
-            if (!world.getBlockState(bitBlockPos).material.isReplaceable) return ActionResult.FAIL
-            if (!world.canPlace(BitsAndChisels.BITS_BLOCK.defaultState, bitBlockPos, ShapeContext.of(playerEntity))) {
-                return ActionResult.FAIL
+            if (index >= OFFSETS.size) return InteractionResult.FAIL
+            val bitBlockPos = blockPos.offset(OFFSETS[index].rotate(rotation))
+            if (!world.getBlockState(bitBlockPos).material.isReplaceable) return InteractionResult.FAIL
+            if (!world.isUnobstructed(BitsAndChisels.BITS_BLOCK.defaultBlockState(), bitBlockPos, CollisionContext.of(playerEntity))) {
+                return InteractionResult.FAIL
             }
         }
-        for ((index, nbtElement) in fullTag.getList(NBT_BIT_BLOCK_TAGS, NbtElement.COMPOUND_TYPE.toInt()).withIndex()) {
-            val tag = nbtElement as NbtCompound
+        for ((index, nbtElement) in fullTag.getList(NBT_BIT_BLOCK_TAGS, Tag.TAG_COMPOUND.toInt()).withIndex()) {
+            val tag = nbtElement as CompoundTag
             if (tag.isEmpty) continue
-            val bitBlockPos = blockPos.add(OFFSETS[index].rotate(rotation))
-            bitBlockState = BitsAndChisels.BITS_BLOCK.defaultState.with(
-                Properties.WATERLOGGED,
-                world.getFluidState(bitBlockPos).fluid === Fluids.WATER
-            ).with(BitsBlock.SHADER_TYPE, tag.getInt("shader_type"))
-            world.setBlockState(bitBlockPos, bitBlockState)
+            val bitBlockPos = blockPos.offset(OFFSETS[index].rotate(rotation))
+            bitBlockState = BitsAndChisels.BITS_BLOCK.defaultBlockState().setValue(
+                BlockStateProperties.WATERLOGGED,
+                world.getFluidState(bitBlockPos).type === Fluids.WATER
+            ).setValue(BitsBlock.SHADER_TYPE, tag.getInt("shader_type"))
+            world.setBlockAndUpdate(bitBlockPos, bitBlockState)
             world.getBlockEntity(bitBlockPos)?.let { blockEntity ->
-                if (!(world.isClient || !blockEntity.copyItemDataRequiresOperator()
-                            || playerEntity != null && playerEntity.isCreativeLevelTwoOp)) {
+                if (!(world.isClientSide || !blockEntity.onlyOpCanSetNbt()
+                            || playerEntity != null && playerEntity.canUseGameMasterBlocks())) {
                     return@let
                 }
-                val nbtCompound2: NbtCompound = blockEntity.createNbt()
+                val nbtCompound2: CompoundTag = blockEntity.saveWithoutMetadata()
                 val nbtCompound3 = nbtCompound2.copy()
-                nbtCompound2.copyFrom(nbtElement)
+                nbtCompound2.merge(nbtElement)
                 val nbtCompound4 = NBTConverter.fromNative(nbtCompound2)
                 val nbtCompound5 = NBTConverter.toNative(
                     ChiselExtent.apply(AffineTransform().rotateY(rotation.toDouble()), nbtCompound4)
                 )
                 nbtCompound2.put("bits_v2", nbtCompound5.get("bits_v2"))
                 nbtCompound2.put("palette", nbtCompound5.get("palette"))
-                nbtCompound2.putUuid("StructureId", structureId)
-                val displayNbt = itemStack.getSubNbt("display")?.copy() ?: NbtCompound()
-                val lore = displayNbt.getList("Lore", NbtElement.STRING_TYPE.toInt())
-                lore.add(NbtString.of("{\"color\":\"dark_gray\",\"text\":\"(${OFFSETS[index].toShortString()})\"}"))
+                nbtCompound2.putUUID("StructureId", structureId)
+                val displayNbt = itemStack.getTagElement("display")?.copy() ?: CompoundTag()
+                val lore = displayNbt.getList("Lore", Tag.TAG_STRING.toInt())
+                lore.add(StringTag.valueOf("{\"color\":\"dark_gray\",\"text\":\"(${OFFSETS[index].toShortString()})\"}"))
                 displayNbt.put("Lore", lore)
                 nbtCompound2.put("display", displayNbt)
                 if (nbtCompound2 != nbtCompound3) {
-                    blockEntity.readNbt(nbtCompound2)
-                    blockEntity.markDirty()
+                    blockEntity.load(nbtCompound2)
+                    blockEntity.setChanged()
                     return@let
                 }
             }
-            if (playerEntity is ServerPlayerEntity) {
-                Criteria.PLACED_BLOCK.trigger(playerEntity, blockPos, itemStack)
+            if (playerEntity is ServerPlayer) {
+                CriteriaTriggers.PLACED_BLOCK.trigger(playerEntity, blockPos, itemStack)
             }
         }
         if (bitBlockState != null) {
-            val blockSoundGroup = BitsAndChisels.BITS_BLOCK.getSoundGroup(bitBlockState)
+            val blockSoundGroup = BitsAndChisels.BITS_BLOCK.getSoundType(bitBlockState)
             world.playSound(
                 playerEntity,
                 blockPos,
-                bitBlockState.soundGroup.placeSound,
-                SoundCategory.BLOCKS,
+                bitBlockState.soundType.placeSound,
+                SoundSource.BLOCKS,
                 (blockSoundGroup.getVolume() + 1.0f) / 2.0f,
                 blockSoundGroup.getPitch() * 0.8f
             )
-            world.emitGameEvent(GameEvent.BLOCK_PLACE, blockPos, GameEvent.Emitter.of(playerEntity, bitBlockState))
-            if (playerEntity == null || !playerEntity.abilities.creativeMode) {
-                itemStack.decrement(1)
+            world.gameEvent(GameEvent.BLOCK_PLACE, blockPos, GameEvent.Context.of(playerEntity, bitBlockState))
+            if (playerEntity == null || !playerEntity.abilities.instabuild) {
+                itemStack.shrink(1)
             }
-            return ActionResult.success(world.isClient)
+            return InteractionResult.sidedSuccess(world.isClientSide)
         }
-        return ActionResult.FAIL
+        return InteractionResult.FAIL
     }
 
-    override fun appendTooltip(
+    override fun appendHoverText(
         stack: ItemStack,
-        world: World?,
-        tooltip: MutableList<Text>,
-        context: TooltipContext
+        world: Level?,
+        tooltip: MutableList<Component>,
+        context: TooltipFlag
     ) {
-        super.appendTooltip(stack, world, tooltip, context)
-        val fullTag = stack.nbt ?: return
+        super.appendHoverText(stack, world, tooltip, context)
+        val fullTag = stack.tag ?: return
         var count = 0
-        for (nbtElement in fullTag.getList(NBT_BIT_BLOCK_TAGS, NbtElement.COMPOUND_TYPE.toInt())) {
-            if ((nbtElement as NbtCompound).isEmpty) continue
+        for (nbtElement in fullTag.getList(NBT_BIT_BLOCK_TAGS, Tag.TAG_COMPOUND.toInt())) {
+            if ((nbtElement as CompoundTag).isEmpty) continue
             count++
         }
-        tooltip.add(Text.translatable("${getTranslationKey(stack)}.desc", count).formatted(Formatting.GRAY))
+        tooltip.add(Component.translatable("${getDescriptionId(stack)}.desc", count).withStyle(ChatFormatting.GRAY))
     }
 }

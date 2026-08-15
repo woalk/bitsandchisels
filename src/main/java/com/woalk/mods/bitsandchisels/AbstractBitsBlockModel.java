@@ -15,37 +15,37 @@ import net.fabricmc.fabric.api.renderer.v1.model.FabricBakedModel;
 import net.fabricmc.fabric.api.renderer.v1.model.ModelHelper;
 import net.fabricmc.fabric.api.renderer.v1.render.RenderContext;
 import net.fabricmc.fabric.api.rendering.data.v1.RenderAttachedBlockView;
-import net.minecraft.block.BlockState;
-import net.minecraft.client.render.model.BakedModel;
-import net.minecraft.client.render.model.BakedQuad;
-import net.minecraft.client.render.model.ModelBakeSettings;
-import net.minecraft.client.render.model.ModelLoader;
-import net.minecraft.client.render.model.UnbakedModel;
-import net.minecraft.client.render.model.json.ModelOverrideList;
-import net.minecraft.client.render.model.json.ModelTransformation;
-import net.minecraft.client.texture.Sprite;
-import net.minecraft.client.texture.SpriteAtlasTexture;
-import net.minecraft.client.util.SpriteIdentifier;
-import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NbtCompound;
-import net.minecraft.nbt.NbtElement;
-import net.minecraft.util.Identifier;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Direction;
-import net.minecraft.util.math.Vec3i;
-import net.minecraft.util.math.random.Random;
-import net.minecraft.world.BlockRenderView;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.client.resources.model.BakedModel;
+import net.minecraft.client.renderer.block.model.BakedQuad;
+import net.minecraft.client.resources.model.ModelState;
+import net.minecraft.client.resources.model.ModelBakery;
+import net.minecraft.client.resources.model.UnbakedModel;
+import net.minecraft.client.renderer.block.model.ItemOverrides;
+import net.minecraft.client.renderer.block.model.ItemTransforms;
+import net.minecraft.client.renderer.texture.TextureAtlasSprite;
+import net.minecraft.client.renderer.texture.TextureAtlas;
+import net.minecraft.client.resources.model.Material;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.Tag;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.core.Vec3i;
+import net.minecraft.util.RandomSource;
+import net.minecraft.world.level.BlockAndTintGetter;
 
 public abstract class AbstractBitsBlockModel implements UnbakedModel, BakedModel, FabricBakedModel {
-    public static final SpriteIdentifier SPRITE = new SpriteIdentifier(SpriteAtlasTexture.BLOCK_ATLAS_TEXTURE, new Identifier("bitsandchisels", "block/null"));
+    public static final Material SPRITE = new Material(TextureAtlas.LOCATION_BLOCKS, new ResourceLocation("bitsandchisels", "block/null"));
     static boolean frapiwarn = false;
 
     // *Important Stuff
 
-    protected static final LRUCache<NbtCompound, Mesh> cache = new LRUCache<>(200); //Should be enough (tm)
+    protected static final LRUCache<CompoundTag, Mesh> cache = new LRUCache<>(200); //Should be enough (tm)
 
     @Override
-    public void emitBlockQuads(BlockRenderView blockView, BlockState state, BlockPos pos, Supplier<Random> randomSupplier, RenderContext context) {
+    public void emitBlockQuads(BlockAndTintGetter blockView, BlockState state, BlockPos pos, Supplier<RandomSource> randomSupplier, RenderContext context) {
         Object mesh = ((RenderAttachedBlockView) blockView).getBlockEntityRenderAttachment(pos);
         if (mesh instanceof Mesh) context.meshConsumer().accept((Mesh) mesh);
         else if (mesh instanceof kotlin.Pair) {
@@ -58,14 +58,14 @@ public abstract class AbstractBitsBlockModel implements UnbakedModel, BakedModel
     }
 
     @Override
-    public void emitItemQuads(ItemStack stack, Supplier<Random> randomSupplier, RenderContext context) {
-        NbtCompound beTag = stack.getSubNbt("BlockEntityTag");
+    public void emitItemQuads(ItemStack stack, Supplier<RandomSource> randomSupplier, RenderContext context) {
+        CompoundTag beTag = stack.getTagElement("BlockEntityTag");
         Mesh mesh = cache.computeIfAbsent(beTag, discard -> {
-            NbtCompound tag = beTag;
+            CompoundTag tag = beTag;
             if (tag != null) {
                 BlockState[][][] bits = new BlockState[16][16][16];
                 if (tag.contains(AnimatedBitsBlockEntity.FRAMES_KEY)) {
-                    tag = tag.getList(AnimatedBitsBlockEntity.FRAMES_KEY, NbtElement.COMPOUND_TYPE).getCompound(0);
+                    tag = tag.getList(AnimatedBitsBlockEntity.FRAMES_KEY, Tag.TAG_COMPOUND).getCompound(0);
                 }
                 if (BitNbtUtil.read3DBitArray(tag, bits)) {
                     return BitMeshes.createMesh(bits, null, null, null);
@@ -80,24 +80,24 @@ public abstract class AbstractBitsBlockModel implements UnbakedModel, BakedModel
     //*Stubs
 
     @Override
-    public Collection<Identifier> getModelDependencies() {
+    public Collection<ResourceLocation> getDependencies() {
         return Collections.emptySet();
     }
 
     @Override
-    public Collection<SpriteIdentifier> getTextureDependencies(Function<Identifier, UnbakedModel> unbakedModelGetter,
-            Set<Pair<String, String>> unresolvedTextureReferences) {
+    public Collection<Material> getMaterials(Function<ResourceLocation, UnbakedModel> unbakedModelGetter,
+                                             Set<Pair<String, String>> unresolvedTextureReferences) {
         return Collections.singletonList(SPRITE);
     }
 
     @Override
-    public BakedModel bake(ModelLoader loader, Function<SpriteIdentifier, Sprite> textureGetter,
-            ModelBakeSettings rotationContainer, Identifier modelId) {
+    public BakedModel bake(ModelBakery loader, Function<Material, TextureAtlasSprite> textureGetter,
+                           ModelState rotationContainer, ResourceLocation modelId) {
         return this;
     }
 
     @Override
-    public List<BakedQuad> getQuads(BlockState state, Direction face, Random random) {
+    public List<BakedQuad> getQuads(BlockState state, Direction face, RandomSource random) {
         if (!frapiwarn) {
             BitsAndChisels.LOGGER.warn("BakedModel.getQuads was just called, this likely means your renderer doesn't support Fabric rendering API. In that case get one that does, I recommend canvas or indigo.");
             frapiwarn = true;
@@ -111,33 +111,33 @@ public abstract class AbstractBitsBlockModel implements UnbakedModel, BakedModel
     }
 
     @Override
-    public boolean hasDepth() {
+    public boolean isGui3d() {
         return false;
     }
 
     @Override
-    public boolean isSideLit() {
+    public boolean usesBlockLight() {
         return true;
     }
 
     @Override
-    public boolean isBuiltin() {
+    public boolean isCustomRenderer() {
         return false;
     }
 
     @Override
-    public Sprite getParticleSprite() {
-        return SPRITE.getSprite();
+    public TextureAtlasSprite getParticleIcon() {
+        return SPRITE.sprite();
     }
 
     @Override
-    public ModelTransformation getTransformation() {
+    public ItemTransforms getTransforms() {
         return ModelHelper.MODEL_TRANSFORM_BLOCK;
     }
 
     @Override
-    public ModelOverrideList getOverrides() {
-        return ModelOverrideList.EMPTY;
+    public ItemOverrides getOverrides() {
+        return ItemOverrides.EMPTY;
     }
 
     @Override

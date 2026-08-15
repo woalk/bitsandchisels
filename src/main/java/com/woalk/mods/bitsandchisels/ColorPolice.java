@@ -11,11 +11,11 @@ import org.slf4j.LoggerFactory;
 
 import net.fabricmc.loader.api.FabricLoader;
 import net.fabricmc.loader.api.ModContainer;
-import net.minecraft.block.BlockState;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.text.Text;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.BlockRenderView;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.client.Minecraft;
+import net.minecraft.network.chat.Component;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.BlockAndTintGetter;
 
 /**
  * We live in a society
@@ -26,9 +26,9 @@ public class ColorPolice {
 
     private ColorPolice() { }
 
-    public static int getBlockColor(BlockState state, @Nullable BlockRenderView world, @Nullable BlockPos pos, int tintIndex) {
+    public static int getBlockColor(BlockState state, @Nullable BlockAndTintGetter world, @Nullable BlockPos pos, int tintIndex) {
         try {
-            return MinecraftClient.getInstance().getBlockColors().getColor(state, world, pos, tintIndex);
+            return Minecraft.getInstance().getBlockColors().getColor(state, world, pos, tintIndex);
         } catch (Exception e) {
             String criminal = null;
             ModContainer criminalMod = null;
@@ -72,7 +72,7 @@ public class ColorPolice {
     }
 
     static void stopYouveViolatedTheLaw(String message) {
-        MinecraftClient.getInstance().inGameHud.getChatHud().addMessage(Text.literal(message));
+        Minecraft.getInstance().gui.getChat().addMessage(Component.literal(message));
         LOGGER.error(message);
     }
 }

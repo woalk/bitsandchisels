@@ -1,31 +1,31 @@
 package com.woalk.mods.bitsandchisels;
 
-import com.woalk.mods.bitsandchisels.mixin.SimpleVoxelShapeFactory;
-import net.minecraft.block.entity.BlockEntityType;
-import net.minecraft.nbt.NbtList;
-import net.minecraft.nbt.NbtString;
-import net.minecraft.text.Text;
-import net.minecraft.util.Nameable;
+import com.woalk.mods.bitsandchisels.mixin.CubeVoxelShapeFactory;
+import net.minecraft.world.level.block.entity.BlockEntityType;
+import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.StringTag;
+import net.minecraft.network.chat.Component;
+import net.minecraft.world.Nameable;
 import org.jetbrains.annotations.Nullable;
 
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.fabricmc.fabric.api.renderer.v1.mesh.Mesh;
 import net.fabricmc.fabric.api.rendering.data.v1.RenderAttachmentBlockEntity;
-import net.minecraft.block.BlockState;
-import net.minecraft.block.Blocks;
-import net.minecraft.block.entity.BlockEntity;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.nbt.NbtCompound;
-import net.minecraft.network.Packet;
-import net.minecraft.network.listener.ClientPlayPacketListener;
-import net.minecraft.network.packet.s2c.play.BlockEntityUpdateS2CPacket;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.MathHelper;
-import net.minecraft.util.shape.BitSetVoxelSet;
-import net.minecraft.util.shape.VoxelShape;
-import net.minecraft.util.shape.VoxelShapes;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.client.Minecraft;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.protocol.Packet;
+import net.minecraft.network.protocol.game.ClientGamePacketListener;
+import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.core.BlockPos;
+import net.minecraft.util.Mth;
+import net.minecraft.world.phys.shapes.BitSetDiscreteVoxelShape;
+import net.minecraft.world.phys.shapes.VoxelShape;
+import net.minecraft.world.phys.shapes.Shapes;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -35,15 +35,15 @@ public class BitsBlockEntity extends BlockEntity implements RenderAttachmentBloc
     protected BlockState[][][] states;
     @Environment(EnvType.CLIENT)
     protected Mesh mesh;
-    protected VoxelShape shape = VoxelShapes.fullCube();
-    protected NbtCompound nbtCache;
+    protected VoxelShape shape = Shapes.block();
+    protected CompoundTag nbtCache;
     private boolean alive = false;
-    private Text customName = null;
-    private List<Text> loreText = null;
+    private Component customName = null;
+    private List<Component> loreText = null;
     private UUID structureId = null;
 
     public BitsBlockEntity(BlockPos pos, BlockState state) {
-        this(Blocks.AIR.getDefaultState(), pos, state, false);
+        this(Blocks.AIR.defaultBlockState(), pos, state, false);
     }
 
     public BitsBlockEntity(BlockState fillState, BlockPos pos, BlockState state, boolean alive) {
@@ -63,7 +63,7 @@ public class BitsBlockEntity extends BlockEntity implements RenderAttachmentBloc
 
     public BitsBlockEntity(BlockEntityType<? extends BitsBlockEntity> type, BlockPos pos, BlockState state) {
         this(type, new BlockState[16][16][16], pos, state, false);
-        final BlockState fillState = Blocks.AIR.getDefaultState();
+        final BlockState fillState = Blocks.AIR.defaultBlockState();
         for (int i = 0; i < 16; i++) {
             for (int j = 0; j < 16; j++) {
                 for (int k = 0; k < 16; k++) {
@@ -80,36 +80,36 @@ public class BitsBlockEntity extends BlockEntity implements RenderAttachmentBloc
     }
 
     @Override
-    public void writeNbt(NbtCompound tag) {
-        super.writeNbt(tag);
+    public void saveAdditional(CompoundTag tag) {
+        super.saveAdditional(tag);
         if (!alive) return;
         writeBitNbt(tag);
         if (customName != null || loreText != null) {
-            NbtCompound displayNbt = new NbtCompound();
+            CompoundTag displayNbt = new CompoundTag();
             writeNameNbt(displayNbt);
             tag.put("display", displayNbt);
         }
         if (structureId != null) {
-            tag.putUuid("StructureId", structureId);
+            tag.putUUID("StructureId", structureId);
         }
     }
 
-    public void writeBitNbt(NbtCompound tag) {
+    public void writeBitNbt(CompoundTag tag) {
         if (nbtCache == null) {
             BitsAndChisels.LOGGER.error("NbtCache should not be null!");
             BitNbtUtil.write3DBitArray(tag, states);
         } else {
-            tag.copyFrom(nbtCache);
+            tag.merge(nbtCache);
         }
     }
 
-    public void writeNameNbt(NbtCompound displayNbt) {
+    public void writeNameNbt(CompoundTag displayNbt) {
         if (customName != null) {
-            displayNbt.putString("Name", Text.Serializer.toJson(this.customName));
+            displayNbt.putString("Name", Component.Serializer.toJson(this.customName));
         }
         if (loreText != null) {
-            NbtList loreNbt = new NbtList();
-            loreText.forEach((text) -> loreNbt.add(NbtString.of(oldChiselItemCompat(Text.Serializer.toJson(text)))));
+            ListTag loreNbt = new ListTag();
+            loreText.forEach((text) -> loreNbt.add(StringTag.valueOf(oldChiselItemCompat(Component.Serializer.toJson(text)))));
             displayNbt.put("Lore", loreNbt);
         }
     }
@@ -121,41 +121,41 @@ public class BitsBlockEntity extends BlockEntity implements RenderAttachmentBloc
     }
 
     @Override
-    public void readNbt(NbtCompound tag) {
-        super.readNbt(tag);
+    public void load(CompoundTag tag) {
+        super.load(tag);
         readBitNbt(tag);
         rebuildShape();
-        if (getWorld() != null && getWorld().isClient) {
+        if (getLevel() != null && getLevel().isClientSide) {
             postFromClientTag();
         }
         rebuildNbtCache();
         if (tag.contains("display")) {
-            NbtCompound displayNbt = tag.getCompound("display");
+            CompoundTag displayNbt = tag.getCompound("display");
             if (displayNbt.contains("Name")) {
-                customName = Text.Serializer.fromJson(displayNbt.getString("Name"));
+                customName = Component.Serializer.fromJson(displayNbt.getString("Name"));
             }
             if (displayNbt.contains("Lore")) {
-                NbtList loreNbt = displayNbt.getList("Lore", NbtList.STRING_TYPE);
+                ListTag loreNbt = displayNbt.getList("Lore", ListTag.TAG_STRING);
                 readLoreText(loreNbt);
             }
         }
         if (tag.contains("StructureId")) {
-            structureId = tag.getUuid("StructureId");
+            structureId = tag.getUUID("StructureId");
         }
         alive = true;
     }
 
-    protected void readBitNbt(NbtCompound tag) {
+    protected void readBitNbt(CompoundTag tag) {
         BitNbtUtil.read3DBitArray(tag, states);
     }
 
-    public void readLoreText(NbtList loreNbt) {
+    public void readLoreText(ListTag loreNbt) {
         loreText = new ArrayList<>(loreNbt.size());
-        loreNbt.forEach((textNbt) -> loreText.add(Text.Serializer.fromJson(textNbt.asString())));
+        loreNbt.forEach((textNbt) -> loreText.add(Component.Serializer.fromJson(textNbt.getAsString())));
     }
     
     protected void rebuildNbtCache() {
-        NbtCompound c = new NbtCompound();
+        CompoundTag c = new CompoundTag();
         BitNbtUtil.write3DBitArray(c, states);
         nbtCache = c;
     }
@@ -187,16 +187,16 @@ public class BitsBlockEntity extends BlockEntity implements RenderAttachmentBloc
 
     protected void rebuildShape() {
         boolean fullcube = true;
-        BitSetVoxelSet set = new BitSetVoxelSet(16, 16, 16);
+        BitSetDiscreteVoxelShape set = new BitSetDiscreteVoxelShape(16, 16, 16);
         BlockState firststate = states[0][0][0];
         int totalLight = 0;
         for (int i = 0; i < 16; i++) {
             for (int j = 0; j < 16; j++) {
                 for (int k = 0; k < 16; k++) {
                     BlockState state = states[i][j][k];
-                    totalLight += state.getLuminance();
+                    totalLight += state.getLightEmission();
                     if (!state.isAir()) {
-                        set.set(i, j, k);
+                        set.fill(i, j, k);
                     }
                     if (firststate != state) {
                         fullcube = false;
@@ -204,47 +204,47 @@ public class BitsBlockEntity extends BlockEntity implements RenderAttachmentBloc
                 }
             }
         }
-        shape = SimpleVoxelShapeFactory.getSimpleVoxelShape(set);
-        if (world != null && !world.isClient) {
-            BlockState state = world.getBlockState(pos);
-            if (!state.isOf(BitsAndChisels.BITS_BLOCK)) {
+        shape = CubeVoxelShapeFactory.getSimpleVoxelShape(set);
+        if (level != null && !level.isClientSide) {
+            BlockState state = level.getBlockState(worldPosition);
+            if (!state.is(BitsAndChisels.BITS_BLOCK)) {
                 // skip rebuilding, we are currently building terrain
                 return;
             }
             if (fullcube) {
-                world.setBlockState(pos, states[0][0][0]);
+                level.setBlockAndUpdate(worldPosition, states[0][0][0]);
             }
-            int targetlight = MathHelper.clamp((int)(Math.sqrt(totalLight) * 0.0625 /*16/sqrt(4096)*/), 0, 16);
-            if (state.get(BitsBlock.LIGHT_LEVEL) != targetlight) {
-                world.setBlockState(pos, state.with(BitsBlock.LIGHT_LEVEL, targetlight), 0);
+            int targetlight = Mth.clamp((int)(Math.sqrt(totalLight) * 0.0625 /*16/sqrt(4096)*/), 0, 16);
+            if (state.getValue(BitsBlock.LIGHT_LEVEL) != targetlight) {
+                level.setBlock(worldPosition, state.setValue(BitsBlock.LIGHT_LEVEL, targetlight), 0);
             }
         }
     }
 
     @Environment(EnvType.CLIENT)
     protected void rebuildMesh() {
-        mesh = BitMeshes.createMesh(states, world, pos, null);
+        mesh = BitMeshes.createMesh(states, level, worldPosition, null);
     }
 
     public void postFromClientTag() {
         rebuildMesh();
-        MinecraftClient.getInstance().worldRenderer.scheduleBlockRenders(pos.getX(), pos.getY(), pos.getZ(), pos.getX(), pos.getY(), pos.getZ());
+        Minecraft.getInstance().levelRenderer.setBlocksDirty(worldPosition.getX(), worldPosition.getY(), worldPosition.getZ(), worldPosition.getX(), worldPosition.getY(), worldPosition.getZ());
     }
 
     @Override
-    public Packet<ClientPlayPacketListener> toUpdatePacket() {
-        return BlockEntityUpdateS2CPacket.create(this);
+    public Packet<ClientGamePacketListener> getUpdatePacket() {
+        return ClientboundBlockEntityDataPacket.create(this);
     }
 
     public void sync() {
-        markDirty();
-        assert world != null;
-        ((ServerWorld) world).getChunkManager().markForUpdate(getPos());
+        setChanged();
+        assert level != null;
+        ((ServerLevel) level).getChunkSource().blockChanged(getBlockPos());
     }
 
     @Override
-    public NbtCompound toInitialChunkDataNbt() {
-        return createNbt();
+    public CompoundTag getUpdateTag() {
+        return saveWithoutMetadata();
     }
 
     @Environment(EnvType.CLIENT)
@@ -254,21 +254,21 @@ public class BitsBlockEntity extends BlockEntity implements RenderAttachmentBloc
     }
 
     @Override
-    public Text getName() {
+    public Component getName() {
         return null;
     }
 
     @Nullable
     @Override
-    public Text getCustomName() {
+    public Component getCustomName() {
         return Nameable.super.getCustomName();
     }
 
-    public void setCustomName(Text customName) {
+    public void setCustomName(Component customName) {
         this.customName = customName;
     }
 
-    public void setLoreText(List<Text> loreText) {
+    public void setLoreText(List<Component> loreText) {
         this.loreText = loreText;
     }
 

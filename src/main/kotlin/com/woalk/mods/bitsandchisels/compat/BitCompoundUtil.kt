@@ -6,9 +6,9 @@ import com.sk89q.jnbt.IntTag
 import com.sk89q.jnbt.ListTag
 import com.sk89q.jnbt.Tag
 import com.woalk.mods.bitsandchisels.blocks.ColoredBlockState
-import net.minecraft.block.BlockState
-import net.minecraft.block.Blocks
-import net.minecraft.item.DyeableItem
+import net.minecraft.world.level.block.state.BlockState
+import net.minecraft.world.level.block.Blocks
+import net.minecraft.world.item.DyeableLeatherItem
 
 typealias Block3D = Array<Array<Array<BlockState?>>>
 
@@ -87,9 +87,9 @@ object BitCompoundUtil {
 
     private fun toBlockState(tag: CompoundTag?): BlockState {
         return if (tag == null) {
-            Blocks.AIR.defaultState
-        } else if (tag.containsKey(DyeableItem.COLOR_KEY)) {
-            return ColoredBlockState(tag.getInt(DyeableItem.COLOR_KEY))
+            Blocks.AIR.defaultBlockState()
+        } else if (tag.containsKey(DyeableLeatherItem.TAG_COLOR)) {
+            return ColoredBlockState(tag.getInt(DyeableLeatherItem.TAG_COLOR))
         } else {
             CompoundHelper.toBlockState(tag)
         }
@@ -97,11 +97,11 @@ object BitCompoundUtil {
 
     private fun fromBlockState(state: BlockState?): CompoundTag {
         return when (state) {
-            null -> CompoundHelper.fromBlockState(Blocks.AIR.defaultState)
+            null -> CompoundHelper.fromBlockState(Blocks.AIR.defaultBlockState())
             is ColoredBlockState -> {
                 CompoundHelper.fromBlockState(state).run {
                     val map = value.toMutableMap()
-                    map[DyeableItem.COLOR_KEY] = IntTag(state.color)
+                    map[DyeableLeatherItem.TAG_COLOR] = IntTag(state.color)
                     setValue(map)
                 }
             }

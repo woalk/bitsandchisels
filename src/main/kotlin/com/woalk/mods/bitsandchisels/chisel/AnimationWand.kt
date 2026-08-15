@@ -6,85 +6,85 @@ import com.woalk.mods.bitsandchisels.registry.ModBlockEntities
 import com.woalk.mods.bitsandchisels.registry.ModBlocks
 import com.woalk.mods.bitsandchisels.registry.ModPermissions
 import me.lucko.fabric.api.permissions.v0.Permissions
-import net.minecraft.block.entity.ChestBlockEntity
-import net.minecraft.client.item.TooltipContext
-import net.minecraft.item.ItemStack
-import net.minecraft.item.ItemUsageContext
-import net.minecraft.item.ToolItem
-import net.minecraft.item.ToolMaterials
-import net.minecraft.nbt.NbtCompound
-import net.minecraft.nbt.NbtList
-import net.minecraft.text.Text
-import net.minecraft.util.ActionResult
-import net.minecraft.util.Formatting
-import net.minecraft.world.World
+import net.minecraft.world.level.block.entity.ChestBlockEntity
+import net.minecraft.world.item.TooltipFlag
+import net.minecraft.world.item.ItemStack
+import net.minecraft.world.item.context.UseOnContext
+import net.minecraft.world.item.TieredItem
+import net.minecraft.world.item.Tiers
+import net.minecraft.nbt.CompoundTag
+import net.minecraft.nbt.ListTag
+import net.minecraft.network.chat.Component
+import net.minecraft.world.InteractionResult
+import net.minecraft.ChatFormatting
+import net.minecraft.world.level.Level
 
-class AnimationWand(settings: Settings) : ToolItem(ToolMaterials.STONE, settings) {
-    override fun useOnBlock(context: ItemUsageContext?): ActionResult {
+class AnimationWand(settings: Properties) : TieredItem(Tiers.STONE, settings) {
+    override fun useOn(context: UseOnContext?): InteractionResult {
         if (context?.player == null ||
             !Permissions.check(context.player!!, ModPermissions.USE_ANIMATION_WAND, true) ||
-            !context.world.canPlayerModifyAt(context.player!!, context.blockPos)) {
-            return ActionResult.PASS
+            !context.level.mayInteract(context.player!!, context.clickedPos)) {
+            return InteractionResult.PASS
         }
-        val be = context.world?.getBlockEntity(
-            context.blockPos
-        ) ?: return ActionResult.PASS
+        val be = context.level?.getBlockEntity(
+            context.clickedPos
+        ) ?: return InteractionResult.PASS
 
         if (be is AnimatedBitsBlockEntity) {
-            if (context.world.isClient) return ActionResult.success(true)
-            if (context.player!!.isSneaking) {
+            if (context.level.isClientSide) return InteractionResult.sidedSuccess(true)
+            if (context.player!!.isShiftKeyDown) {
                 be.frametime = (be.frametime - 1).coerceAtLeast(1)
             } else be.frametime++
             be.sync()
-            context.player!!.sendMessage(Text.literal("Set frame time to ${be.frametime}"), true)
-            return ActionResult.SUCCESS
+            context.player!!.displayClientMessage(Component.literal("Set frame time to ${be.frametime}"), true)
+            return InteractionResult.SUCCESS
         }
 
-        val chestEntity = be as? ChestBlockEntity ?: return ActionResult.PASS
-        if (context.world.isClient) return ActionResult.success(true)
+        val chestEntity = be as? ChestBlockEntity ?: return InteractionResult.PASS
+        if (context.level.isClientSide) return InteractionResult.sidedSuccess(true)
 
         var error = false
-        val frames = NbtList()
+        val frames = ListTag()
         for (slot in 0 until 27) {
-            val stack = chestEntity.getStack(slot)
+            val stack = chestEntity.getItem(slot)
             if (stack.isEmpty) {
                 continue
-            } else if (!stack.isOf(BitsAndChisels.BITS_BLOCK_ITEM)) {
+            } else if (!stack.`is`(BitsAndChisels.BITS_BLOCK_ITEM)) {
                 error = true
                 break
             } else {
-                val tag = stack.getSubNbt("BlockEntityTag")
-                println(tag?.asString())
+                val tag = stack.getTagElement("BlockEntityTag")
+                println(tag?.asString)
                 frames.add(tag ?: continue)
             }
         }
 
         return if (error || frames.isEmpty()) {
-            context.player?.sendMessage(Text.literal("This chest contains items that are not bit blocks."))
-            ActionResult.FAIL
+            context.player?.sendSystemMessage(Component.literal("This chest contains items that are not bit blocks."))
+            InteractionResult.FAIL
         } else {
-            context.world.removeBlockEntity(context.blockPos)
-            val state = ModBlocks.animatedBitsBlock.defaultState
-            context.world.setBlockState(context.blockPos, state)
-            val be = context.world.getBlockEntity(context.blockPos, ModBlockEntities.animatedBitsBlockEntity)
-            if (be.isPresent) be.get().readNbt(NbtCompound().apply {
+            context.level.removeBlockEntity(context.clickedPos)
+            val state = ModBlocks.animatedBitsBlock.defaultBlockState()
+            context.level.setBlockAndUpdate(context.clickedPos, state)
+            val be = context.level.getBlockEntity(context.clickedPos, ModBlockEntities.animatedBitsBlockEntity)
+            if (be.isPresent) be.get().load(CompoundTag().apply {
                 put(AnimatedBitsBlockEntity.FRAMES_KEY, frames)
             })
-            ActionResult.SUCCESS
+            InteractionResult.SUCCESS
         }
     }
 
-    override fun appendTooltip(
+    override fun appendHoverText(
         stack: ItemStack,
-        world: World?,
-        tooltip: MutableList<Text>,
-        context: TooltipContext?
+        world: Level?,
+        tooltip: MutableList<Component>,
+        context: TooltipFlag?
     ) {
-        super.appendTooltip(stack, world, tooltip, context)
+        super.appendHoverText(stack, world, tooltip, context)
         tooltip.add(
-            Text.translatable("$translationKey.desc")
-                .formatted(Formatting.DARK_PURPLE)
-                .formatted(Formatting.ITALIC)
+            Component.translatable("$descriptionId.desc")
+                .withStyle(ChatFormatting.DARK_PURPLE)
+                .withStyle(ChatFormatting.ITALIC)
         )
     }
 }

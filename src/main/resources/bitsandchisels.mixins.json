@@ -4,15 +4,15 @@
   "package": "com.woalk.mods.bitsandchisels.mixin",
   "compatibilityLevel": "JAVA_8",
   "mixins": [
-    "SimpleVoxelShapeFactory"
+    "CubeVoxelShapeFactory"
   ],
   "client": [
     "ParticleYeeter",
     "RedSelectionBoxMixin",
     "BakedQuadAccessor",
     "BlockStateMixin",
-    "MinecraftClientMixin",
-    "ClientPlayerEntityMixin"
+    "MinecraftMixin",
+    "LocalPlayerMixin"
   ],
   "server": [
     "DebugStickItemMixin"

@@ -1,6 +1,6 @@
 package com.woalk.mods.bitsandchisels.image
 
-import net.minecraft.block.BlockState
+import net.minecraft.world.level.block.state.BlockState
 
 interface IChiseledImage {
     val width: Int
