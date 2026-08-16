@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "id": "bitsandchisels",
-  "version": "0.5",
+  "version": "${version}",
   "name": "Woalk's BitsAndChisels",
   "description": "Turn Blocks Into Small Bits With Chisels; Build All The Things",
   "authors": [
@@ -12,7 +12,7 @@
     "homepage": "https://mods.iramesia.com/docs/bitsandchisels/",
     "sources": "https://git.woalk.com/mc-mods/bitsandchisels"
   },
-  "license": "All rights reserved.",
+  "license": "GPL-3.0-or-later",
   "icon": "assets/bitsandchisels/icon.png",
   "environment": "*",
   "entrypoints": {
