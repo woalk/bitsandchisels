@@ -4,6 +4,8 @@ import com.woalk.mods.bitsandchisels.BitsAndChisels;
 import com.woalk.mods.bitsandchisels.api.BitUtils;
 import com.woalk.mods.bitsandchisels.api.client.AirSwingItem;
 import com.woalk.mods.bitsandchisels.api.client.RedBoxCallback;
+import com.woalk.mods.bitsandchisels.networking.SmartChiselPacket;
+import com.woalk.mods.bitsandchisels.registry.ModItems;
 import com.woalk.mods.bitsandchisels.registry.ModPermissions;
 import io.netty.buffer.Unpooled;
 import me.lucko.fabric.api.permissions.v0.Permissions;
@@ -33,9 +35,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.level.Level;
 
-public class SmartChisel extends TieredItem implements ServerPlayNetworking.PlayChannelHandler, AirSwingItem {
-    public static final ResourceLocation PACKET_ID = new ResourceLocation("bitsandchisels", "smart_chisel_packet");
-
+public class SmartChisel extends TieredItem implements ServerPlayNetworking.PlayPayloadHandler<SmartChiselPacket>, AirSwingItem {
     BlockPos block = null;
 
     int bitx = 0;
@@ -48,7 +48,7 @@ public class SmartChisel extends TieredItem implements ServerPlayNetworking.Play
 
     public SmartChisel(Properties settings) {
         super(Tiers.IRON, settings);
-        ServerPlayNetworking.registerGlobalReceiver(PACKET_ID, this);
+        ServerPlayNetworking.registerGlobalReceiver(SmartChiselPacket.TYPE, this);
         AttackBlockCallback.EVENT.register((player, world, hand, pos, direction) -> {
             Item i = player.getItemInHand(hand).getItem();
             if (i instanceof SmartChisel) {
@@ -62,7 +62,7 @@ public class SmartChisel extends TieredItem implements ServerPlayNetworking.Play
     public void initClient() {
         RedBoxCallback.EVENT.register((redBoxDrawer, matrixStack, vertexConsumer, worldoffsetx, worldoffsety, worldoffsetz) -> {
             Minecraft client = Minecraft.getInstance();
-            if (client.player.getMainHandItem().getItem() == BitsAndChisels.SMART_CHISEL) {
+            if (client.player.getMainHandItem().getItem() == this) {
                 if (haspos1) {
                     HitResult hit = client.hitResult;
                     if (hit.getType() == HitResult.Type.BLOCK) {
@@ -103,23 +103,23 @@ public class SmartChisel extends TieredItem implements ServerPlayNetworking.Play
     }
 
     @Override
-    public void receive(MinecraftServer server, ServerPlayer player, ServerGamePacketListenerImpl handler, FriendlyByteBuf buf, PacketSender responseSender) {
-        if (!Permissions.check(player, ModPermissions.USE_CHISEL_SMART, true)) return;
-        BlockPos pos = buf.readBlockPos();
-        int x1 = buf.readInt();
-        int y1 = buf.readInt();
-        int z1 = buf.readInt();
-        int x2 = buf.readInt();
-        int y2 = buf.readInt();
-        int z2 = buf.readInt();
-        server.execute(() -> {
+    public void receive(SmartChiselPacket payload, ServerPlayNetworking.Context context) {
+        if (!Permissions.check(context.player(), ModPermissions.USE_CHISEL_SMART, true)) return;
+        BlockPos pos = payload.getBlockPos();
+        int x1 = payload.getBitPos().getX();
+        int y1 = payload.getBitPos().getY();
+        int z1 = payload.getBitPos().getZ();
+        int x2 = payload.getBitPos2().getX();
+        int y2 = payload.getBitPos2().getY();
+        int z2 = payload.getBitPos2().getZ();
+        context.server().execute(() -> {
             if (
-                player.getMainHandItem().getItem() == BitsAndChisels.SMART_CHISEL &&
-                player.blockPosition().distSqr(pos) < 81 &&
+                context.player().getMainHandItem().getItem() == this &&
+                context.player().blockPosition().distSqr(pos) < 81 &&
                 x1 <= x2 && y1 <= y2 && z1 <= z2 &&
                 ((x2 - x1) * (x2 - x1)) + ((y2 - y1) * (y2 - y1)) + ((z2 - z1) * (z2 - z1)) <= 1000000
             ) {
-                BitUtils.attemptBreakRegion(player, pos, x1, y1, z1, x2, y2, z2);
+                BitUtils.attemptBreakRegion(context.player(), pos, x1, y1, z1, x2, y2, z2);
             }
         });
     }
@@ -157,14 +157,8 @@ public class SmartChisel extends TieredItem implements ServerPlayNetworking.Play
                     int maxy = Math.max(bity, blockYOffset * 16 + y);
                     int maxz = Math.max(bitz, blockZOffset * 16 + z);
 
-                    passedData.writeBlockPos(block);
-                    passedData.writeInt(minx);
-                    passedData.writeInt(miny);
-                    passedData.writeInt(minz);
-                    passedData.writeInt(maxx);
-                    passedData.writeInt(maxy);
-                    passedData.writeInt(maxz);
-                    ClientPlayNetworking.send(PACKET_ID, passedData);
+                    final var packet = new SmartChiselPacket(block, new BlockPos(minx, miny, minz), new BlockPos(maxx, maxy, maxz));
+                    ClientPlayNetworking.send(packet);
                     haspos1 = false;
                 }
                 return InteractionResult.SUCCESS;

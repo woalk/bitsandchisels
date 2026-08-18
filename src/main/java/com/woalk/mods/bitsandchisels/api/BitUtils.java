@@ -2,8 +2,12 @@ package com.woalk.mods.bitsandchisels.api;
 
 import com.woalk.mods.bitsandchisels.blocks.ColoredBlockState;
 import com.woalk.mods.bitsandchisels.registry.ModBlocks;
+import com.woalk.mods.bitsandchisels.registry.ModItems;
 import com.woalk.mods.bitsandchisels.registry.ModPermissions;
 import me.lucko.fabric.api.permissions.v0.Permissions;
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.world.item.component.CustomData;
 import org.jetbrains.annotations.Nullable;
 
 import com.woalk.mods.bitsandchisels.BitNbtUtil;
@@ -111,13 +115,23 @@ public class BitUtils {
     }
 
     public static ItemStack getBitItemStack(BlockState state) {
-        ItemStack result = new ItemStack(BitsAndChisels.BIT_ITEM);
-        result.addTagElement("bit", BitNbtUtil.fromBlockState(state));
+        ItemStack result = new ItemStack(ModItems.BIT_ITEM);
+        final var data = result.getComponents().get(DataComponents.CUSTOM_DATA);
+        CompoundTag nbt;
+        if (data == null) {
+            nbt = new CompoundTag();
+        } else {
+            nbt = data.copyTag();
+        }
+        nbt.put("bit", BitNbtUtil.fromBlockState(state));
+        result.set(DataComponents.CUSTOM_DATA, CustomData.of(nbt));
         return result;
     }
 
     public static BlockState getBit(ItemStack stack) {
-        return BitNbtUtil.toBlockState(stack.getTagElement("bit"));
+        final var data = stack.getComponents().get(DataComponents.CUSTOM_DATA);
+        if (data == null) return null;
+        return BitNbtUtil.toBlockState(data.copyTag().getCompound("bit"));
     }
 
     public static boolean canBeChiseled(BlockState state, Level world, BlockPos pos) {

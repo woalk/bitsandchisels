@@ -2,11 +2,13 @@ package com.woalk.mods.bitsandchisels.blocks
 
 import com.sk89q.worldedit.fabric.internal.NBTConverter
 import com.sk89q.worldedit.math.transform.AffineTransform
+import com.sk89q.worldedit.util.formatting.text.NbtComponent
 import com.woalk.mods.bitsandchisels.BitsAndChisels
 import com.woalk.mods.bitsandchisels.BitsBlock
 import com.woalk.mods.bitsandchisels.compat.ChiselExtent
 import com.woalk.mods.bitsandchisels.utils.rotate
 import com.woalk.mods.bitsandchisels.utils.toYaw
+import net.fabricmc.fabric.api.recipe.v1.ingredient.DefaultCustomIngredients.components
 import net.minecraft.advancements.CriteriaTriggers
 import net.minecraft.world.level.block.state.BlockState
 import net.minecraft.world.phys.shapes.CollisionContext
@@ -27,6 +29,11 @@ import net.minecraft.world.InteractionResult
 import net.minecraft.ChatFormatting
 import net.minecraft.core.Direction
 import net.minecraft.core.Vec3i
+import net.minecraft.core.component.DataComponentMap
+import net.minecraft.core.component.DataComponentPatch
+import net.minecraft.core.component.DataComponents
+import net.minecraft.network.chat.ComponentSerialization
+import net.minecraft.world.item.component.ItemLore
 import net.minecraft.world.level.Level
 import net.minecraft.world.level.gameevent.GameEvent
 import java.util.*
@@ -47,7 +54,7 @@ class BitStructureItem(settings: Properties) : Item(settings) {
     override fun useOn(context: UseOnContext): InteractionResult {
         if (context.level.isClientSide) return InteractionResult.SUCCESS
         val actionResult = this.place(BlockPlaceContext(context))
-        if (!actionResult.consumesAction() && this.isEdible) {
+        if (!actionResult.consumesAction() && components().get(DataComponents.FOOD) != null) {
             val actionResult2 = use(context.level, context.player, context.hand).result
             return if (actionResult2 == InteractionResult.CONSUME) InteractionResult.CONSUME_PARTIAL else actionResult2
         }
@@ -60,7 +67,7 @@ class BitStructureItem(settings: Properties) : Item(settings) {
         val world = context.level
         val playerEntity = context.player
         val itemStack = context.itemInHand
-        val fullTag = itemStack.tag ?: return InteractionResult.FAIL
+        val fullTag = itemStack.components.get(DataComponents.CUSTOM_DATA)?.copyTag() ?: return InteractionResult.FAIL
         var bitBlockState: BlockState? = null
         val structureId = UUID.randomUUID()
         val rotation = ((Direction.from3DDataValue(fullTag.getInt(NBT_ROTATION)).normal.toYaw() - (playerEntity?.yRot ?: 0f)) / 90).roundToInt() * 90
@@ -88,7 +95,7 @@ class BitStructureItem(settings: Properties) : Item(settings) {
                             || playerEntity != null && playerEntity.canUseGameMasterBlocks())) {
                     return@let
                 }
-                val nbtCompound2: CompoundTag = blockEntity.saveWithoutMetadata()
+                val nbtCompound2: CompoundTag = blockEntity.saveWithoutMetadata(context.level.registryAccess())
                 val nbtCompound3 = nbtCompound2.copy()
                 nbtCompound2.merge(nbtElement)
                 val nbtCompound4 = NBTConverter.fromNative(nbtCompound2)
@@ -98,13 +105,17 @@ class BitStructureItem(settings: Properties) : Item(settings) {
                 nbtCompound2.put("bits_v2", nbtCompound5.get("bits_v2"))
                 nbtCompound2.put("palette", nbtCompound5.get("palette"))
                 nbtCompound2.putUUID("StructureId", structureId)
-                val displayNbt = itemStack.getTagElement("display")?.copy() ?: CompoundTag()
-                val lore = displayNbt.getList("Lore", Tag.TAG_STRING.toInt())
-                lore.add(StringTag.valueOf("{\"color\":\"dark_gray\",\"text\":\"(${OFFSETS[index].toShortString()})\"}"))
-                displayNbt.put("Lore", lore)
-                nbtCompound2.put("display", displayNbt)
+                val lore = itemStack.components.get(DataComponents.LORE)?.lines.orEmpty().toMutableList()
+                lore.add(Component.literal(OFFSETS[index].toShortString()).withStyle(ChatFormatting.DARK_GRAY))
+                val loreComponent = ItemLore(lore)
                 if (nbtCompound2 != nbtCompound3) {
-                    blockEntity.load(nbtCompound2)
+                    blockEntity.loadCustomOnly(nbtCompound2, context.level.registryAccess())
+                    blockEntity.applyComponents(
+                        components(),
+                        DataComponentPatch.builder()
+                            .set(DataComponents.LORE, loreComponent)
+                            .build()
+                    )
                     blockEntity.setChanged()
                     return@let
                 }
@@ -114,11 +125,11 @@ class BitStructureItem(settings: Properties) : Item(settings) {
             }
         }
         if (bitBlockState != null) {
-            val blockSoundGroup = BitsAndChisels.BITS_BLOCK.getSoundType(bitBlockState)
+            val blockSoundGroup = bitBlockState.soundType
             world.playSound(
                 playerEntity,
                 blockPos,
-                bitBlockState.soundType.placeSound,
+                blockSoundGroup.placeSound,
                 SoundSource.BLOCKS,
                 (blockSoundGroup.getVolume() + 1.0f) / 2.0f,
                 blockSoundGroup.getPitch() * 0.8f
@@ -134,12 +145,12 @@ class BitStructureItem(settings: Properties) : Item(settings) {
 
     override fun appendHoverText(
         stack: ItemStack,
-        world: Level?,
+        tooltipContext: TooltipContext,
         tooltip: MutableList<Component>,
-        context: TooltipFlag
+        flag: TooltipFlag
     ) {
-        super.appendHoverText(stack, world, tooltip, context)
-        val fullTag = stack.tag ?: return
+        super.appendHoverText(stack, tooltipContext, tooltip, flag)
+        val fullTag = stack.components.get(DataComponents.CUSTOM_DATA)?.copyTag() ?: return
         var count = 0
         for (nbtElement in fullTag.getList(NBT_BIT_BLOCK_TAGS, Tag.TAG_COMPOUND.toInt())) {
             if ((nbtElement as CompoundTag).isEmpty) continue

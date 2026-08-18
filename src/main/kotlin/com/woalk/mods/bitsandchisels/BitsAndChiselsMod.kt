@@ -6,11 +6,13 @@ import com.woalk.mods.bitsandchisels.registry.ModBlockEntities
 import com.woalk.mods.bitsandchisels.registry.ModBlocks
 import com.woalk.mods.bitsandchisels.registry.ModCommands
 import com.woalk.mods.bitsandchisels.registry.ModItems
+import com.woalk.mods.bitsandchisels.registry.ModPackets
 import net.fabricmc.api.ModInitializer
 import net.fabricmc.loader.api.FabricLoader
 
 object BitsAndChiselsMod: ModInitializer {
     override fun onInitialize() {
+        ModPackets.registerAll()
         ModCommands.registerAll()
         ModBlocks.registerAll()
         ModBlockEntities.registerAll()

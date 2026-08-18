@@ -16,6 +16,7 @@ import net.fabricmc.fabric.api.renderer.v1.model.FabricBakedModel;
 import net.fabricmc.fabric.api.renderer.v1.render.RenderContext;
 import net.fabricmc.fabric.api.renderer.v1.render.RenderContext.QuadTransform;
 import net.minecraft.client.resources.model.*;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.color.block.BlockColor;
@@ -84,8 +85,10 @@ public class BitItemModel implements UnbakedModel, BakedModel, FabricBakedModel 
 
     @Override
     public void emitItemQuads(ItemStack stack, Supplier<RandomSource> randomSupplier, RenderContext context) {
-        if (!stack.hasTag() || stack.getTagElement("bit") == null) return;
-        transform_state = cache.computeIfAbsent(stack.getTag(), tag -> BitNbtUtil.toBlockState(stack.getTagElement("bit")));
+        final var data = stack.getComponents().get(DataComponents.CUSTOM_DATA);
+        final var bitNbt = data != null ? data.copyTag().getCompound("bit") : null;
+        if (bitNbt == null) return;
+        transform_state = cache.computeIfAbsent(bitNbt, BitNbtUtil::toBlockState);
         context.pushTransform(TRANSFORM);
         context.fallbackConsumer().accept(Minecraft.getInstance().getBlockRenderer().getBlockModel(
                 transform_state instanceof ColoredBlockState ?

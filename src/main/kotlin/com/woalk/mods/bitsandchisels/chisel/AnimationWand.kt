@@ -4,6 +4,7 @@ import com.woalk.mods.bitsandchisels.BitsAndChisels
 import com.woalk.mods.bitsandchisels.blocks.AnimatedBitsBlockEntity
 import com.woalk.mods.bitsandchisels.registry.ModBlockEntities
 import com.woalk.mods.bitsandchisels.registry.ModBlocks
+import com.woalk.mods.bitsandchisels.registry.ModItems
 import com.woalk.mods.bitsandchisels.registry.ModPermissions
 import me.lucko.fabric.api.permissions.v0.Permissions
 import net.minecraft.world.level.block.entity.ChestBlockEntity
@@ -17,6 +18,7 @@ import net.minecraft.nbt.ListTag
 import net.minecraft.network.chat.Component
 import net.minecraft.world.InteractionResult
 import net.minecraft.ChatFormatting
+import net.minecraft.core.component.DataComponents
 import net.minecraft.world.level.Level
 
 class AnimationWand(settings: Properties) : TieredItem(Tiers.STONE, settings) {
@@ -49,11 +51,11 @@ class AnimationWand(settings: Properties) : TieredItem(Tiers.STONE, settings) {
             val stack = chestEntity.getItem(slot)
             if (stack.isEmpty) {
                 continue
-            } else if (!stack.`is`(BitsAndChisels.BITS_BLOCK_ITEM)) {
+            } else if (!stack.`is`(ModItems.BITS_BLOCK_ITEM)) {
                 error = true
                 break
             } else {
-                val tag = stack.getTagElement("BlockEntityTag")
+                val tag = stack.components.get(DataComponents.BLOCK_ENTITY_DATA)?.copyTag()
                 println(tag?.asString)
                 frames.add(tag ?: continue)
             }
@@ -76,12 +78,12 @@ class AnimationWand(settings: Properties) : TieredItem(Tiers.STONE, settings) {
 
     override fun appendHoverText(
         stack: ItemStack,
-        world: Level?,
-        tooltip: MutableList<Component>,
-        context: TooltipFlag?
+        tooltipContext: TooltipContext,
+        list: MutableList<Component?>,
+        tooltipFlag: TooltipFlag
     ) {
-        super.appendHoverText(stack, world, tooltip, context)
-        tooltip.add(
+        super.appendHoverText(stack, tooltipContext, list, tooltipFlag)
+        list.add(
             Component.translatable("$descriptionId.desc")
                 .withStyle(ChatFormatting.DARK_PURPLE)
                 .withStyle(ChatFormatting.ITALIC)

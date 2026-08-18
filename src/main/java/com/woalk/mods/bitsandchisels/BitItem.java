@@ -2,12 +2,14 @@ package com.woalk.mods.bitsandchisels;
 
 import com.woalk.mods.bitsandchisels.api.BitUtils;
 import com.woalk.mods.bitsandchisels.api.client.RedBoxCallback;
+import com.woalk.mods.bitsandchisels.networking.BitPacket;
 import com.woalk.mods.bitsandchisels.registry.ModPermissions;
 import io.netty.buffer.Unpooled;
 import me.lucko.fabric.api.permissions.v0.Permissions;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.networking.v1.PacketSender;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.world.item.Item.Properties;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.Blocks;
@@ -35,10 +37,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 
-public class BitItem extends Item implements ServerPlayNetworking.PlayChannelHandler {
-
-    public static final ResourceLocation PACKET_ID = new ResourceLocation("bitsandchisels", "bit_packet");
-
+public class BitItem extends Item implements ServerPlayNetworking.PlayPayloadHandler<BitPacket> {
     BlockPos block = null;
 
     int bitx = 0;
@@ -49,31 +48,31 @@ public class BitItem extends Item implements ServerPlayNetworking.PlayChannelHan
 
     public BitItem(Properties settings) {
         super(settings);
-        ServerPlayNetworking.registerGlobalReceiver(PACKET_ID, this);
+        ServerPlayNetworking.registerGlobalReceiver(BitPacket.TYPE, this);
     }
 
     @Override
-    public void receive(MinecraftServer server, ServerPlayer player, ServerGamePacketListenerImpl handler, FriendlyByteBuf buf, PacketSender responseSender) {
-        if (!Permissions.check(player, ModPermissions.USE_BIT, true)) return;
-        BlockPos pos = buf.readBlockPos();
-        int x1 = buf.readInt();
-        int y1 = buf.readInt();
-        int z1 = buf.readInt();
-        int x2 = buf.readInt();
-        int y2 = buf.readInt();
-        int z2 = buf.readInt();
-        InteractionHand hand = buf.readBoolean() ? InteractionHand.MAIN_HAND : InteractionHand.OFF_HAND;
-        server.execute(() -> {
+    public void receive(BitPacket payload, ServerPlayNetworking.Context context) {
+        if (!Permissions.check(context.player(), ModPermissions.USE_BIT, true)) return;
+        BlockPos pos = payload.getBlockPos();
+        int x1 = payload.getBitPos().getX();
+        int y1 = payload.getBitPos().getY();
+        int z1 = payload.getBitPos().getZ();
+        int x2 = payload.getBitPos2().getX();
+        int y2 = payload.getBitPos2().getY();
+        int z2 = payload.getBitPos2().getZ();
+        InteractionHand hand = payload.isMainHandInteraction() ? InteractionHand.MAIN_HAND : InteractionHand.OFF_HAND;
+        context.server().execute(() -> {
             // Execute on the main thread
             if (
-                player.getItemInHand(hand).getItem() == BitsAndChisels.BIT_ITEM &&
-                player.blockPosition().distSqr(pos) < 81 &&
+                context.player().getItemInHand(hand).getItem() == this &&
+                context.player().blockPosition().distSqr(pos) < 81 &&
                 x1 <= x2 && y1 <= y2 && z1 <= z2 &&
                 ((x2 - x1) * (x2 - x1)) + ((y2 - y1) * (y2 - y1)) + ((z2 - z1) * (z2 - z1)) <= 1000000
             ) {
-                Level world = player.level();
+                Level world = context.player().level();
                 BlockPos.MutableBlockPos mut = new BlockPos.MutableBlockPos();
-                ItemStack stack = player.getItemInHand(hand);
+                ItemStack stack = context.player().getItemInHand(hand);
                 BlockState state = BitUtils.getBit(stack);
                 placeloop:
                 for (int i = x1; i <= x2; i++) {
@@ -85,11 +84,11 @@ public class BitItem extends Item implements ServerPlayNetworking.PlayChannelHan
                             int z = Math.floorMod(k, 16);
                             if (world.isLoaded(mut) && !BitUtils.exists(BitUtils.getBit(world, mut, x, y, z))) {
                                 boolean b = BitUtils.setBit(world, mut, x, y, z, state);
-                                if (b && !player.isCreative()) stack.shrink(1);
+                                if (b && !context.player().isCreative()) stack.shrink(1);
                                 if (stack.isEmpty()) {
-                                    for (int a = 0; a < player.getInventory().getContainerSize(); a++) {
-                                        ItemStack teststack = player.getInventory().getItem(a);
-                                        if (!teststack.isEmpty() && teststack.getItem() == BitsAndChisels.BIT_ITEM) {
+                                    for (int a = 0; a < context.player().getInventory().getContainerSize(); a++) {
+                                        ItemStack teststack = context.player().getInventory().getItem(a);
+                                        if (!teststack.isEmpty() && teststack.getItem() == this) {
                                             BlockState itemState = BitUtils.getBit(teststack);
                                             if (itemState == state) {
                                                 stack = teststack;
@@ -126,7 +125,7 @@ public class BitItem extends Item implements ServerPlayNetworking.PlayChannelHan
     public void initClient() {
         RedBoxCallback.EVENT.register((redBoxDrawer, matrixStack, vertexConsumer, worldoffsetx, worldoffsety, worldoffsetz) -> {
             Minecraft client = Minecraft.getInstance();
-            if (client.player.getMainHandItem().getItem() == BitsAndChisels.BIT_ITEM) {
+            if (client.player.getMainHandItem().getItem() == this) {
                 HitResult hit = client.hitResult;
                 if (hit.getType() == HitResult.Type.BLOCK) {
                     Direction direction = ((BlockHitResult)hit).getDirection();
@@ -237,15 +236,8 @@ public class BitItem extends Item implements ServerPlayNetworking.PlayChannelHan
                         int maxy = Math.max(bity, blockYOffset * 16 + y);
                         int maxz = Math.max(bitz, blockZOffset * 16 + z);
 
-                        passedData.writeBlockPos(block);
-                        passedData.writeInt(minx);
-                        passedData.writeInt(miny);
-                        passedData.writeInt(minz);
-                        passedData.writeInt(maxx);
-                        passedData.writeInt(maxy);
-                        passedData.writeInt(maxz);
-                        passedData.writeBoolean(context.getHand().equals(InteractionHand.MAIN_HAND));
-                        ClientPlayNetworking.send(PACKET_ID, passedData);
+                        final var packet = new BitPacket(block != null ? block : pos, new BlockPos(minx, miny, minz), new BlockPos(maxx, maxy, maxz), context.getHand().equals(InteractionHand.MAIN_HAND));
+                        ClientPlayNetworking.send(packet);
                         haspos1 = false;
                         return InteractionResult.SUCCESS;
                     } else {
@@ -256,16 +248,9 @@ public class BitItem extends Item implements ServerPlayNetworking.PlayChannelHan
                         haspos1 = true;
                     }
                 } else {
-                    FriendlyByteBuf passedData = new FriendlyByteBuf(Unpooled.buffer());
-                    passedData.writeBlockPos(pos);
-                    passedData.writeInt(x);
-                    passedData.writeInt(y);
-                    passedData.writeInt(z);
-                    passedData.writeInt(x);
-                    passedData.writeInt(y);
-                    passedData.writeInt(z);
-                    passedData.writeBoolean(context.getHand().equals(InteractionHand.MAIN_HAND));
-                    ClientPlayNetworking.send(PACKET_ID, passedData);
+                    final var bit = new BlockPos(x, y, z);
+                    final var packet = new BitPacket(block != null ? block : pos, bit, bit, context.getHand().equals(InteractionHand.MAIN_HAND));
+                    ClientPlayNetworking.send(packet);
                     return InteractionResult.SUCCESS;
                 }
                 
@@ -277,21 +262,24 @@ public class BitItem extends Item implements ServerPlayNetworking.PlayChannelHan
 
     @Override
     public Component getName(ItemStack stack) {
-        BlockState state = stack.getTagElement("bit") != null ? BitNbtUtil.toBlockState(stack.getTagElement("bit")) : Blocks.AIR.defaultBlockState();
+        final var data = stack.getComponents().get(DataComponents.CUSTOM_DATA);
+        final var bitNbt = data != null ? data.copyTag().getCompound("bit") : null;
+        BlockState state = bitNbt != null ? BitNbtUtil.toBlockState(bitNbt) : Blocks.AIR.defaultBlockState();
         return Component.translatable(this.getDescriptionId(stack), Component.translatable(state.getBlock().getDescriptionId()));
     }
 
     @Override
-    public void appendHoverText(ItemStack stack, @Nullable Level world, List<Component> tooltip, TooltipFlag context) {
-        super.appendHoverText(stack, world, tooltip, context);
-        if (context.isAdvanced()) {
-            final CompoundTag blockState = stack.getTagElement("bit");
+    public void appendHoverText(ItemStack itemStack, TooltipContext tooltipContext, List<Component> list, TooltipFlag tooltipFlag) {
+        super.appendHoverText(itemStack, tooltipContext, list, tooltipFlag);
+        if (tooltipFlag.isAdvanced()) {
+            final var data = itemStack.getComponents().get(DataComponents.CUSTOM_DATA);
+            final CompoundTag blockState = data != null ? data.copyTag().getCompound("bit") : null;
             if (blockState != null) {
-                tooltip.add(Component.literal(blockState.getString("Name")).withStyle(ChatFormatting.DARK_PURPLE));
+                list.add(Component.literal(blockState.getString("Name")).withStyle(ChatFormatting.DARK_PURPLE));
                 final CompoundTag remainder = blockState.copy();
                 remainder.remove("Name");
                 if (!remainder.isEmpty()) {
-                    tooltip.add(Component.literal(remainder.getAsString()).withStyle(ChatFormatting.DARK_GREEN));
+                    list.add(Component.literal(remainder.getAsString()).withStyle(ChatFormatting.DARK_GREEN));
                 }
             }
         }

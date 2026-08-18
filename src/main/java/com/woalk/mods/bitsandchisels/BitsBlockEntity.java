@@ -1,6 +1,10 @@
 package com.woalk.mods.bitsandchisels;
 
 import com.woalk.mods.bitsandchisels.mixin.CubeVoxelShapeFactory;
+import net.minecraft.core.HolderLookup;
+import net.minecraft.core.component.DataComponentPatch;
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.world.item.component.ItemLore;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.StringTag;
@@ -28,6 +32,7 @@ import net.minecraft.world.phys.shapes.VoxelShape;
 import net.minecraft.world.phys.shapes.Shapes;
 
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.UUID;
 
@@ -38,8 +43,6 @@ public class BitsBlockEntity extends BlockEntity implements RenderAttachmentBloc
     protected VoxelShape shape = Shapes.block();
     protected CompoundTag nbtCache;
     private boolean alive = false;
-    private Component customName = null;
-    private List<Component> loreText = null;
     private UUID structureId = null;
 
     public BitsBlockEntity(BlockPos pos, BlockState state) {
@@ -80,15 +83,10 @@ public class BitsBlockEntity extends BlockEntity implements RenderAttachmentBloc
     }
 
     @Override
-    public void saveAdditional(CompoundTag tag) {
-        super.saveAdditional(tag);
+    protected void saveAdditional(CompoundTag tag, HolderLookup.Provider provider) {
+        super.saveAdditional(tag, provider);
         if (!alive) return;
         writeBitNbt(tag);
-        if (customName != null || loreText != null) {
-            CompoundTag displayNbt = new CompoundTag();
-            writeNameNbt(displayNbt);
-            tag.put("display", displayNbt);
-        }
         if (structureId != null) {
             tag.putUUID("StructureId", structureId);
         }
@@ -103,26 +101,9 @@ public class BitsBlockEntity extends BlockEntity implements RenderAttachmentBloc
         }
     }
 
-    public void writeNameNbt(CompoundTag displayNbt) {
-        if (customName != null) {
-            displayNbt.putString("Name", Component.Serializer.toJson(this.customName));
-        }
-        if (loreText != null) {
-            ListTag loreNbt = new ListTag();
-            loreText.forEach((text) -> loreNbt.add(StringTag.valueOf(oldChiselItemCompat(Component.Serializer.toJson(text)))));
-            displayNbt.put("Lore", loreNbt);
-        }
-    }
-
-    private String oldChiselItemCompat(String json) {
-        if (json.equals("{\"text\":\"(+NBT)\"}")) {
-            return "\"(+NBT)\"";
-        } else return json;
-    }
-
     @Override
-    public void load(CompoundTag tag) {
-        super.load(tag);
+    protected void loadAdditional(CompoundTag tag, HolderLookup.Provider provider) {
+        super.loadAdditional(tag, provider);
         readBitNbt(tag);
         rebuildShape();
         if (getLevel() != null && getLevel().isClientSide) {
@@ -131,13 +112,6 @@ public class BitsBlockEntity extends BlockEntity implements RenderAttachmentBloc
         rebuildNbtCache();
         if (tag.contains("display")) {
             CompoundTag displayNbt = tag.getCompound("display");
-            if (displayNbt.contains("Name")) {
-                customName = Component.Serializer.fromJson(displayNbt.getString("Name"));
-            }
-            if (displayNbt.contains("Lore")) {
-                ListTag loreNbt = displayNbt.getList("Lore", ListTag.TAG_STRING);
-                readLoreText(loreNbt);
-            }
         }
         if (tag.contains("StructureId")) {
             structureId = tag.getUUID("StructureId");
@@ -147,11 +121,6 @@ public class BitsBlockEntity extends BlockEntity implements RenderAttachmentBloc
 
     protected void readBitNbt(CompoundTag tag) {
         BitNbtUtil.read3DBitArray(tag, states);
-    }
-
-    public void readLoreText(ListTag loreNbt) {
-        loreText = new ArrayList<>(loreNbt.size());
-        loreNbt.forEach((textNbt) -> loreText.add(Component.Serializer.fromJson(textNbt.getAsString())));
     }
     
     protected void rebuildNbtCache() {
@@ -243,8 +212,8 @@ public class BitsBlockEntity extends BlockEntity implements RenderAttachmentBloc
     }
 
     @Override
-    public CompoundTag getUpdateTag() {
-        return saveWithoutMetadata();
+    public CompoundTag getUpdateTag(HolderLookup.Provider provider) {
+        return saveWithoutMetadata(provider);
     }
 
     @Environment(EnvType.CLIENT)
@@ -265,11 +234,11 @@ public class BitsBlockEntity extends BlockEntity implements RenderAttachmentBloc
     }
 
     public void setCustomName(Component customName) {
-        this.customName = customName;
+        applyComponents(components(), DataComponentPatch.builder().set(DataComponents.CUSTOM_NAME, customName).build());
     }
 
     public void setLoreText(List<Component> loreText) {
-        this.loreText = loreText;
+        applyComponents(components(), DataComponentPatch.builder().set(DataComponents.LORE, new ItemLore(loreText)).build());
     }
 
     public UUID getStructureId() {

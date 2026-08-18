@@ -1,20 +1,9 @@
 package com.woalk.mods.bitsandchisels.compat
 
-import com.sk89q.jnbt.ByteArrayTag
-import com.sk89q.jnbt.CompoundTag
-import com.sk89q.jnbt.IntTag
-import com.sk89q.jnbt.ListTag
-import com.sk89q.jnbt.Tag
 import com.woalk.mods.bitsandchisels.blocks.ColoredBlockState
-import net.minecraft.world.level.block.state.BlockState
 import net.minecraft.world.level.block.Blocks
-import net.minecraft.world.item.DyeableLeatherItem
-import org.enginehub.linbus.tree.LinByteArrayTag
-import org.enginehub.linbus.tree.LinCompoundTag
-import org.enginehub.linbus.tree.LinIntTag
-import org.enginehub.linbus.tree.LinListTag
-import org.enginehub.linbus.tree.LinTag
-import org.enginehub.linbus.tree.LinTagType
+import net.minecraft.world.level.block.state.BlockState
+import org.enginehub.linbus.tree.*
 
 typealias Block3D = Array<Array<Array<BlockState?>>>
 
@@ -82,8 +71,8 @@ object BitCompoundUtil {
     private fun toBlockState(tag: LinCompoundTag?): BlockState {
         return if (tag == null) {
             Blocks.AIR.defaultBlockState()
-        } else if (tag.value().containsKey(DyeableLeatherItem.TAG_COLOR)) {
-            ColoredBlockState(tag.getTag(DyeableLeatherItem.TAG_COLOR, LinTagType.intTag()).value())
+        } else if (tag.value().containsKey(ColoredBlockState.TAG_COLOR)) {
+            ColoredBlockState(tag.getTag(ColoredBlockState.TAG_COLOR, LinTagType.intTag()).value())
         } else {
             CompoundHelper.toBlockState(tag)
         }
@@ -95,7 +84,7 @@ object BitCompoundUtil {
             is ColoredBlockState -> {
                 CompoundHelper.fromBlockState(state).run {
                     val map = value().toMutableMap()
-                    map[DyeableLeatherItem.TAG_COLOR] = LinIntTag.of(state.color)
+                    map[ColoredBlockState.TAG_COLOR] = LinIntTag.of(state.color)
                     LinCompoundTag.of(map)
                 }
             }

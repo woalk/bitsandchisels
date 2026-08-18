@@ -27,20 +27,7 @@ public class BitsAndChisels implements ModInitializer {
 	public static final Logger LOGGER = LoggerFactory.getLogger("BitsAndChisels");
 
 	public static final BitsBlock BITS_BLOCK = new BitsBlock(FabricBlockSettings.of().noOcclusion().dynamicShape().destroyTime(4.0f).lightLevel(s -> s.getValue(BitsBlock.LIGHT_LEVEL)));
-	public static final BlockItem BITS_BLOCK_ITEM = new BitsBlockItem(BITS_BLOCK, new Item.Properties());
-	public static final DiamondChisel DIAMOND_CHISEL = new DiamondChisel(new Item.Properties());
-	public static final EnderChisel ENDER_CHISEL = new EnderChisel(new Item.Properties());
-	public static final IronChisel IRON_CHISEL = new IronChisel(new Item.Properties());
-	public static final SmartChisel SMART_CHISEL = new SmartChisel(new Item.Properties());
-	public static final WrenchItem WRENCH_ITEM = new WrenchItem(new Item.Properties());
 	public static BlockEntityType<BitsBlockEntity> BITS_BLOCK_ENTITY;
-
-	public static final BitItem BIT_ITEM = new BitItem(new Item.Properties());
-
-	//Hack around "Cannot reference a field before it is defined"
-	private static ItemStack getDiamondChiselStack() {
-		return new ItemStack(DIAMOND_CHISEL);
-	}
 
 	@Override
 	public void onInitialize() {
@@ -49,13 +36,6 @@ public class BitsAndChisels implements ModInitializer {
 		// Proceed with mild caution.
 		Registry.register(BuiltInRegistries.BLOCK, new ResourceLocation(MODID, "bits_block"), BITS_BLOCK);
 		BITS_BLOCK_ENTITY = Registry.register(BuiltInRegistries.BLOCK_ENTITY_TYPE, "bitsandchisels:bits_block_entity", FabricBlockEntityTypeBuilder.create(BitsBlockEntity::new, BITS_BLOCK).build(null));
-		Registry.register(BuiltInRegistries.ITEM, new ResourceLocation(MODID, "bits_block"), BITS_BLOCK_ITEM);
-		Registry.register(BuiltInRegistries.ITEM, new ResourceLocation(MODID, "diamond_chisel"), DIAMOND_CHISEL);
-		Registry.register(BuiltInRegistries.ITEM, new ResourceLocation(MODID, "ender_chisel"), ENDER_CHISEL);
-		Registry.register(BuiltInRegistries.ITEM, new ResourceLocation(MODID, "iron_chisel"), IRON_CHISEL);
-		Registry.register(BuiltInRegistries.ITEM, new ResourceLocation(MODID, "smart_chisel"), SMART_CHISEL);
-		Registry.register(BuiltInRegistries.ITEM, new ResourceLocation(MODID, "bit_item"), BIT_ITEM);
-		Registry.register(BuiltInRegistries.ITEM, new ResourceLocation(MODID, "wrench"), WRENCH_ITEM);
 	}
 	
 }

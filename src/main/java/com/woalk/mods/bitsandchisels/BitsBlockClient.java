@@ -2,6 +2,7 @@ package com.woalk.mods.bitsandchisels;
 
 import com.woalk.mods.bitsandchisels.blocks.BitStructureModel;
 import com.woalk.mods.bitsandchisels.blocks.BitsBlockModel;
+import com.woalk.mods.bitsandchisels.registry.ModItems;
 import org.jetbrains.annotations.Nullable;
 
 import net.fabricmc.api.ClientModInitializer;
@@ -17,11 +18,11 @@ public class BitsBlockClient implements ClientModInitializer {
     @Override
     public void onInitializeClient() {
         ModelLoadingRegistry.INSTANCE.registerResourceProvider(rm -> new BitsModelProvider());
-        BitsAndChisels.DIAMOND_CHISEL.initClient();
-        BitsAndChisels.ENDER_CHISEL.initClient();
-        BitsAndChisels.IRON_CHISEL.initClient();
-        BitsAndChisels.BIT_ITEM.initClient();
-        BitsAndChisels.SMART_CHISEL.initClient();
+        ModItems.DIAMOND_CHISEL.initClient();
+        ModItems.ENDER_CHISEL.initClient();
+        ModItems.IRON_CHISEL.initClient();
+        ModItems.BIT_ITEM.initClient();
+        ModItems.SMART_CHISEL.initClient();
     }
 
     public static class BitsModelProvider implements ModelResourceProvider {

@@ -3,6 +3,7 @@ package com.woalk.mods.bitsandchisels.chisel;
 import com.woalk.mods.bitsandchisels.BitsAndChisels;
 import com.woalk.mods.bitsandchisels.api.BitUtils;
 import com.woalk.mods.bitsandchisels.api.client.RedBoxCallback;
+import com.woalk.mods.bitsandchisels.networking.DiamondChiselPacket;
 import com.woalk.mods.bitsandchisels.registry.ModPermissions;
 import io.netty.buffer.Unpooled;
 import me.lucko.fabric.api.permissions.v0.Permissions;
@@ -29,15 +30,13 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.level.Level;
 
-public class DiamondChisel extends TieredItem implements ServerPlayNetworking.PlayChannelHandler {
-
-    public static final ResourceLocation PACKET_ID = new ResourceLocation("bitsandchisels", "diamond_chisel_packet");
+public class DiamondChisel extends TieredItem implements ServerPlayNetworking.PlayPayloadHandler<DiamondChiselPacket> {
     private long lastBreakTick = 0;
     private boolean fastBreak = false;
 
     public DiamondChisel(Properties settings) {
         super(Tiers.STONE, settings);
-        ServerPlayNetworking.registerGlobalReceiver(PACKET_ID, this);
+        ServerPlayNetworking.registerGlobalReceiver(DiamondChiselPacket.TYPE, this);
         AttackBlockCallback.EVENT.register((player, world, hand, pos, direction) -> {
             Item i = player.getItemInHand(hand).getItem();
             if (i instanceof DiamondChisel) {
@@ -49,17 +48,17 @@ public class DiamondChisel extends TieredItem implements ServerPlayNetworking.Pl
     }
 
     @Override
-    public void receive(MinecraftServer server, ServerPlayer player, ServerGamePacketListenerImpl handler, FriendlyByteBuf buf, PacketSender responseSender) {
-        if (!Permissions.check(player, ModPermissions.USE_CHISEL_DIAMOND, true)) return;
-        BlockPos pos = buf.readBlockPos();
-        int x = buf.readInt();
-        int y = buf.readInt();
-        int z = buf.readInt();
-        server.execute(() -> {
+    public void receive(DiamondChiselPacket payload, ServerPlayNetworking.Context context) {
+        if (!Permissions.check(context.player(), ModPermissions.USE_CHISEL_DIAMOND, true)) return;
+        BlockPos pos = payload.getBlockPos();
+        int x = payload.getBitPos().getX();
+        int y = payload.getBitPos().getY();
+        int z = payload.getBitPos().getZ();
+        context.server().executeIfPossible(() -> {
             // Execute on the main thread
-            ItemStack stack = player.getMainHandItem();
-            if (player.blockPosition().distSqr(pos) < 81 && stack.getItem() == BitsAndChisels.DIAMOND_CHISEL) {
-                BitUtils.attemptBreak(player, pos, x, y, z);
+            ItemStack stack = context.player().getMainHandItem();
+            if (context.player().blockPosition().distSqr(pos) < 81 && stack.getItem() == this) {
+                BitUtils.attemptBreak(context.player(), pos, x, y, z);
             }
         });
     }
@@ -67,7 +66,7 @@ public class DiamondChisel extends TieredItem implements ServerPlayNetworking.Pl
     public void initClient() {
         RedBoxCallback.EVENT.register((redBoxDrawer, matrixStack, vertexConsumer, worldoffsetx, worldoffsety, worldoffsetz) -> {
             Minecraft client = Minecraft.getInstance();
-            if (client.player.getMainHandItem().getItem() == BitsAndChisels.DIAMOND_CHISEL) {
+            if (client.player.getMainHandItem().getItem() == this) {
                 HitResult hit = client.hitResult;
                 if (hit.getType() == HitResult.Type.BLOCK) {
                     Direction direction = ((BlockHitResult)hit).getDirection();
@@ -92,12 +91,8 @@ public class DiamondChisel extends TieredItem implements ServerPlayNetworking.Pl
             int y = (int) Math.floor(((hit.getLocation().y() - pos.getY()) * 16) + (direction.getStepY() * -0.5d));
             int z = (int) Math.floor(((hit.getLocation().z() - pos.getZ()) * 16) + (direction.getStepZ() * -0.5d));
             if (BitUtils.exists(BitUtils.getBit(world, pos, x, y, z))) {
-                FriendlyByteBuf passedData = new FriendlyByteBuf(Unpooled.buffer());
-                passedData.writeBlockPos(pos);
-                passedData.writeInt(x);
-                passedData.writeInt(y);
-                passedData.writeInt(z);
-                ClientPlayNetworking.send(PACKET_ID, passedData);
+                final var packet = new DiamondChiselPacket(pos, new BlockPos(x, y, z));
+                ClientPlayNetworking.send(packet);
                 fastBreak = getTime() - lastBreakTick < 10;
                 lastBreakTick = getTime();
                 return InteractionResult.SUCCESS;

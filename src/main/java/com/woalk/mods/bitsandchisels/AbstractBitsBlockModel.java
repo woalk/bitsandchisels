@@ -16,6 +16,7 @@ import net.fabricmc.fabric.api.renderer.v1.model.ModelHelper;
 import net.fabricmc.fabric.api.renderer.v1.render.RenderContext;
 import net.fabricmc.fabric.api.rendering.data.v1.RenderAttachedBlockView;
 import net.minecraft.client.resources.model.*;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.client.renderer.block.model.BakedQuad;
 import net.minecraft.client.renderer.block.model.ItemOverrides;
@@ -56,7 +57,8 @@ public abstract class AbstractBitsBlockModel implements UnbakedModel, BakedModel
 
     @Override
     public void emitItemQuads(ItemStack stack, Supplier<RandomSource> randomSupplier, RenderContext context) {
-        CompoundTag beTag = stack.getTagElement("BlockEntityTag");
+        final var data = stack.getComponents().get(DataComponents.BLOCK_ENTITY_DATA);
+        CompoundTag beTag = data != null ? data.copyTag() : null;
         Mesh mesh = cache.computeIfAbsent(beTag, discard -> {
             CompoundTag tag = beTag;
             if (tag != null) {

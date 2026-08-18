@@ -1,19 +1,21 @@
 package com.woalk.mods.bitsandchisels;
 
 import com.mojang.serialization.MapCodec;
-import com.mojang.serialization.codecs.RecordCodecBuilder;
 import com.woalk.mods.bitsandchisels.api.BitUtils;
 import com.woalk.mods.bitsandchisels.blocks.BitStructureItem;
 import com.woalk.mods.bitsandchisels.registry.ModItems;
 import com.woalk.mods.bitsandchisels.utils.DirectionUtilsKt;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
+import net.minecraft.core.component.DataComponentPatch;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.Registries;
+import net.minecraft.world.item.component.CustomData;
+import net.minecraft.world.item.component.ItemLore;
 import net.minecraft.world.level.LevelReader;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.RenderShape;
 import net.minecraft.world.level.block.BaseEntityBlock;
-import net.minecraft.world.level.block.state.BlockBehaviour.Properties;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.level.block.SimpleWaterloggedBlock;
@@ -24,7 +26,6 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.material.FluidState;
 import net.minecraft.world.level.material.Fluids;
-import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.nbt.CompoundTag;
@@ -132,7 +133,15 @@ public class BitsBlock extends BaseEntityBlock implements SimpleWaterloggedBlock
             final var stack = ItemHelpers.blockToItem(this, state, blockEntity);
             if (player != null) {
                 final var rotation = DirectionUtilsKt.getNearestDirectionForVector(pos.subtract(player.blockPosition()));
-                stack.getOrCreateTagElement("BlockEntityTag").putInt(BitStructureItem.NBT_ROTATION, rotation.get3DDataValue());
+                final var currentEntityData = stack.get(DataComponents.BLOCK_ENTITY_DATA);
+                CompoundTag nbt;
+                if (currentEntityData != null) {
+                    nbt = currentEntityData.copyTag();
+                } else {
+                    nbt = new CompoundTag();
+                }
+                nbt.putInt(BitStructureItem.NBT_ROTATION, rotation.get3DDataValue());
+                stack.set(DataComponents.BLOCK_ENTITY_DATA, CustomData.of(nbt));
             }
             return stack;
         }
@@ -183,23 +192,23 @@ public class BitsBlock extends BaseEntityBlock implements SimpleWaterloggedBlock
         }
         if (!moreThanPos1) return null;
         final var stack = ModItems.INSTANCE.getBitStructureItem().getDefaultInstance();
-        stack.addTagElement(BitStructureItem.NBT_BIT_BLOCK_TAGS, nbts);
+        final var customData = stack.get(DataComponents.CUSTOM_DATA);
+        CompoundTag nbt;
+        if (customData != null) {
+            nbt = customData.copyTag();
+        } else {
+            nbt = new CompoundTag();
+        }
+        nbt.put(BitStructureItem.NBT_BIT_BLOCK_TAGS, nbts);
         if (player != null) {
             final var rotation = DirectionUtilsKt.getNearestDirectionForVector(pos.subtract(player.blockPosition()));
-            stack.addTagElement(
+            nbt.put(
                     BitStructureItem.NBT_ROTATION,
                     IntTag.valueOf(rotation.get3DDataValue())
             );
         }
-        final var displayNbt = new CompoundTag();
-        blockEntity.writeNameNbt(displayNbt);
-        if (!displayNbt.isEmpty()) {
-            final var lore = displayNbt.getList("Lore", Tag.TAG_STRING);
-            if (lore.getString(lore.size() - 1).matches("^\\{\"color\":\"dark_gray\",\"text\":\"\\(\\d+, \\d+, \\d+\\)\"}$")) {
-                lore.remove(lore.size() - 1);
-            }
-            stack.addTagElement("display", displayNbt);
-        }
+        stack.set(DataComponents.CUSTOM_DATA, CustomData.of(nbt));
+        stack.applyComponents(blockEntity.components());
         return stack;
     }
 
@@ -208,16 +217,13 @@ public class BitsBlock extends BaseEntityBlock implements SimpleWaterloggedBlock
         super.setPlacedBy(world, pos, state, placer, itemStack);
         BitsBlockEntity blockEntity = world.getBlockEntity(pos, BitsAndChisels.BITS_BLOCK_ENTITY).orElse(null);
         if (blockEntity == null) return;
-        if (itemStack.hasCustomHoverName()) {
-            blockEntity.setCustomName(itemStack.getHoverName());
+        final var data = itemStack.get(DataComponents.CUSTOM_DATA);
+        if (data != null && data.contains("StructureId")) {
+            blockEntity.setStructureId(data.copyTag().getUUID("StructureId"));
         }
-        if (itemStack.getOrCreateTag().contains("StructureId")) {
-            assert itemStack.getTag() != null;
-            blockEntity.setStructureId(itemStack.getTag().getUUID("StructureId"));
-        }
-        CompoundTag displayNbt = itemStack.getTagElement("display");
-        if (displayNbt != null && displayNbt.contains("Lore")) {
-            blockEntity.readLoreText(displayNbt.getList("Lore", Tag.TAG_STRING));
+        final var lore = itemStack.get(DataComponents.LORE);
+        if (lore != null) {
+            blockEntity.applyComponents(blockEntity.components(), DataComponentPatch.builder().set(DataComponents.LORE, lore).build());
         }
     }
 
@@ -267,7 +273,15 @@ public class BitsBlock extends BaseEntityBlock implements SimpleWaterloggedBlock
                     final var stack = ItemHelpers.blockToItem(this, state, blockEntity);
                     if (player != null) {
                         final var rotation = DirectionUtilsKt.getNearestDirectionForVector(pos.subtract(player.blockPosition()));
-                        stack.getOrCreateTagElement("BlockEntityTag").putInt(BitStructureItem.NBT_ROTATION, rotation.get3DDataValue());
+                        final var data = stack.get(DataComponents.BLOCK_ENTITY_DATA);
+                        CompoundTag nbt;
+                        if (data != null) {
+                            nbt = data.copyTag();
+                        } else {
+                            nbt = new CompoundTag();
+                        }
+                        nbt.putInt(BitStructureItem.NBT_ROTATION, rotation.get3DDataValue());
+                        stack.set(DataComponents.BLOCK_ENTITY_DATA, CustomData.of(nbt));
                     }
                     return stack;
                 }

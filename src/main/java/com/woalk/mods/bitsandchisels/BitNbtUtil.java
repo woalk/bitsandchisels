@@ -4,7 +4,6 @@ import java.util.ArrayList;
 
 import com.woalk.mods.bitsandchisels.blocks.ColoredBlockState;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.world.item.DyeableLeatherItem;
 import org.jetbrains.annotations.Nullable;
 
 import net.minecraft.world.level.block.state.BlockState;
@@ -83,8 +82,8 @@ public class BitNbtUtil {
     public static BlockState toBlockState(@Nullable CompoundTag tag) {
         if (tag == null) {
             return Blocks.AIR.defaultBlockState();
-        } else if (tag.contains(DyeableLeatherItem.TAG_COLOR)) {
-            return new ColoredBlockState(tag.getInt(DyeableLeatherItem.TAG_COLOR));
+        } else if (tag.contains(ColoredBlockState.TAG_COLOR)) {
+            return new ColoredBlockState(tag.getInt(ColoredBlockState.TAG_COLOR));
         } else {
             return NbtUtils.readBlockState(BuiltInRegistries.BLOCK.asLookup(), tag);
         }
@@ -95,7 +94,7 @@ public class BitNbtUtil {
             return NbtUtils.writeBlockState(Blocks.AIR.defaultBlockState());
         } else if (state instanceof ColoredBlockState) {
             CompoundTag nbt = NbtUtils.writeBlockState(state);
-            nbt.putInt(DyeableLeatherItem.TAG_COLOR, ((ColoredBlockState) state).getColor());
+            nbt.putInt(ColoredBlockState.TAG_COLOR, ((ColoredBlockState) state).getColor());
             return nbt;
         } else {
             return NbtUtils.writeBlockState(state);

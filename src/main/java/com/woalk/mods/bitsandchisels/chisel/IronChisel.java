@@ -3,6 +3,7 @@ package com.woalk.mods.bitsandchisels.chisel;
 import com.woalk.mods.bitsandchisels.BitsAndChisels;
 import com.woalk.mods.bitsandchisels.api.BitUtils;
 import com.woalk.mods.bitsandchisels.api.client.RedBoxCallback;
+import com.woalk.mods.bitsandchisels.networking.IronChiselPacket;
 import com.woalk.mods.bitsandchisels.registry.ModPermissions;
 import io.netty.buffer.Unpooled;
 import me.lucko.fabric.api.permissions.v0.Permissions;
@@ -29,14 +30,12 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.level.Level;
 
-public class IronChisel extends TieredItem implements ServerPlayNetworking.PlayChannelHandler {
-
-    public static final ResourceLocation PACKET_ID = new ResourceLocation("bitsandchisels", "iron_chisel_packet");
+public class IronChisel extends TieredItem implements ServerPlayNetworking.PlayPayloadHandler<IronChiselPacket> {
     private long lastBreakTick = 0;
 
     public IronChisel(Properties settings) {
         super(Tiers.STONE, settings);
-        ServerPlayNetworking.registerGlobalReceiver(PACKET_ID, this);
+        ServerPlayNetworking.registerGlobalReceiver(IronChiselPacket.TYPE, this);
         AttackBlockCallback.EVENT.register((player, world, hand, pos, direction) -> {
             Item i = player.getItemInHand(hand).getItem();
             if (i instanceof IronChisel) {
@@ -48,17 +47,17 @@ public class IronChisel extends TieredItem implements ServerPlayNetworking.PlayC
     }
 
     @Override
-    public void receive(MinecraftServer server, ServerPlayer player, ServerGamePacketListenerImpl handler, FriendlyByteBuf buf, PacketSender responseSender) {
-        if (!Permissions.check(player, ModPermissions.USE_CHISEL_IRON, true)) return;
-        BlockPos pos = buf.readBlockPos();
-        int x = buf.readInt();
-        int y = buf.readInt();
-        int z = buf.readInt();
-        server.execute(() -> {
+    public void receive(IronChiselPacket payload, ServerPlayNetworking.Context context) {
+        if (!Permissions.check(context.player(), ModPermissions.USE_CHISEL_IRON, true)) return;
+        BlockPos pos = payload.getBlockPos();
+        int x = payload.getBitPos().getX();
+        int y = payload.getBitPos().getY();
+        int z = payload.getBitPos().getZ();
+        context.server().executeIfPossible(() -> {
             // Execute on the main thread
-            ItemStack stack = player.getMainHandItem();
-            if (stack.getItem() == BitsAndChisels.IRON_CHISEL && player.blockPosition().distSqr(pos) < 81) {
-                BitUtils.attemptBreakRegion(player, pos, x, y, z, x + 3, y + 3, z + 3);
+            ItemStack stack = context.player().getMainHandItem();
+            if (stack.getItem() == this && context.player().blockPosition().distSqr(pos) < 81) {
+                BitUtils.attemptBreakRegion(context.player(), pos, x, y, z, x + 3, y + 3, z + 3);
             }
         });
     }
@@ -66,7 +65,7 @@ public class IronChisel extends TieredItem implements ServerPlayNetworking.PlayC
     public void initClient() {
         RedBoxCallback.EVENT.register((redBoxDrawer, matrixStack, vertexConsumer, worldoffsetx, worldoffsety, worldoffsetz) -> {
             Minecraft client = Minecraft.getInstance();
-            if (client.player.getMainHandItem().getItem() == BitsAndChisels.IRON_CHISEL) {
+            if (client.player.getMainHandItem().getItem() == this) {
                 HitResult hit = client.hitResult;
                 if (hit.getType() == HitResult.Type.BLOCK) {
                     Direction direction = ((BlockHitResult)hit).getDirection();
@@ -91,12 +90,8 @@ public class IronChisel extends TieredItem implements ServerPlayNetworking.PlayC
             int y = (int) Math.floor(Math.floor(((hit.getLocation().y() - pos.getY()) * 16) + (direction.getStepY() * -0.5d)) / 4) * 4;
             int z = (int) Math.floor(Math.floor(((hit.getLocation().z() - pos.getZ()) * 16) + (direction.getStepZ() * -0.5d)) / 4) * 4;
             if (BitUtils.exists(BitUtils.getBit(world, pos, x, y, z))) {
-                FriendlyByteBuf passedData = new FriendlyByteBuf(Unpooled.buffer());
-                passedData.writeBlockPos(pos);
-                passedData.writeInt(x);
-                passedData.writeInt(y);
-                passedData.writeInt(z);
-                ClientPlayNetworking.send(PACKET_ID, passedData);
+                final var packet = new IronChiselPacket(pos, new BlockPos(x, y, z));
+                ClientPlayNetworking.send(packet);
                 lastBreakTick = getTime();
                 return InteractionResult.SUCCESS;
             }
@@ -107,6 +102,4 @@ public class IronChisel extends TieredItem implements ServerPlayNetworking.PlayC
     private static long getTime() {
         return System.currentTimeMillis() / 50;
     }
-
-    
 }

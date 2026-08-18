@@ -5,6 +5,8 @@ import com.woalk.mods.bitsandchisels.BitsAndChisels;
 import com.woalk.mods.bitsandchisels.BitsBlockEntity;
 import com.woalk.mods.bitsandchisels.api.BitUtils;
 import com.woalk.mods.bitsandchisels.api.client.RedBoxCallback;
+import com.woalk.mods.bitsandchisels.networking.EnderChiselPacket;
+import com.woalk.mods.bitsandchisels.registry.ModItems;
 import com.woalk.mods.bitsandchisels.registry.ModPermissions;
 import io.netty.buffer.Unpooled;
 import me.lucko.fabric.api.permissions.v0.Permissions;
@@ -37,15 +39,13 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 
-public class EnderChisel extends TieredItem implements ServerPlayNetworking.PlayChannelHandler {
-
-    public static final ResourceLocation PACKET_ID = new ResourceLocation("bitsandchisels", "ender_chisel_packet");
+public class EnderChisel extends TieredItem implements ServerPlayNetworking.PlayPayloadHandler<EnderChiselPacket> {
     private long lastBreakTick = 0;
     private boolean fastBreak = false;
 
     public EnderChisel(Properties settings) {
         super(Tiers.STONE, settings);
-        ServerPlayNetworking.registerGlobalReceiver(PACKET_ID, this);
+        ServerPlayNetworking.registerGlobalReceiver(EnderChiselPacket.TYPE, this);
         AttackBlockCallback.EVENT.register((player, world, hand, pos, direction) -> {
             Item i = player.getMainHandItem().getItem();
             if (i instanceof EnderChisel) {
@@ -62,9 +62,9 @@ public class EnderChisel extends TieredItem implements ServerPlayNetworking.Play
     }
 
     @Override
-    public void appendHoverText(ItemStack stack, @Nullable Level world, List<Component> tooltip, TooltipFlag context) {
-        super.appendHoverText(stack, world, tooltip, context);
-        tooltip.add(
+    public void appendHoverText(ItemStack stack, TooltipContext tooltipContext, List<Component> list, TooltipFlag tooltipFlag) {
+        super.appendHoverText(stack, tooltipContext, list, tooltipFlag);
+        list.add(
                 Component.translatable(getDescriptionId() + ".desc")
                         .withStyle(ChatFormatting.DARK_PURPLE)
                         .withStyle(ChatFormatting.ITALIC)
@@ -72,19 +72,20 @@ public class EnderChisel extends TieredItem implements ServerPlayNetworking.Play
     }
 
     @Override
-    public void receive(MinecraftServer server, ServerPlayer player, ServerGamePacketListenerImpl handler, FriendlyByteBuf buf, PacketSender responseSender) {
+    public void receive(EnderChiselPacket payload, ServerPlayNetworking.Context context) {
+        final var player = context.player();
         if (!Permissions.check(player, ModPermissions.USE_CHISEL_ENDER, true)) return;
-        BlockPos pos = buf.readBlockPos();
-        final int x = buf.readInt();
-        final int y = buf.readInt();
-        final int z = buf.readInt();
-        server.execute(() -> {
+        BlockPos pos = payload.getBlockPos();
+        final int x = payload.getBitPos().getX();
+        final int y = payload.getBitPos().getY();
+        final int z = payload.getBitPos().getZ();
+        context.server().execute(() -> {
             // Execute on the main thread
             BitsAndChisels.LOGGER.warn("Ender Chisel used");
             ItemStack stack = player.getMainHandItem();
             ItemStack bit = player.getOffhandItem();
             if (player.level().isLoaded(pos) && player.blockPosition().distSqr(pos) < 81) {
-                if (stack.getItem() == BitsAndChisels.ENDER_CHISEL && bit.getItem() instanceof BitItem) {
+                if (stack.getItem() == this && bit.getItem() instanceof BitItem) {
                     BlockState oldState = BitUtils.getBit(player.level(), pos, x, y, z);
                     BlockState targetState = BitUtils.getBit(bit);
                     for (int i = 0; i < 16; i++) {
@@ -108,7 +109,7 @@ public class EnderChisel extends TieredItem implements ServerPlayNetworking.Play
     public void initClient() {
         RedBoxCallback.EVENT.register((redBoxDrawer, matrixStack, vertexConsumer, worldoffsetx, worldoffsety, worldoffsetz) -> {
             Minecraft client = Minecraft.getInstance();
-            if (client.player.getMainHandItem().getItem() == BitsAndChisels.ENDER_CHISEL) {
+            if (client.player.getMainHandItem().getItem() == this) {
                 HitResult hit = client.hitResult;
                 if (hit.getType() == HitResult.Type.BLOCK) {
                     Direction direction = ((BlockHitResult) hit).getDirection();
@@ -136,12 +137,8 @@ public class EnderChisel extends TieredItem implements ServerPlayNetworking.Play
                 return InteractionResult.CONSUME;
             }
             if (BitUtils.exists(BitUtils.getBit(world, pos, x, y, z))) {
-                FriendlyByteBuf passedData = new FriendlyByteBuf(Unpooled.buffer());
-                passedData.writeBlockPos(pos);
-                passedData.writeInt(x);
-                passedData.writeInt(y);
-                passedData.writeInt(z);
-                ClientPlayNetworking.send(PACKET_ID, passedData);
+                final var packet = new EnderChiselPacket(pos, new BlockPos(x, y, z));
+                ClientPlayNetworking.send(packet);
                 fastBreak = getTime() - lastBreakTick < 10;
                 lastBreakTick = getTime();
                 return InteractionResult.SUCCESS;

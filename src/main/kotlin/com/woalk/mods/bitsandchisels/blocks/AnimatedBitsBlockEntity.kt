@@ -12,6 +12,7 @@ import net.minecraft.nbt.CompoundTag
 import net.minecraft.nbt.Tag
 import net.minecraft.nbt.ListTag
 import net.minecraft.core.BlockPos
+import net.minecraft.core.HolderLookup
 import java.util.*
 
 class AnimatedBitsBlockEntity(pos: BlockPos, val state: BlockState) : BitsBlockEntity(
@@ -36,8 +37,8 @@ class AnimatedBitsBlockEntity(pos: BlockPos, val state: BlockState) : BitsBlockE
         tag.putInt(FRAME_TIME_KEY, frametime)
     }
 
-    override fun saveAdditional(tag: CompoundTag) {
-        super.saveAdditional(tag)
+    override fun saveAdditional(tag: CompoundTag, provider: HolderLookup.Provider) {
+        super.saveAdditional(tag, provider)
         tag.putInt(FRAME_TIME_KEY, frametime)
     }
 
@@ -57,8 +58,12 @@ class AnimatedBitsBlockEntity(pos: BlockPos, val state: BlockState) : BitsBlockE
         tag.put(FRAMES_KEY, list)
     }
 
-    override fun load(tag: CompoundTag) {
-        super.load(tag)
+    override fun loadAdditional(tag: CompoundTag, provider: HolderLookup.Provider) {
+        super.loadAdditional(tag, provider)
+        load(tag)
+    }
+
+    fun load(tag: CompoundTag) {
         frametime = tag.getInt(FRAME_TIME_KEY).coerceAtLeast(1)
     }
 

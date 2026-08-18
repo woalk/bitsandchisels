@@ -9,6 +9,7 @@ import com.woalk.mods.bitsandchisels.blocks.BitStructureItem.Companion.OFFSETS
 import net.fabricmc.fabric.api.renderer.v1.RendererAccess
 import net.fabricmc.fabric.api.renderer.v1.mesh.Mesh
 import net.fabricmc.fabric.api.renderer.v1.render.RenderContext
+import net.minecraft.core.component.DataComponents
 import net.minecraft.world.level.block.state.BlockState
 import net.minecraft.world.item.ItemStack
 import net.minecraft.nbt.CompoundTag
@@ -24,7 +25,7 @@ class BitStructureModel: AbstractBitsBlockModel() {
     }
 
     override fun emitItemQuads(stack: ItemStack, randomSupplier: Supplier<RandomSource?>?, context: RenderContext) {
-        val fullTag = stack.tag ?: return
+        val fullTag = stack.components.get(DataComponents.CUSTOM_DATA)?.copyTag() ?: return
         val mesh = cache.computeIfAbsent(fullTag) { _ ->
             val builder = RendererAccess.INSTANCE.renderer!!.meshBuilder()
             val emitter = builder.emitter

@@ -15,6 +15,8 @@ import net.minecraft.stats.Stats
 import net.minecraft.network.chat.Component
 import net.minecraft.world.InteractionResult
 import net.minecraft.ChatFormatting
+import net.minecraft.core.component.DataComponents
+import net.minecraft.world.item.component.ItemLore
 import net.minecraft.world.level.Level
 
 class DuplicationKit(settings: Properties) : Item(settings) {
@@ -37,19 +39,13 @@ class DuplicationKit(settings: Properties) : Item(settings) {
             }
             val itemStack = block.getDropItem(context.level, context.clickedPos, blockState, null, context.player, false)
             if (itemStack != null) {
-                itemStack.getTagElement("display")?.apply {
-                    val lore = getList("Lore", Tag.TAG_STRING.toInt())
-                    lore.add(
-                        StringTag.valueOf(
-                            Component.Serializer.toJson(
-                                Component.translatable("$descriptionId.remark", context.player!!.displayName)
-                                    .withStyle(ChatFormatting.GRAY)
-                            )
-                        )
-                    )
-                    put("Lore", lore)
-                }
-                println("Duplicated item $itemStack ${itemStack.tag.toString()}")
+                val lore = components().get(DataComponents.LORE)?.lines ?: mutableListOf<Component>()
+                lore.add(
+                    Component.translatable("$descriptionId.remark", context.player!!.displayName)
+                        .withStyle(ChatFormatting.GRAY)
+                )
+                itemStack.set(DataComponents.LORE, ItemLore(lore))
+                println("Duplicated item $itemStack ${itemStack.components}")
                 context.player!!.awardStat(Stats.ITEM_USED.get(this))
                 val newStack = ItemUtils.createFilledResult(context.itemInHand, context.player, itemStack, false)
                 context.player!!.setItemInHand(context.hand, newStack)
@@ -59,12 +55,17 @@ class DuplicationKit(settings: Properties) : Item(settings) {
         return InteractionResult.FAIL
     }
 
-    override fun appendHoverText(stack: ItemStack?, world: Level?, tooltip: MutableList<Component?>, context: TooltipFlag) {
-        super.appendHoverText(stack, world, tooltip, context)
-        tooltip.add(
+    override fun appendHoverText(
+        itemStack: ItemStack,
+        tooltipContext: TooltipContext,
+        list: MutableList<Component?>,
+        tooltipFlag: TooltipFlag
+    ) {
+        super.appendHoverText(itemStack, tooltipContext, list, tooltipFlag)
+        list.add(
             Component.translatable("$descriptionId.desc1").withStyle(ChatFormatting.DARK_PURPLE).withStyle(
                 ChatFormatting.ITALIC))
-        tooltip.add(
+        list.add(
             Component.translatable("$descriptionId.desc2").withStyle(ChatFormatting.DARK_PURPLE).withStyle(
                 ChatFormatting.ITALIC))
     }
