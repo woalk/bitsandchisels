@@ -2,6 +2,7 @@ package com.woalk.mods.bitsandchisels.blocks
 
 import com.sk89q.worldedit.fabric.internal.NBTConverter
 import com.sk89q.worldedit.math.transform.AffineTransform
+import com.woalk.mods.bitsandchisels.BitsAndChisels
 import com.woalk.mods.bitsandchisels.BitsBlock
 import com.woalk.mods.bitsandchisels.blocks.BitStructureItem.Companion.NBT_ROTATION
 import com.woalk.mods.bitsandchisels.compat.ChiselExtent
@@ -23,8 +24,10 @@ import net.minecraft.world.level.Level
 import kotlin.math.roundToInt
 
 class BitsBlockItem(block: Block, settings: Properties) : BlockItem(block, settings) {
-    override fun place(context: BlockPlaceContext): InteractionResult? {
-        val nbt = components().get(DataComponents.BLOCK_ENTITY_DATA)?.copyTag()?.apply {
+    override fun place(context: BlockPlaceContext): InteractionResult {
+        val stack = context.itemInHand
+        val blockEntityData = stack.get(DataComponents.BLOCK_ENTITY_DATA)
+        val nbt = blockEntityData?.copyTag()?.apply {
             if (!context.level.isClientSide && this.contains(NBT_ROTATION)) {
                 val rotation =
                     ((Direction.from3DDataValue(this.getInt(NBT_ROTATION)).normal.toYaw() - context.rotation) / 90).roundToInt()
@@ -36,13 +39,14 @@ class BitsBlockItem(block: Block, settings: Properties) : BlockItem(block, setti
                 this.put("palette", rotatedNbt.get("palette"))
             }
         }
-        if (nbt != null) {
-            val newContext = BlockPlaceContext(context.level, context.player, context.hand, context.itemInHand.copy().apply {
-                set(DataComponents.BLOCK_ENTITY_DATA, CustomData.of(nbt))
-            }, context.hitResult)
-            return super.place(newContext)
+        val newContext = if (nbt != null) {
+            val newStack = stack.copy()
+            setBlockEntityData(newStack, BitsAndChisels.BITS_BLOCK_ENTITY, nbt)
+            BlockPlaceContext(context.level, context.player, context.hand, newStack, context.hitResult)
+        } else {
+            context
         }
-        return null
+        return super.place(newContext)
     }
 
     override fun appendHoverText(

@@ -1,8 +1,8 @@
 package com.woalk.mods.bitsandchisels;
 
 import net.minecraft.core.component.DataComponents;
+import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.component.BlockItemStateProperties;
-import net.minecraft.world.item.component.CustomData;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.entity.BlockEntity;
@@ -19,14 +19,11 @@ public class ItemHelpers {
     }
 
     public static ItemStack addBlockEntityNbt(ItemStack stack, BlockEntity blockEntity) {
-        if (blockEntity instanceof BitsBlockEntity) {
+        if (blockEntity instanceof BitsBlockEntity bitsBlockEntity) {
             stack.applyComponents(blockEntity.components());
             CompoundTag compoundTag = new CompoundTag();
-            final var pos = ((BitsBlockEntity) blockEntity).getBlockPos();
-            compoundTag.putInt("x", pos.getX());
-            compoundTag.putInt("y", pos.getY());
-            compoundTag.putInt("z", pos.getZ());
-            stack.set(DataComponents.BLOCK_ENTITY_DATA, CustomData.of(compoundTag));
+            bitsBlockEntity.writeBitNbt(compoundTag);
+            BlockItem.setBlockEntityData(stack, BitsAndChisels.BITS_BLOCK_ENTITY, compoundTag);
         }
         return stack;
     }

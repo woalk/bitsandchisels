@@ -27,6 +27,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.material.FluidState;
 import net.minecraft.world.level.material.Fluids;
 import net.minecraft.world.item.context.BlockPlaceContext;
+import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.Tag;
@@ -141,7 +142,7 @@ public class BitsBlock extends BaseEntityBlock implements SimpleWaterloggedBlock
                     nbt = new CompoundTag();
                 }
                 nbt.putInt(BitStructureItem.NBT_ROTATION, rotation.get3DDataValue());
-                stack.set(DataComponents.BLOCK_ENTITY_DATA, CustomData.of(nbt));
+                BlockItem.setBlockEntityData(stack, BitsAndChisels.BITS_BLOCK_ENTITY, nbt);
             }
             return stack;
         }
@@ -281,7 +282,7 @@ public class BitsBlock extends BaseEntityBlock implements SimpleWaterloggedBlock
                             nbt = new CompoundTag();
                         }
                         nbt.putInt(BitStructureItem.NBT_ROTATION, rotation.get3DDataValue());
-                        stack.set(DataComponents.BLOCK_ENTITY_DATA, CustomData.of(nbt));
+                        BlockItem.setBlockEntityData(stack, BitsAndChisels.BITS_BLOCK_ENTITY, nbt);
                     }
                     return stack;
                 }
