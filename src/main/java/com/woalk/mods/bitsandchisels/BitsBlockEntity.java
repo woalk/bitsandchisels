@@ -3,7 +3,6 @@ package com.woalk.mods.bitsandchisels;
 import com.woalk.mods.bitsandchisels.mixin.CubeVoxelShapeFactory;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.component.DataComponentMap;
-import net.minecraft.core.component.DataComponentPatch;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.world.item.component.ItemLore;
 import net.minecraft.world.level.block.entity.BlockEntityType;
@@ -34,10 +33,8 @@ import net.minecraft.world.phys.shapes.VoxelShape;
 import net.minecraft.world.phys.shapes.Shapes;
 
 import java.util.ArrayList;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 public class BitsBlockEntity extends BlockEntity implements RenderAttachmentBlockEntity, Nameable {
     protected BlockState[][][] states;
@@ -49,6 +46,8 @@ public class BitsBlockEntity extends BlockEntity implements RenderAttachmentBloc
     private UUID structureId = null;
     @Nullable
     private Component name = null;
+    @Nullable
+    private List<Component> lore = null;
 
     public BitsBlockEntity(BlockPos pos, BlockState state) {
         this(Blocks.AIR.defaultBlockState(), pos, state, false);
@@ -98,6 +97,13 @@ public class BitsBlockEntity extends BlockEntity implements RenderAttachmentBloc
         if (this.name != null) {
             tag.putString("CustomName", Component.Serializer.toJson(this.name, provider));
         }
+        if (this.lore != null) {
+            ListTag loreNbt = new ListTag();
+            for (Component line : this.lore) {
+                loreNbt.add(StringTag.valueOf(Component.Serializer.toJson(line, provider)));
+            }
+            tag.put("Lore", loreNbt);
+        }
     }
 
     public void writeBitNbt(CompoundTag tag) {
@@ -115,6 +121,12 @@ public class BitsBlockEntity extends BlockEntity implements RenderAttachmentBloc
         if (tag.contains("CustomName", Tag.TAG_STRING)) {
             this.name = parseCustomNameSafe(tag.getString("CustomName"), provider);
         }
+        if (tag.contains("Lore", Tag.TAG_LIST)) {
+            this.lore = tag.getList("Lore", Tag.TAG_STRING)
+                    .stream()
+                    .map(it -> parseCustomNameSafe(it.getAsString(), provider))
+                    .toList();
+        }
         readBitNbt(tag);
         rebuildShape();
         if (getLevel() != null && getLevel().isClientSide) {
@@ -127,12 +139,10 @@ public class BitsBlockEntity extends BlockEntity implements RenderAttachmentBloc
                 this.name = parseCustomNameSafe(displayNbt.getString("Name"), provider);
             }
             if (displayNbt.contains("Lore")) {
-                setLoreText(
-                        displayNbt.getList("Lore", ListTag.TAG_STRING)
-                                .stream()
-                                .map(it -> parseCustomNameSafe(it.getAsString(), provider))
-                                .toList()
-                );
+                this.lore = displayNbt.getList("Lore", ListTag.TAG_STRING)
+                        .stream()
+                        .map(it -> parseCustomNameSafe(it.getAsString(), provider))
+                        .toList();
             }
         }
         if (tag.contains("StructureId")) {
@@ -260,25 +270,33 @@ public class BitsBlockEntity extends BlockEntity implements RenderAttachmentBloc
     }
 
     public void setLoreText(List<Component> loreText) {
-        setComponents(DataComponentMap.builder().addAll(components()).set(DataComponents.LORE, new ItemLore(loreText)).build());
+        this.lore = loreText;
     }
 
     @Override
     protected void applyImplicitComponents(BlockEntity.DataComponentInput input) {
         super.applyImplicitComponents(input);
         this.name = input.get(DataComponents.CUSTOM_NAME);
+        ItemLore itemLore = input.get(DataComponents.LORE);
+        if (itemLore != null && !itemLore.lines().isEmpty()) {
+            this.lore = itemLore.lines();
+        }
     }
 
     @Override
     protected void collectImplicitComponents(DataComponentMap.Builder builder) {
         super.collectImplicitComponents(builder);
         builder.set(DataComponents.CUSTOM_NAME, this.name);
+        if (this.lore != null) {
+            builder.set(DataComponents.LORE, new ItemLore(this.lore));
+        }
     }
 
     @Override
     public void removeComponentsFromTag(CompoundTag tag) {
         super.removeComponentsFromTag(tag);
         tag.remove("CustomName");
+        tag.remove("Lore");
     }
 
     public UUID getStructureId() {
