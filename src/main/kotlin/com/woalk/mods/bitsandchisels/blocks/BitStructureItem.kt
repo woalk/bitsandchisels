@@ -6,6 +6,7 @@ import com.sk89q.worldedit.util.formatting.text.NbtComponent
 import com.woalk.mods.bitsandchisels.BitsAndChisels
 import com.woalk.mods.bitsandchisels.BitsBlock
 import com.woalk.mods.bitsandchisels.compat.ChiselExtent
+import com.woalk.mods.bitsandchisels.registry.ModBlockEntities
 import com.woalk.mods.bitsandchisels.utils.rotate
 import com.woalk.mods.bitsandchisels.utils.toYaw
 import net.fabricmc.fabric.api.recipe.v1.ingredient.DefaultCustomIngredients.components
@@ -37,6 +38,7 @@ import net.minecraft.world.item.component.ItemLore
 import net.minecraft.world.level.Level
 import net.minecraft.world.level.gameevent.GameEvent
 import java.util.*
+import kotlin.jvm.optionals.getOrNull
 import kotlin.math.roundToInt
 
 class BitStructureItem(settings: Properties) : Item(settings) {
@@ -90,7 +92,7 @@ class BitStructureItem(settings: Properties) : Item(settings) {
                 world.getFluidState(bitBlockPos).type === Fluids.WATER
             ).setValue(BitsBlock.SHADER_TYPE, tag.getInt("shader_type"))
             world.setBlockAndUpdate(bitBlockPos, bitBlockState)
-            world.getBlockEntity(bitBlockPos)?.let { blockEntity ->
+            world.getBlockEntity(bitBlockPos, BitsAndChisels.BITS_BLOCK_ENTITY).getOrNull()?.let { blockEntity ->
                 if (!(world.isClientSide || !blockEntity.onlyOpCanSetNbt()
                             || playerEntity != null && playerEntity.canUseGameMasterBlocks())) {
                     return@let
@@ -105,17 +107,13 @@ class BitStructureItem(settings: Properties) : Item(settings) {
                 nbtCompound2.put("bits_v2", nbtCompound5.get("bits_v2"))
                 nbtCompound2.put("palette", nbtCompound5.get("palette"))
                 nbtCompound2.putUUID("StructureId", structureId)
+                val name = itemStack.components.get(DataComponents.CUSTOM_NAME)
+                blockEntity.customName = name
                 val lore = itemStack.components.get(DataComponents.LORE)?.lines.orEmpty().toMutableList()
                 lore.add(Component.literal(OFFSETS[index].toShortString()).withStyle(ChatFormatting.DARK_GRAY))
-                val loreComponent = ItemLore(lore)
+                blockEntity.setLoreText(lore)
                 if (nbtCompound2 != nbtCompound3) {
                     blockEntity.loadCustomOnly(nbtCompound2, context.level.registryAccess())
-                    blockEntity.applyComponents(
-                        components(),
-                        DataComponentPatch.builder()
-                            .set(DataComponents.LORE, loreComponent)
-                            .build()
-                    )
                     blockEntity.setChanged()
                     return@let
                 }

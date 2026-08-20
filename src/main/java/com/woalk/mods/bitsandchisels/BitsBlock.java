@@ -52,6 +52,8 @@ import net.minecraft.world.level.LevelAccessor;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.ArrayList;
+
 public class BitsBlock extends BaseEntityBlock implements SimpleWaterloggedBlock {
     private static final MapCodec<BitsBlock> CODEC = simpleCodec(BitsBlock::new);
 
@@ -210,6 +212,20 @@ public class BitsBlock extends BaseEntityBlock implements SimpleWaterloggedBlock
         }
         stack.set(DataComponents.CUSTOM_DATA, CustomData.of(nbt));
         stack.applyComponents(blockEntity.collectComponents());
+        final var name = blockEntity.getCustomName();
+        var lore = blockEntity.getLoreText();
+        final var patch = DataComponentPatch.builder();
+        if (name != null) {
+            patch.set(DataComponents.CUSTOM_NAME, name);
+        }
+        if (lore != null) {
+            lore = new ArrayList<>(lore);
+            if (lore.getLast().getString().matches("^\\(?\\d+, \\d+, \\d+\\)?$")) {
+                lore.removeLast();
+            }
+            patch.set(DataComponents.LORE, new ItemLore(lore));
+        }
+        stack.applyComponents(patch.build());
         return stack;
     }
 

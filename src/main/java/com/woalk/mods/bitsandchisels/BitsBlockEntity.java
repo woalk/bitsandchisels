@@ -269,6 +269,10 @@ public class BitsBlockEntity extends BlockEntity implements RenderAttachmentBloc
         this.name = customName;
     }
 
+    public @Nullable List<Component> getLoreText() {
+        return lore;
+    }
+
     public void setLoreText(List<Component> loreText) {
         this.lore = loreText;
     }
