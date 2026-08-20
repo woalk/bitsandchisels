@@ -209,7 +209,7 @@ public class BitsBlock extends BaseEntityBlock implements SimpleWaterloggedBlock
             );
         }
         stack.set(DataComponents.CUSTOM_DATA, CustomData.of(nbt));
-        stack.applyComponents(blockEntity.components());
+        stack.applyComponents(blockEntity.collectComponents());
         return stack;
     }
 
@@ -225,10 +225,6 @@ public class BitsBlock extends BaseEntityBlock implements SimpleWaterloggedBlock
         final var name = itemStack.get(DataComponents.CUSTOM_NAME);
         if (name != null) {
             blockEntity.setCustomName(name);
-        }
-        final var lore = itemStack.get(DataComponents.LORE);
-        if (lore != null) {
-            blockEntity.applyComponents(blockEntity.components(), DataComponentPatch.builder().set(DataComponents.LORE, lore).build());
         }
     }
 

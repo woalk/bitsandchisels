@@ -20,7 +20,7 @@ public class ItemHelpers {
 
     public static ItemStack addBlockEntityNbt(ItemStack stack, BlockEntity blockEntity) {
         if (blockEntity instanceof BitsBlockEntity bitsBlockEntity) {
-            stack.applyComponents(blockEntity.components());
+            stack.applyComponents(blockEntity.collectComponents());
             CompoundTag compoundTag = new CompoundTag();
             bitsBlockEntity.writeBitNbt(compoundTag);
             BlockItem.setBlockEntityData(stack, BitsAndChisels.BITS_BLOCK_ENTITY, compoundTag);

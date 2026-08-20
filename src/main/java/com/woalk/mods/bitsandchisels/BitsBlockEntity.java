@@ -2,12 +2,14 @@ package com.woalk.mods.bitsandchisels;
 
 import com.woalk.mods.bitsandchisels.mixin.CubeVoxelShapeFactory;
 import net.minecraft.core.HolderLookup;
+import net.minecraft.core.component.DataComponentMap;
 import net.minecraft.core.component.DataComponentPatch;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.world.item.component.ItemLore;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.StringTag;
+import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.Nameable;
 import org.jetbrains.annotations.Nullable;
@@ -45,6 +47,8 @@ public class BitsBlockEntity extends BlockEntity implements RenderAttachmentBloc
     protected CompoundTag nbtCache;
     private boolean alive = false;
     private UUID structureId = null;
+    @Nullable
+    private Component name = null;
 
     public BitsBlockEntity(BlockPos pos, BlockState state) {
         this(Blocks.AIR.defaultBlockState(), pos, state, false);
@@ -91,6 +95,9 @@ public class BitsBlockEntity extends BlockEntity implements RenderAttachmentBloc
         if (structureId != null) {
             tag.putUUID("StructureId", structureId);
         }
+        if (this.name != null) {
+            tag.putString("CustomName", Component.Serializer.toJson(this.name, provider));
+        }
     }
 
     public void writeBitNbt(CompoundTag tag) {
@@ -105,6 +112,9 @@ public class BitsBlockEntity extends BlockEntity implements RenderAttachmentBloc
     @Override
     protected void loadAdditional(CompoundTag tag, HolderLookup.Provider provider) {
         super.loadAdditional(tag, provider);
+        if (tag.contains("CustomName", Tag.TAG_STRING)) {
+            this.name = parseCustomNameSafe(tag.getString("CustomName"), provider);
+        }
         readBitNbt(tag);
         rebuildShape();
         if (getLevel() != null && getLevel().isClientSide) {
@@ -114,14 +124,14 @@ public class BitsBlockEntity extends BlockEntity implements RenderAttachmentBloc
         if (tag.contains("display")) {
             CompoundTag displayNbt = tag.getCompound("display");
             if (displayNbt.contains("Name")) {
-                setCustomName(Component.Serializer.fromJson(displayNbt.getString("Name"), provider));
+                this.name = parseCustomNameSafe(displayNbt.getString("Name"), provider);
             }
             if (displayNbt.contains("Lore")) {
                 setLoreText(
                         displayNbt.getList("Lore", ListTag.TAG_STRING)
                                 .stream()
-                                .map(it -> Component.Serializer.fromJson(it.getAsString(), provider))
-                                .collect(Collectors.toUnmodifiableList())
+                                .map(it -> parseCustomNameSafe(it.getAsString(), provider))
+                                .toList()
                 );
             }
         }
@@ -236,21 +246,39 @@ public class BitsBlockEntity extends BlockEntity implements RenderAttachmentBloc
 
     @Override
     public Component getName() {
-        return null;
+        return this.name != null ? this.name : Component.translatable("block.bitsandchisels.bits_block");
     }
 
     @Nullable
     @Override
     public Component getCustomName() {
-        return Nameable.super.getCustomName();
+        return this.name;
     }
 
-    public void setCustomName(Component customName) {
-        applyComponents(components(), DataComponentPatch.builder().set(DataComponents.CUSTOM_NAME, customName).build());
+    public void setCustomName(@Nullable Component customName) {
+        this.name = customName;
     }
 
     public void setLoreText(List<Component> loreText) {
-        applyComponents(components(), DataComponentPatch.builder().set(DataComponents.LORE, new ItemLore(loreText)).build());
+        setComponents(DataComponentMap.builder().addAll(components()).set(DataComponents.LORE, new ItemLore(loreText)).build());
+    }
+
+    @Override
+    protected void applyImplicitComponents(BlockEntity.DataComponentInput input) {
+        super.applyImplicitComponents(input);
+        this.name = input.get(DataComponents.CUSTOM_NAME);
+    }
+
+    @Override
+    protected void collectImplicitComponents(DataComponentMap.Builder builder) {
+        super.collectImplicitComponents(builder);
+        builder.set(DataComponents.CUSTOM_NAME, this.name);
+    }
+
+    @Override
+    public void removeComponentsFromTag(CompoundTag tag) {
+        super.removeComponentsFromTag(tag);
+        tag.remove("CustomName");
     }
 
     public UUID getStructureId() {
