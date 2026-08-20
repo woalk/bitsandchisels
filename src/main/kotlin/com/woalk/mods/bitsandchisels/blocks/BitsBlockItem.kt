@@ -17,10 +17,7 @@ import net.minecraft.network.chat.Component
 import net.minecraft.world.InteractionResult
 import net.minecraft.ChatFormatting
 import net.minecraft.core.Direction
-import net.minecraft.core.component.DataComponentMap
 import net.minecraft.core.component.DataComponents
-import net.minecraft.world.item.component.CustomData
-import net.minecraft.world.level.Level
 import kotlin.math.roundToInt
 
 class BitsBlockItem(block: Block, settings: Properties) : BlockItem(block, settings) {

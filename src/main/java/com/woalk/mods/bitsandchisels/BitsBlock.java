@@ -222,6 +222,10 @@ public class BitsBlock extends BaseEntityBlock implements SimpleWaterloggedBlock
         if (data != null && data.contains("StructureId")) {
             blockEntity.setStructureId(data.copyTag().getUUID("StructureId"));
         }
+        final var name = itemStack.get(DataComponents.CUSTOM_NAME);
+        if (name != null) {
+            blockEntity.setCustomName(name);
+        }
         final var lore = itemStack.get(DataComponents.LORE);
         if (lore != null) {
             blockEntity.applyComponents(blockEntity.components(), DataComponentPatch.builder().set(DataComponents.LORE, lore).build());

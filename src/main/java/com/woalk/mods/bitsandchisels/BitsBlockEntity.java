@@ -35,6 +35,7 @@ import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 public class BitsBlockEntity extends BlockEntity implements RenderAttachmentBlockEntity, Nameable {
     protected BlockState[][][] states;
@@ -112,6 +113,17 @@ public class BitsBlockEntity extends BlockEntity implements RenderAttachmentBloc
         rebuildNbtCache();
         if (tag.contains("display")) {
             CompoundTag displayNbt = tag.getCompound("display");
+            if (displayNbt.contains("Name")) {
+                setCustomName(Component.Serializer.fromJson(displayNbt.getString("Name"), provider));
+            }
+            if (displayNbt.contains("Lore")) {
+                setLoreText(
+                        displayNbt.getList("Lore", ListTag.TAG_STRING)
+                                .stream()
+                                .map(it -> Component.Serializer.fromJson(it.getAsString(), provider))
+                                .collect(Collectors.toUnmodifiableList())
+                );
+            }
         }
         if (tag.contains("StructureId")) {
             structureId = tag.getUUID("StructureId");
