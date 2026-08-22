@@ -1,11 +1,9 @@
 package com.woalk.mods.bitsandchisels.chisel;
 
-import com.woalk.mods.bitsandchisels.BitsAndChisels;
 import com.woalk.mods.bitsandchisels.api.BitUtils;
 import com.woalk.mods.bitsandchisels.api.client.AirSwingItem;
 import com.woalk.mods.bitsandchisels.api.client.RedBoxCallback;
 import com.woalk.mods.bitsandchisels.networking.SmartChiselPacket;
-import com.woalk.mods.bitsandchisels.registry.ModItems;
 import com.woalk.mods.bitsandchisels.registry.ModPermissions;
 import io.netty.buffer.Unpooled;
 import me.lucko.fabric.api.permissions.v0.Permissions;
@@ -13,29 +11,21 @@ import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.event.player.AttackBlockCallback;
-import net.fabricmc.fabric.api.networking.v1.PacketSender;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
-import net.minecraft.world.item.Item.Properties;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.TieredItem;
-import net.minecraft.world.item.Tiers;
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.network.ServerGamePacketListenerImpl;
-import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionResult;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.level.Level;
 
-public class SmartChisel extends TieredItem implements ServerPlayNetworking.PlayPayloadHandler<SmartChiselPacket>, AirSwingItem {
+public class SmartChisel extends Item implements ServerPlayNetworking.PlayPayloadHandler<SmartChiselPacket>, AirSwingItem {
     BlockPos block = null;
 
     int bitx = 0;
@@ -47,12 +37,12 @@ public class SmartChisel extends TieredItem implements ServerPlayNetworking.Play
     private long lastBreakTick = 0;
 
     public SmartChisel(Properties settings) {
-        super(Tiers.IRON, settings);
+        super(settings);
         ServerPlayNetworking.registerGlobalReceiver(SmartChiselPacket.TYPE, this);
         AttackBlockCallback.EVENT.register((player, world, hand, pos, direction) -> {
             Item i = player.getItemInHand(hand).getItem();
             if (i instanceof SmartChisel) {
-                if (!world.isClientSide) return InteractionResult.FAIL;
+                if (!world.isClientSide()) return InteractionResult.FAIL;
                 return ((SmartChisel)i).interactBreakBlockClient(player, world, pos);
             }
             return InteractionResult.PASS;

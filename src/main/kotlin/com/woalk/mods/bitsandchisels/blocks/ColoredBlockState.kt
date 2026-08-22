@@ -12,29 +12,32 @@ import net.minecraft.core.BlockPos
 import net.minecraft.world.level.LevelReader
 
 class ColoredBlockState(
-    block: Block?,
-    immutableMap: Reference2ObjectArrayMap<Property<*>, Comparable<*>>?,
-    mapCodec: MapCodec<BlockState>?,
+    block: Block,
+    propertyKeys: Array<Property<*>>,
+    propertyValues: Array<Comparable<*>>,
     val wrapped: BlockState,
     val color: Int = 0xFFFFFF
-) : BlockState(block, immutableMap, mapCodec) {
+) : BlockState(block, propertyKeys, propertyValues) {
     companion object {
         const val TAG_COLOR = "color"
     }
 
-    constructor(state: BlockState, world: LevelReader, pos: BlockPos) :
+    constructor(state: BlockState, color: Int) :
             this(
                 state.block,
-                Reference2ObjectArrayMap(state.values),
-                MapCodec.of(Encoder.empty(), Decoder.unit { null }),
+                state.properties.toTypedArray(),
+                state.properties.map { state.getValue(it as Property<Nothing>) as Comparable<*> }.toTypedArray(),
+                state,
+                color
+            )
+
+    constructor(state: BlockState, world: LevelReader, pos: BlockPos) :
+            this(
                 state,
                 (world.getBlockEntity(pos) as ColoredBlockEntity).color
             )
 
     constructor(color: Int) : this(
-        ModBlocks.coloredBlock,
-        Reference2ObjectArrayMap(ModBlocks.coloredBlock.defaultBlockState().values),
-        MapCodec.of(Encoder.empty(), Decoder.unit { null }),
         ModBlocks.coloredBlock.defaultBlockState(),
         color
     )

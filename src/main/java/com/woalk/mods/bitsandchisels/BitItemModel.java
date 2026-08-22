@@ -1,155 +1,88 @@
 package com.woalk.mods.bitsandchisels;
 
-import java.util.Collection;
-import java.util.Collections;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
-import java.util.function.Function;
-import java.util.function.Supplier;
-
-import com.mojang.datafixers.util.Pair;
 
 import com.woalk.mods.bitsandchisels.blocks.ColoredBlockState;
-import com.woalk.mods.bitsandchisels.registry.ModBlocks;
-import net.fabricmc.fabric.api.client.rendering.v1.ColorProviderRegistry;
-import net.fabricmc.fabric.api.renderer.v1.model.FabricBakedModel;
-import net.fabricmc.fabric.api.renderer.v1.render.RenderContext;
-import net.fabricmc.fabric.api.renderer.v1.render.RenderContext.QuadTransform;
-import net.minecraft.client.resources.model.*;
-import net.minecraft.core.component.DataComponents;
-import net.minecraft.world.level.block.state.BlockState;
+import com.woalk.mods.bitsandchisels.duck.CubeRenderStuff;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.color.block.BlockColor;
-import net.minecraft.client.renderer.block.model.BakedQuad;
-import net.minecraft.client.renderer.block.model.ItemOverrides;
-import net.minecraft.client.renderer.block.model.ItemTransforms;
-import net.minecraft.client.renderer.block.model.ItemTransform;
-import net.minecraft.client.renderer.texture.TextureAtlasSprite;
-import net.minecraft.world.item.ItemStack;
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.resources.ResourceLocation;
-import net.minecraft.core.BlockPos;
+import net.minecraft.client.multiplayer.ClientLevel;
+import net.minecraft.client.renderer.block.BlockStateModelSet;
+import net.minecraft.client.renderer.block.dispatch.BlockStateModel;
+import net.minecraft.client.renderer.block.dispatch.BlockStateModelPart;
+import net.minecraft.client.renderer.item.ItemModel;
+import net.minecraft.client.renderer.item.ItemModelResolver;
+import net.minecraft.client.renderer.item.ItemStackRenderState;
+import net.minecraft.client.resources.model.geometry.BakedQuad;
+import net.minecraft.client.resources.model.sprite.Material;
 import net.minecraft.core.Direction;
-import net.minecraft.util.RandomSource;
-import net.minecraft.world.level.BlockAndTintGetter;
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.world.entity.ItemOwner;
+import net.minecraft.world.item.ItemDisplayContext;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.levelgen.LegacyRandomSource;
 import org.jetbrains.annotations.Nullable;
-import org.joml.Vector3f;
 
-public class BitItemModel implements UnbakedModel, BakedModel, FabricBakedModel {
+public class BitItemModel implements ItemModel {
 
-    //Copied from fapi
-
-    private static ItemTransform makeTransform(float rotationX, float rotationY, float rotationZ, float translationX, float translationY, float translationZ, float scaleX, float scaleY, float scaleZ) {
-		Vector3f translation = new Vector3f(translationX, translationY, translationZ);
-		translation.mul(0.0625f);
-		translation = new Vector3f(Math.clamp(translation.x, -5.0F, 5.0F), Math.clamp(translation.y, -5.0F, 5.0F), Math.clamp(translation.z, -5.0F, 5.0F));
-		return new ItemTransform(new Vector3f(rotationX, rotationY, rotationZ), translation, new Vector3f(scaleX, scaleY, scaleZ));
-	}
-
-    public static final ItemTransform TRANSFORM_BLOCK_GUI = makeTransform(30, 225, 0, 0, 0, 0, 0.625f * 0.5f, 0.625f * 0.5f, 0.625f * 0.5f);
-	public static final ItemTransform TRANSFORM_BLOCK_GROUND = makeTransform(0, 0, 0, 0, 3, 0, 0.25f * 0.5f, 0.25f * 0.5f, 0.25f * 0.5f);
-	public static final ItemTransform TRANSFORM_BLOCK_FIXED = makeTransform(0, 0, 0, 0, 0, 0, 0.5f * 0.5f, 0.5f * 0.5f, 0.5f * 0.5f);
-	public static final ItemTransform TRANSFORM_BLOCK_3RD_PERSON_RIGHT = makeTransform(75, 45, 0, 0, 2.5f, 0, 0.375f * 0.5f, 0.375f * 0.5f, 0.375f * 0.5f);
-	public static final ItemTransform TRANSFORM_BLOCK_1ST_PERSON_RIGHT = makeTransform(0, 45, 0, 0, 0, 0, 0.4f * 0.5f, 0.4f * 0.5f, 0.4f * 0.5f);
-    public static final ItemTransform TRANSFORM_BLOCK_1ST_PERSON_LEFT = makeTransform(0, 225, 0, 0, 0, 0, 0.4f * 0.5f, 0.4f * 0.5f, 0.4f * 0.5f);
-    
-    private static BlockState transform_state;
-    private static final QuadTransform TRANSFORM = quad -> {
-        BlockColor colorthing = ColorProviderRegistry.BLOCK.get(transform_state.getBlock());
-        if (transform_state instanceof ColoredBlockState) {
-            int color = 0xFF000000 | ((ColoredBlockState) transform_state).getColor();
-            quad.spriteColor(0, color, color, color, color);
-        } else if (colorthing != null) {
-            int color = 0xFF000000 | ColorPolice.getBlockColor(transform_state, null, null, quad.colorIndex());
-            quad.spriteColor(0, color, color, color, color);
-        }
-        return true;
-    };
-
-	/**
-	 * Mimics the vanilla model transformation * 0.5 used for most vanilla blocks,
-	 */
-    public static final ItemTransforms MODEL_TRANSFORM_BLOCK = new ItemTransforms(TRANSFORM_BLOCK_3RD_PERSON_RIGHT, TRANSFORM_BLOCK_3RD_PERSON_RIGHT, TRANSFORM_BLOCK_1ST_PERSON_LEFT, TRANSFORM_BLOCK_1ST_PERSON_RIGHT, ItemTransform.NO_TRANSFORM, TRANSFORM_BLOCK_GUI, TRANSFORM_BLOCK_GROUND, TRANSFORM_BLOCK_FIXED);
-    
-    private static LRUCache<CompoundTag, BlockState> cache = new LRUCache<>(200);
+    private static final LRUCache<CompoundTag, BlockState> cache = new LRUCache<>(200);
 
     @Override
-    public boolean isVanillaAdapter() {
-        return false;
-    }
-
-    @Override
-    public void emitBlockQuads(BlockAndTintGetter blockView, BlockState state, BlockPos pos, Supplier<RandomSource> randomSupplier, RenderContext context) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public void emitItemQuads(ItemStack stack, Supplier<RandomSource> randomSupplier, RenderContext context) {
+    public void update(ItemStackRenderState renderState, ItemStack stack, ItemModelResolver resolver, ItemDisplayContext displayContext, @Nullable ClientLevel level, @Nullable ItemOwner owner, int seed) {
         final var data = stack.getComponents().get(DataComponents.CUSTOM_DATA);
-        final var bitNbt = data != null ? data.copyTag().getCompound("bit") : null;
+        final var bitNbt = data != null ? data.copyTag().getCompound("bit").orElse(null) : null;
         if (bitNbt == null) return;
-        transform_state = cache.computeIfAbsent(bitNbt, BitNbtUtil::toBlockState);
-        context.pushTransform(TRANSFORM);
-        context.fallbackConsumer().accept(Minecraft.getInstance().getBlockRenderer().getBlockModel(
-                transform_state instanceof ColoredBlockState ?
-                        ((ColoredBlockState) transform_state).getWrapped() :
-                        transform_state));
-        context.popTransform();
-    }
 
-    @Override
-    public List<BakedQuad> getQuads(BlockState state, Direction face, RandomSource random) {
-        BitsAndChisels.LOGGER.warn("BakedModel.getQuads was just called, this likely means your renderer doesn't support Fabric rendering API. In that case get one that does, I recommend canvas or indigo.");
-        return Collections.emptyList();
-    }
+        BlockState blockState = cache.computeIfAbsent(bitNbt, BitNbtUtil::toBlockState);
+        if (blockState == null) return;
 
-    @Override
-    public void resolveParents(Function<ResourceLocation, UnbakedModel> function) {
-    }
+        BlockState renderBlockState = blockState instanceof ColoredBlockState cbs ? cbs.getWrapped() : blockState;
 
-    @Override
-    public boolean useAmbientOcclusion() {
-        return false;
-    }
+        // Get the block model's quads
+        BlockStateModelSet modelSet = Minecraft.getInstance().getModelManager().getBlockStateModelSet();
+        BlockStateModel model = modelSet.get(renderBlockState);
+        List<BlockStateModelPart> parts = new ArrayList<>();
+        model.collectParts(new LegacyRandomSource(seed), parts);
 
-    @Override
-    public boolean isGui3d() {
-        return false;
-    }
+        ItemStackRenderState.LayerRenderState layer = renderState.newLayer();
+        List<BakedQuad> quadList = layer.prepareQuadList();
 
-    @Override
-    public boolean usesBlockLight() {
-        return true;
-    }
+        for (BlockStateModelPart part : parts) {
+            for (Direction d : Direction.values()) {
+                List<BakedQuad> dirQuads = part.getQuads(d);
+                if (dirQuads != null) {
+                    for (BakedQuad quad : dirQuads) {
+                        // Apply tinting
+                        if (blockState instanceof ColoredBlockState cbs) {
+                            int color = 0xFF000000 | cbs.getColor();
+                            // We can't modify BakedQuad colors directly here, but the tint layer system handles it
+                            quadList.add(quad);
+                        } else {
+                            quadList.add(quad);
+                        }
+                    }
+                }
+            }
+            // Also add null-face quads (unculled)
+            List<BakedQuad> nullQuads = part.getQuads(null);
+            if (nullQuads != null) {
+                quadList.addAll(nullQuads);
+            }
+        }
 
-    @Override
-    public boolean isCustomRenderer() {
-        return false;
-    }
+        // Apply color tinting via tint layers
+        if (blockState instanceof ColoredBlockState cbs) {
+            int color = 0xFF000000 | cbs.getColor();
+            layer.tintLayers().add(color);
+        } else {
+            // Use the block's color provider tint
+            int color = 0xFF000000 | ColorPolice.getBlockColor(blockState, null, null, 0);
+            layer.tintLayers().add(color);
+        }
 
-    @Override
-    public TextureAtlasSprite getParticleIcon() {
-        return null;
+        layer.setParticleMaterial(model.particleMaterial());
+        layer.setUsesBlockLight(true);
     }
-
-    @Override
-    public ItemTransforms getTransforms() {
-        return MODEL_TRANSFORM_BLOCK;
-    }
-
-    @Override
-    public ItemOverrides getOverrides() {
-        return ItemOverrides.EMPTY;
-    }
-
-    @Override
-    public Collection<ResourceLocation> getDependencies() {
-        return Collections.emptyList();
-    }
-
-    @Override
-    public @Nullable BakedModel bake(ModelBaker modelBaker, Function<Material, TextureAtlasSprite> function, ModelState modelState, ResourceLocation resourceLocation) {
-        return this;
-    }
-    
 }

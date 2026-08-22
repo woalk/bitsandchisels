@@ -1,23 +1,51 @@
 package com.woalk.mods.bitsandchisels;
 
-import com.woalk.mods.bitsandchisels.blocks.BitStructureModel;
 import com.woalk.mods.bitsandchisels.blocks.BitsBlockModel;
+import com.woalk.mods.bitsandchisels.blocks.BitStructureItemModel;
+import com.woalk.mods.bitsandchisels.registry.ModBlocks;
 import com.woalk.mods.bitsandchisels.registry.ModItems;
-import org.jetbrains.annotations.Nullable;
 
 import net.fabricmc.api.ClientModInitializer;
-import net.fabricmc.fabric.api.client.model.ModelLoadingRegistry;
-import net.fabricmc.fabric.api.client.model.ModelProviderContext;
-import net.fabricmc.fabric.api.client.model.ModelProviderException;
-import net.fabricmc.fabric.api.client.model.ModelResourceProvider;
-import net.minecraft.client.resources.model.UnbakedModel;
-import net.minecraft.resources.ResourceLocation;
+import net.fabricmc.fabric.api.client.model.loading.v1.ModelLoadingPlugin;
+import net.minecraft.client.renderer.block.dispatch.BlockStateModel;
+import net.minecraft.resources.Identifier;
 
 public class BitsBlockClient implements ClientModInitializer {
 
     @Override
     public void onInitializeClient() {
-        ModelLoadingRegistry.INSTANCE.registerResourceProvider(rm -> new BitsModelProvider());
+        ModelLoadingPlugin.register(pluginContext -> {
+            // Register block state resolver for bits_block
+            pluginContext.registerBlockStateResolver(BitsAndChisels.BITS_BLOCK, context -> {
+                BitsBlockModel model = new BitsBlockModel();
+                for (var state : context.block().getStateDefinition().getPossibleStates()) {
+                    context.setModel(state, new SimpleUnbakedRoot(model));
+                }
+            });
+
+            // Register block state resolver for animated_bits_block
+            pluginContext.registerBlockStateResolver(ModBlocks.INSTANCE.getAnimatedBitsBlock(), context -> {
+                BitsBlockModel model = new BitsBlockModel();
+                for (var state : context.block().getStateDefinition().getPossibleStates()) {
+                    context.setModel(state, new SimpleUnbakedRoot(model));
+                }
+            });
+
+            // Replace item models after bake
+            pluginContext.modifyItemModelAfterBake().register((model, ctx) -> {
+                Identifier itemId = ctx.itemId();
+                if (itemId.equals(Identifier.fromNamespaceAndPath("bitsandchisels", "bits_block"))
+                        || itemId.equals(Identifier.fromNamespaceAndPath("bitsandchisels", "animated_bits_block"))) {
+                    return new BitsBlockItemModel();
+                } else if (itemId.equals(Identifier.fromNamespaceAndPath("bitsandchisels", "bit_item"))) {
+                    return new BitItemModel();
+                } else if (itemId.equals(Identifier.fromNamespaceAndPath("bitsandchisels", "bit_structure"))) {
+                    return new BitStructureItemModel();
+                }
+                return model;
+            });
+        });
+
         ModItems.DIAMOND_CHISEL.initClient();
         ModItems.ENDER_CHISEL.initClient();
         ModItems.IRON_CHISEL.initClient();
@@ -25,26 +53,29 @@ public class BitsBlockClient implements ClientModInitializer {
         ModItems.SMART_CHISEL.initClient();
     }
 
-    public static class BitsModelProvider implements ModelResourceProvider {
-        public static final ResourceLocation BITS_BLOCK_MODEL = new ResourceLocation("bitsandchisels:block/bits_block_model");
-        public static final ResourceLocation BITS_BLOCK_ITEM_MODEL = new ResourceLocation("bitsandchisels:item/bits_block");
-        public static final ResourceLocation ANIMATED_BITS_BLOCK_ITEM_MODEL = new ResourceLocation("bitsandchisels:item/animated_bits_block");
-        public static final ResourceLocation BIT_STRUCTURE_MODEL = new ResourceLocation("bitsandchisels:item/bit_structure");
-        public static final ResourceLocation BIT_ITEM_MODEL = new ResourceLocation("bitsandchisels:item/bit_item");
+    /**
+     * Simple UnbakedRoot that wraps a pre-built BlockStateModel.
+     */
+    private static class SimpleUnbakedRoot implements BlockStateModel.UnbakedRoot {
+        private final BlockStateModel model;
+
+        SimpleUnbakedRoot(BlockStateModel model) {
+            this.model = model;
+        }
 
         @Override
-        public @Nullable UnbakedModel loadModelResource(ResourceLocation resourceId, ModelProviderContext context) throws ModelProviderException {
-            if(resourceId.equals(BITS_BLOCK_MODEL) || resourceId.equals(BITS_BLOCK_ITEM_MODEL) || resourceId.equals(ANIMATED_BITS_BLOCK_ITEM_MODEL)) {
-                return new BitsBlockModel();
-            } else if (resourceId.equals(BIT_ITEM_MODEL)) {
-                return new BitItemModel();
-            } else if (resourceId.equals(BIT_STRUCTURE_MODEL)) {
-                return new BitStructureModel();
-            } else {
-                return null;
-            }
+        public BlockStateModel bake(net.minecraft.world.level.block.state.BlockState state, net.minecraft.client.resources.model.ModelBaker baker) {
+            return model;
+        }
+
+        @Override
+        public Object visualEqualityGroup(net.minecraft.world.level.block.state.BlockState state) {
+            return model;
+        }
+
+        @Override
+        public void resolveDependencies(net.minecraft.client.resources.model.ResolvableModel.Resolver resolver) {
+            // No dependencies
         }
     }
-
-    
 }

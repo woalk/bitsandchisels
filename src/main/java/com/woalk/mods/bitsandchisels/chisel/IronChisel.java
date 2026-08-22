@@ -1,45 +1,34 @@
 package com.woalk.mods.bitsandchisels.chisel;
 
-import com.woalk.mods.bitsandchisels.BitsAndChisels;
 import com.woalk.mods.bitsandchisels.api.BitUtils;
 import com.woalk.mods.bitsandchisels.api.client.RedBoxCallback;
 import com.woalk.mods.bitsandchisels.networking.IronChiselPacket;
 import com.woalk.mods.bitsandchisels.registry.ModPermissions;
-import io.netty.buffer.Unpooled;
 import me.lucko.fabric.api.permissions.v0.Permissions;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.event.player.AttackBlockCallback;
-import net.fabricmc.fabric.api.networking.v1.PacketSender;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.client.Minecraft;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
-import net.minecraft.world.item.Item.Properties;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.TieredItem;
-import net.minecraft.world.item.Tiers;
-import net.minecraft.network.FriendlyByteBuf;
-import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.network.ServerGamePacketListenerImpl;
-import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionResult;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.level.Level;
 
-public class IronChisel extends TieredItem implements ServerPlayNetworking.PlayPayloadHandler<IronChiselPacket> {
+public class IronChisel extends Item implements ServerPlayNetworking.PlayPayloadHandler<IronChiselPacket> {
     private long lastBreakTick = 0;
 
     public IronChisel(Properties settings) {
-        super(Tiers.STONE, settings);
+        super(settings);
         ServerPlayNetworking.registerGlobalReceiver(IronChiselPacket.TYPE, this);
         AttackBlockCallback.EVENT.register((player, world, hand, pos, direction) -> {
             Item i = player.getItemInHand(hand).getItem();
             if (i instanceof IronChisel) {
-                if (!world.isClientSide) return InteractionResult.FAIL;
+                if (!world.isClientSide()) return InteractionResult.FAIL;
                 return ((IronChisel)i).interactBreakBlockClient(player, world, pos);
             }
             return InteractionResult.PASS;

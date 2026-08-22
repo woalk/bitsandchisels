@@ -9,7 +9,7 @@ import net.minecraft.world.level.LevelReader
 
 private val MY_CODEC = BaseEntityBlock.simpleCodec(::ColoredBlock)!!
 
-class ColoredBlock(settings: Properties?) : BaseEntityBlock(settings) {
+class ColoredBlock(settings: Properties) : BaseEntityBlock(settings) {
     override fun codec() = MY_CODEC
 
     override fun newBlockEntity(pos: BlockPos, state: BlockState) = ColoredBlockEntity(pos, state)
@@ -18,8 +18,8 @@ class ColoredBlock(settings: Properties?) : BaseEntityBlock(settings) {
     @Deprecated("Copied from superclass")
     override fun getRenderShape(state: BlockState): RenderShape = RenderShape.MODEL
 
-    override fun getCloneItemStack(world: LevelReader, pos: BlockPos, state: BlockState) =
-        super.getCloneItemStack(world, pos, state)!!.apply {
+    override fun getCloneItemStack(world: LevelReader, pos: BlockPos, state: BlockState, includeData: Boolean) =
+        super.getCloneItemStack(world, pos, state, includeData)!!.apply {
             val entity = world.getBlockEntity(pos) as ColoredBlockEntity
             val color = entity.components().get(DataComponents.DYED_COLOR)
             set(DataComponents.DYED_COLOR, color)

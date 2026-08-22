@@ -3,7 +3,7 @@ package com.woalk.mods.bitsandchisels.image
 import com.woalk.mods.bitsandchisels.BitsAndChisels
 import com.woalk.mods.bitsandchisels.BitsBlock
 import net.minecraft.world.level.block.state.BlockState
-import net.minecraft.resources.ResourceLocation
+import net.minecraft.resources.Identifier
 import java.lang.IllegalArgumentException
 
 data class PaletteIdentifier(
@@ -33,7 +33,7 @@ data class PaletteIdentifier(
         BitsAndChisels.BITS_BLOCK.defaultBlockState().setValue(BitsBlock.SHADER_TYPE, 3)
     } else BitsAndChisels.BITS_BLOCK.defaultBlockState()
 
-    fun toIdentifier(wildcardInsert: String) = ResourceLocation(
+    fun toIdentifier(wildcardInsert: String) = Identifier.fromNamespaceAndPath(
         namespace,
         blockWildcard.replace(if (withSkinColors) "+" else "*", wildcardInsert)
     )

@@ -6,20 +6,15 @@ import com.woalk.mods.bitsandchisels.WoalkItemsMod
 import com.woalk.mods.bitsandchisels.blocks.*
 import net.fabricmc.api.EnvType
 import net.fabricmc.api.Environment
-import net.fabricmc.fabric.api.blockrenderlayer.v1.BlockRenderLayerMap
-import net.fabricmc.fabric.api.client.rendering.v1.ColorProviderRegistry
 import net.minecraft.world.level.block.*
-import net.minecraft.client.color.block.BlockColor
-import net.minecraft.client.color.item.ItemColor
-import net.minecraft.client.renderer.RenderType
 import net.minecraft.world.entity.EntityType
 import net.minecraft.world.item.BlockItem
-import net.minecraft.resources.ResourceLocation
+import net.minecraft.resources.Identifier
 import net.minecraft.world.item.Rarity
 import net.minecraft.core.BlockPos
 import net.minecraft.core.Registry
-import net.minecraft.core.component.DataComponents
 import net.minecraft.core.registries.BuiltInRegistries
+import net.minecraft.references.BlockItemId
 import net.minecraft.world.item.Item
 import net.minecraft.world.level.BlockGetter
 import net.minecraft.world.level.block.state.BlockBehaviour
@@ -28,24 +23,23 @@ import net.minecraft.world.level.block.state.BlockState
 @Suppress("unused")
 object ModBlocks : ModRegister<Pair<Block, (() -> Item.Properties)?>, Block>(BuiltInRegistries.BLOCK) {
     //region block declarations
-    val animatedBitsBlock = register("animated_bits_block", Pair(AnimatedBitsBlock(
+    val animatedBitsBlock = register("animated_bits_block", { AnimatedBitsBlock(it) },
         BlockBehaviour.Properties.of()
             .noOcclusion()
             .dynamicShape()
             .destroyTime(4.0f)
             .lightLevel { s -> s.getValue(BitsBlock.LIGHT_LEVEL) }
-    )) { Item.Properties().stacksTo(16) }).first
+    ) { Item.Properties().stacksTo(16) }
 
-    val coloredBlock = register("coloured_block", ColoredBlock(
-        BlockBehaviour.Properties.ofFullCopy(Blocks.WHITE_CONCRETE)
-    ))
-    val barrierBlock = register("barrier", Pair(
-        Block(
+    val coloredBlock = register("coloured_block", { ColoredBlock(it) },
+        BlockBehaviour.Properties.ofFullCopy(Blocks.CONCRETE.white)
+    )
+    val barrierBlock = register("barrier",
+        { Block(it) },
         BlockBehaviour.Properties.of()
             .noOcclusion()
             .destroyTime(0.3f)
-    )
-    ) { Item.Properties() }.first)
+    ) { Item.Properties() }
     //endregion
 
     //region convenience methods
@@ -57,6 +51,19 @@ object ModBlocks : ModRegister<Pair<Block, (() -> Item.Properties)?>, Block>(Bui
     private fun register(id: String, block: Block): Block =
         register(id, Pair(block) { itemSettings }).first
 
+    private fun register(
+        id: String,
+        block: (BlockBehaviour.Properties) -> Block,
+        blockProperties: BlockBehaviour.Properties,
+        item: () -> Item.Properties = { itemSettings },
+    ): Block {
+        val identifier = Identifier.fromNamespaceAndPath(getNamespace(id), id)
+        val blockItemId = BlockItemId.create(identifier, identifier)
+        return register(
+            id,
+            Pair(block(blockProperties.setId(blockItemId.block))) { item().setId(blockItemId.item) }).first
+    }
+
     override fun onRegister(toRegister: Pair<Block, (() -> Item.Properties)?>) = toRegister.first
 
     override fun getNamespace(id: String) = if (id == "animated_bits_block") BitsAndChisels.MODID else WoalkItemsMod.MOD_ID
@@ -66,7 +73,7 @@ object ModBlocks : ModRegister<Pair<Block, (() -> Item.Properties)?>, Block>(Bui
         if (toRegister.second != null) {
             Registry.register(
                 BuiltInRegistries.ITEM,
-                ResourceLocation(getNamespace(id), id),
+                Identifier.fromNamespaceAndPath(getNamespace(id), id),
                 when (id) {
                     "coloured_block" -> ColoredBlockItem(toRegister.first, toRegister.second!!.invoke())
                     "animated_bits_block" -> BitsBlockItem(toRegister.first, toRegister.second!!.invoke())
@@ -81,14 +88,6 @@ object ModBlocks : ModRegister<Pair<Block, (() -> Item.Properties)?>, Block>(Bui
 
     @Environment(EnvType.CLIENT)
     fun registerAllClient() {
-        ColorProviderRegistry.BLOCK.register(BlockColor { _, world, pos, _ ->
-            (world?.getBlockEntity(pos) as? ColoredBlockEntity)?.colorWithAlpha ?: 0xFFFFFFFFU.toInt()
-        }, coloredBlock)
-        ColorProviderRegistry.ITEM.register(ItemColor { stack, _ ->
-            stack.components.get(DataComponents.DYED_COLOR)?.rgb ?: 0xFFFFFF
-        }, coloredBlock.asItem())
-
-        BlockRenderLayerMap.INSTANCE.putBlock(barrierBlock, RenderType.translucent())
     }
     //endregion
 }

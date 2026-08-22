@@ -4,11 +4,9 @@
   "package": "com.woalk.mods.bitsandchisels.mixin",
   "compatibilityLevel": "JAVA_8",
   "mixins": [
-    "CubeVoxelShapeFactory",
-    "ItemStackMixin"
+    "CubeVoxelShapeFactory"
   ],
   "client": [
-    "ParticleYeeter",
     "RedSelectionBoxMixin",
     "BakedQuadAccessor",
     "BlockStateMixin",

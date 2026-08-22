@@ -17,15 +17,20 @@ import net.minecraft.world.level.LevelReader
 class AnimatedBitsBlock(settings: Properties?) : BitsBlock(settings) {
     override fun newBlockEntity(pos: BlockPos, state: BlockState): BlockEntity = AnimatedBitsBlockEntity(pos, state)
 
-    override fun getRenderShape(state: BlockState?): RenderShape = RenderShape.ENTITYBLOCK_ANIMATED
+    override fun getRenderShape(state: BlockState): RenderShape = RenderShape.INVISIBLE
 
-    override fun playerWillDestroy(world: Level, pos: BlockPos?, state: BlockState?, player: Player): BlockState {
+    override fun playerWillDestroy(world: Level, pos: BlockPos, state: BlockState, player: Player): BlockState {
         val blockEntity = world.getBlockEntity(pos, ModBlockEntities.animatedBitsBlockEntity).orElse(null)
         popResource(world, pos, ItemHelpers.blockToItem(this, state, blockEntity))
         return playerWillDestroyBlock(world, pos, state, player)
     }
 
-    override fun getCloneItemStack(world: LevelReader, pos: BlockPos, state: BlockState): ItemStack? {
+    override fun getCloneItemStack(
+        world: LevelReader,
+        pos: BlockPos,
+        state: BlockState,
+        includeData: Boolean
+    ): ItemStack {
         val blockEntity = world.getBlockEntity(pos, ModBlockEntities.animatedBitsBlockEntity).orElse(null)
         return if (blockEntity != null) {
             ItemHelpers.blockToItem(this, state, blockEntity)
@@ -34,7 +39,7 @@ class AnimatedBitsBlock(settings: Properties?) : BitsBlock(settings) {
         }
     }
 
-    override fun <T : BlockEntity?> getTicker(
+    override fun <T : BlockEntity> getTicker(
         world: Level,
         state: BlockState,
         type: BlockEntityType<T>

@@ -12,7 +12,7 @@ import net.minecraft.network.protocol.common.custom.CustomPacketPayload
 
 object ModPackets: IModRegister {
     override fun registerAll() {
-        PayloadTypeRegistry.playC2S().run {
+        PayloadTypeRegistry.serverboundPlay().run {
             register(EnderChiselPacket.register())
             register(DiamondChiselPacket.register())
             register(IronChiselPacket.register())

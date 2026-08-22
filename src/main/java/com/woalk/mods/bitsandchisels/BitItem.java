@@ -11,6 +11,7 @@ import net.fabricmc.fabric.api.networking.v1.PacketSender;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.world.item.Item.Properties;
+import net.minecraft.world.item.component.TooltipDisplay;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.client.Minecraft;
@@ -27,7 +28,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.ChatFormatting;
 import net.minecraft.world.InteractionHand;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.core.BlockPos;
@@ -36,6 +37,7 @@ import net.minecraft.world.level.Level;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
+import java.util.function.Consumer;
 
 public class BitItem extends Item implements ServerPlayNetworking.PlayPayloadHandler<BitPacket> {
     BlockPos block = null;
@@ -183,7 +185,7 @@ public class BitItem extends Item implements ServerPlayNetworking.PlayPayloadHan
 
     @Override
     public InteractionResult useOn(UseOnContext context) {
-        if (!context.getLevel().isClientSide) return InteractionResult.CONSUME;
+        if (!context.getLevel().isClientSide()) return InteractionResult.CONSUME;
         BlockPos pos = context.getClickedPos();
         Minecraft client = Minecraft.getInstance();
         HitResult hit = client.hitResult;
@@ -263,23 +265,23 @@ public class BitItem extends Item implements ServerPlayNetworking.PlayPayloadHan
     @Override
     public Component getName(ItemStack stack) {
         final var data = stack.getComponents().get(DataComponents.CUSTOM_DATA);
-        final var bitNbt = data != null ? data.copyTag().getCompound("bit") : null;
+        final var bitNbt = data != null ? data.copyTag().getCompound("bit").orElse(null) : null;
         BlockState state = bitNbt != null ? BitNbtUtil.toBlockState(bitNbt) : Blocks.AIR.defaultBlockState();
-        return Component.translatable(this.getDescriptionId(stack), Component.translatable(state.getBlock().getDescriptionId()));
+        return Component.translatable(this.getDescriptionId(), Component.translatable(state.getBlock().getDescriptionId()));
     }
 
     @Override
-    public void appendHoverText(ItemStack itemStack, TooltipContext tooltipContext, List<Component> list, TooltipFlag tooltipFlag) {
-        super.appendHoverText(itemStack, tooltipContext, list, tooltipFlag);
+    public void appendHoverText(ItemStack itemStack, TooltipContext context, TooltipDisplay display, Consumer<Component> builder, TooltipFlag tooltipFlag) {
+        super.appendHoverText(itemStack, context, display, builder, tooltipFlag);
         if (tooltipFlag.isAdvanced()) {
             final var data = itemStack.getComponents().get(DataComponents.CUSTOM_DATA);
-            final CompoundTag blockState = data != null ? data.copyTag().getCompound("bit") : null;
+            final CompoundTag blockState = data != null ? data.copyTag().getCompound("bit").orElse(null) : null;
             if (blockState != null) {
-                list.add(Component.literal(blockState.getString("Name")).withStyle(ChatFormatting.DARK_PURPLE));
+                builder.accept(Component.literal(blockState.getString("Name").get()).withStyle(ChatFormatting.DARK_PURPLE));
                 final CompoundTag remainder = blockState.copy();
                 remainder.remove("Name");
                 if (!remainder.isEmpty()) {
-                    list.add(Component.literal(remainder.getAsString()).withStyle(ChatFormatting.DARK_GREEN));
+                    remainder.asString().ifPresent(s -> builder.accept(Component.literal(s).withStyle(ChatFormatting.DARK_GREEN)));
                 }
             }
         }

@@ -11,8 +11,8 @@ import com.woalk.mods.bitsandchisels.image.*
 import com.woalk.mods.bitsandchisels.utils.DirectionArgumentType
 import com.woalk.mods.bitsandchisels.utils.toColor
 import me.lucko.fabric.api.permissions.v0.Permissions
-import net.fabricmc.fabric.api.client.command.v2.ClientCommandManager
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback
+import net.fabricmc.fabric.api.client.command.v2.ClientCommands
 import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback
 import net.minecraft.world.level.block.state.BlockState
@@ -329,7 +329,7 @@ object ModCommands : IModRegister {
     fun registerAllClient() {
         ClientCommandRegistrationCallback.EVENT.register { dispatcher, _ ->
             dispatcher.register(
-                ClientCommandManager.literal("bitshaders").executes(::bitShaderHelp)
+                ClientCommands.literal("bitshaders").executes(::bitShaderHelp)
             )
         }
     }

@@ -4,24 +4,27 @@ import java.util.Arrays;
 import java.util.Objects;
 
 import com.woalk.mods.bitsandchisels.blocks.ColoredBlockState;
+import net.fabricmc.fabric.api.client.renderer.v1.mesh.Mesh;
+import net.fabricmc.fabric.api.client.renderer.v1.mesh.MutableQuadView;
+import net.fabricmc.fabric.api.client.renderer.v1.mesh.QuadEmitter;
+import net.fabricmc.fabric.api.client.renderer.v1.mesh.MutableMesh;
+import net.fabricmc.fabric.api.client.renderer.v1.mesh.QuadAtlas;
+import net.fabricmc.fabric.api.client.renderer.v1.Renderer;
+import net.fabricmc.fabric.api.client.renderer.v1.sprite.FabricPreparations;
+import net.fabricmc.fabric.api.client.renderer.v1.sprite.FabricTextureAtlas;
+import net.fabricmc.fabric.api.client.renderer.v1.sprite.SpriteFinder;
+import net.fabricmc.fabric.api.client.renderer.v1.sprite.SpriteFinderGetter;
+import net.minecraft.client.multiplayer.ClientLevel;
+import net.minecraft.client.resources.model.geometry.BakedQuad;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.core.Vec3i;
 import org.jetbrains.annotations.Nullable;
 
 import com.woalk.mods.bitsandchisels.duck.CubeRenderStuff;
-import net.fabricmc.fabric.api.renderer.v1.RendererAccess;
-import net.fabricmc.fabric.api.renderer.v1.mesh.Mesh;
-import net.fabricmc.fabric.api.renderer.v1.mesh.MeshBuilder;
-import net.fabricmc.fabric.api.renderer.v1.mesh.MutableQuadView;
-import net.fabricmc.fabric.api.renderer.v1.mesh.QuadEmitter;
-import net.fabricmc.fabric.api.renderer.v1.model.SpriteFinder;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.RenderType;
-import net.minecraft.client.renderer.ItemBlockRenderTypes;
-import net.minecraft.client.renderer.block.model.BakedQuad;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
-import net.minecraft.client.renderer.texture.TextureAtlas;
+import net.minecraft.client.resources.model.sprite.Material;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.level.Level;
@@ -33,18 +36,19 @@ public class BitMeshes {
     private static final Direction[] Z_DIRECTIONS = {Direction.SOUTH, Direction.NORTH};
     private static final float ONE_PIXEL = 1f/16f;
 
-    private static MeshBuilder builder = null;
+    private static MutableMesh builder = null;
 
     private BitMeshes() { }
 
     public static Mesh createMesh(BlockState[][][] states, @Nullable Level world, @Nullable BlockPos pos, @Nullable Vec3i offset) {
         if (builder == null) {
-            builder = Objects.requireNonNull(RendererAccess.INSTANCE.getRenderer()).meshBuilder();
+            builder = Objects.requireNonNull(Renderer.get()).mutableMesh();
         }
-        QuadEmitter emitter = builder.getEmitter();
+        builder.clear();
+        QuadEmitter emitter = builder.emitter();
         Vector3f tmp = new Vector3f();
         prepareMesh(states, world, pos, emitter, tmp, offset);
-        return builder.build();
+        return builder.immutableCopy();
     }
 
     public static void prepareMesh(BlockState[][][] states, @Nullable Level world, @Nullable BlockPos pos, QuadEmitter emitter, Vector3f tmp, @Nullable Vec3i offset) {
@@ -172,17 +176,18 @@ public class BitMeshes {
         CubeRenderStuff cubeRenderStuff = CubeRenderStuff.of(
                 isColoredBlock ? ((ColoredBlockState) state).getWrapped() : state
         );
-        for (int z = 0; z < cubeRenderStuff.getQuads(d.get3DDataValue()).length; z++) {
-            BakedQuad vanillaQuad = cubeRenderStuff.getQuads(d.get3DDataValue())[z];
-            MutableQuadView quad = emitter.fromVanilla(vanillaQuad, cubeRenderStuff.getMaterials(d.get3DDataValue())[z], d);
+        BakedQuad[] vanillaQuads = cubeRenderStuff.getQuads(d.get3DDataValue());
+        for (int z = 0; z < vanillaQuads.length; z++) {
+            BakedQuad vanillaQuad = vanillaQuads[z];
+            MutableQuadView quad = emitter.fromBakedQuad(vanillaQuad);
             transform(quad, d, minx, miny, minz, maxx, maxy, maxz, tmp);
             //noinspection ConstantConditions
             if (isColoredBlock) {
                 int color = ((ColoredBlockState) state).getColor();
-                quad.spriteColor(0, color, color, color, color);
-            } else if (vanillaQuad.isTinted()) {
-                int color = 0xFF000000 | ColorPolice.getBlockColor(state, world, pos, vanillaQuad.getTintIndex());
-                quad.spriteColor(0, color, color, color, color);
+                quad.color(color, color, color, color);
+            } else if (vanillaQuad.materialInfo().isTinted()) {
+                int color = 0xFF000000 | ColorPolice.getBlockColor(state, (ClientLevel) world, pos, vanillaQuad.materialInfo().tintIndex());
+                quad.color(color, color, color, color);
             }
             if (!canCull(d, minx, miny, minz)) quad.cullFace(null);
             if (offset != null) {
@@ -199,22 +204,22 @@ public class BitMeshes {
     private static boolean quadNeeded(BlockState[][][] states, Direction d, int x, int y, int z) {
         switch (d) {
             case UP:
-                if (y <= 14) return isEmpty(states[x][y + 1][z]) || (ItemBlockRenderTypes.getChunkRenderType(states[x][y + 1][z]) != RenderType.solid() && states[x][y][z] != states[x][y + 1][z]);
+                if (y <= 14) return isEmpty(states[x][y + 1][z]) || (!states[x][y + 1][z].isSolidRender() && states[x][y][z] != states[x][y + 1][z]);
                 return true;
             case DOWN:
-                if (y >= 1) return isEmpty(states[x][y - 1][z]) || (ItemBlockRenderTypes.getChunkRenderType(states[x][y - 1][z]) != RenderType.solid() && states[x][y][z] != states[x][y - 1][z]);
+                if (y >= 1) return isEmpty(states[x][y - 1][z]) || (!states[x][y - 1][z].isSolidRender() && states[x][y][z] != states[x][y - 1][z]);
                 return true;
             case SOUTH:
-                if (z <= 14) return isEmpty(states[x][y][z + 1]) || (ItemBlockRenderTypes.getChunkRenderType(states[x][y][z + 1]) != RenderType.solid() && states[x][y][z] != states[x][y][z + 1]);
+                if (z <= 14) return isEmpty(states[x][y][z + 1]) || (!states[x][y][z + 1].isSolidRender() && states[x][y][z] != states[x][y][z + 1]);
                 return true;
             case NORTH:
-                if (z >= 1) return isEmpty(states[x][y][z - 1]) || (ItemBlockRenderTypes.getChunkRenderType(states[x][y][z - 1]) != RenderType.solid() && states[x][y][z] != states[x][y][z - 1]);
+                if (z >= 1) return isEmpty(states[x][y][z - 1]) || (!states[x][y][z - 1].isSolidRender() && states[x][y][z] != states[x][y][z - 1]);
                 return true;
             case EAST:
-                if (x <= 14) return isEmpty(states[x + 1][y][z]) || (ItemBlockRenderTypes.getChunkRenderType(states[x + 1][y][z]) != RenderType.solid() && states[x][y][z] != states[x + 1][y][z]);
+                if (x <= 14) return isEmpty(states[x + 1][y][z]) || (!states[x + 1][y][z].isSolidRender() && states[x][y][z] != states[x + 1][y][z]);
                 return true;
             case WEST:
-                if (x >= 1) return isEmpty(states[x - 1][y][z]) || (ItemBlockRenderTypes.getChunkRenderType(states[x - 1][y][z]) != RenderType.solid() && states[x][y][z] != states[x - 1][y][z]);
+                if (x >= 1) return isEmpty(states[x - 1][y][z]) || (!states[x - 1][y][z].isSolidRender() && states[x][y][z] != states[x - 1][y][z]);
                 return true;
         }
         return true;
@@ -249,10 +254,11 @@ public class BitMeshes {
     }
 
     private static void transform(MutableQuadView quad, Direction direction, int minx, int miny, int minz, int maxx, int maxy, int maxz, Vector3f tmp) {
-        TextureAtlasSprite sprite = SpriteFinder.get(Minecraft.getInstance().getModelManager().getAtlas(TextureAtlas.LOCATION_BLOCKS)).find(quad, 0);
+        SpriteFinder spriteFinder = Minecraft.getInstance().getAtlasManager().getAtlasOrThrow(QuadAtlas.BLOCK.getId()).spriteFinder();
+        TextureAtlasSprite sprite = spriteFinder.find(quad);
         transform0(minx * ONE_PIXEL, (maxx + 1) * ONE_PIXEL, miny * ONE_PIXEL, (maxy + 1) * ONE_PIXEL, minz * ONE_PIXEL, (maxz + 1) * ONE_PIXEL, quad, tmp);
         int bake_flags = MutableQuadView.BAKE_LOCK_UV;
-        quad.spriteBake(0, sprite, bake_flags);
+        quad.materialBake(new Material.Baked(sprite, false), bake_flags);
     }
 
     private static void transform0(float minx, float maxx, float miny, float maxy, float minz, float maxz, MutableQuadView quad, Vector3f tmp) {

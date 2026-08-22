@@ -65,11 +65,11 @@ public class BitUtils {
     }
 
     public static boolean canPlace(Player player, BlockPos block, int x, int y, int z) {
-        return canPlace(player, block, x, y, z, true);
+        return canPlace(player, block, x, y, z, !player.level().isClientSide());
     }
 
     public static boolean canPlace(Player player, BlockPos block, int x, int y, int z, boolean checkPermission) {
-        Level world = player.getCommandSenderWorld();
+        Level world = player.level();
         if (!world.mayInteract(player, block)) return false;
         if (checkPermission && !Permissions.check(player, ModPermissions.USE_BIT, true)) return false;
         if (world.getBlockState(block).isAir()) {
@@ -83,7 +83,7 @@ public class BitUtils {
     }
     
     public static boolean canBreak(Player player, BlockPos block, int x, int y, int z) {
-        Level world = player.getCommandSenderWorld();
+        Level world = player.level();
         if (!world.isLoaded(block)) return false;
         if (!world.mayInteract(player, block)) return false;
         if (!Permissions.check(player, ModPermissions.USE_CHISEL, true)) return false;
@@ -131,7 +131,7 @@ public class BitUtils {
     public static BlockState getBit(ItemStack stack) {
         final var data = stack.getComponents().get(DataComponents.CUSTOM_DATA);
         if (data == null) return null;
-        return BitNbtUtil.toBlockState(data.copyTag().getCompound("bit"));
+        return BitNbtUtil.toBlockState(data.copyTag().getCompound("bit").get());
     }
 
     public static boolean canBeChiseled(BlockState state, Level world, BlockPos pos) {

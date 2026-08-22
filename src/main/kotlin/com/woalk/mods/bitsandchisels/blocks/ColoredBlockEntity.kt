@@ -18,7 +18,7 @@ class ColoredBlockEntity(pos: BlockPos, state: BlockState) :
     var color: Int
         get() = components().get(DataComponents.DYED_COLOR)?.rgb ?: 0xFFFFFF
         set(value) {
-            setComponents(DataComponentMap.builder().set(DataComponents.DYED_COLOR, DyedItemColor(value, true)).build())
+            setComponents(DataComponentMap.builder().set(DataComponents.DYED_COLOR, DyedItemColor(value)).build())
         }
     var colorWithAlpha: Int
         get() = (0xFF000000U or color.toUInt()).toInt()

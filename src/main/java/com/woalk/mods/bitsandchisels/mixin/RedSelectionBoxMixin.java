@@ -1,6 +1,13 @@
 package com.woalk.mods.bitsandchisels.mixin;
 
 import com.woalk.mods.bitsandchisels.api.client.RedBoxCallback;
+import net.minecraft.client.renderer.GameRenderer;
+import net.minecraft.client.renderer.SubmitNodeCollector;
+import net.minecraft.client.renderer.rendertype.RenderTypes;
+import net.minecraft.client.renderer.state.level.LevelRenderState;
+import net.minecraft.util.ARGB;
+import net.minecraft.world.phys.shapes.Shapes;
+import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
@@ -16,13 +23,17 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.world.phys.shapes.VoxelShape;
 
 @Mixin(LevelRenderer.class)
-public class RedSelectionBoxMixin implements RedBoxCallback.IRedBoxDrawer {
-    @Inject(at = @At("HEAD"), method = "renderHitOutline")
-    private void drawBlockOutlineAddon(PoseStack matrixStack, VertexConsumer vertexConsumer, Entity entity, double d, double e, double f, BlockPos blockPos, BlockState blockState, CallbackInfo bruh) {
-        RedBoxCallback.EVENT.invoker().drawBoxes(this, matrixStack, vertexConsumer, d, e, f);
+public abstract class RedSelectionBoxMixin implements RedBoxCallback.IRedBoxDrawer {
+    @Final
+    @Shadow
+    private GameRenderer gameRenderer;
+
+    @Inject(at = @At("TAIL"), method = "submitBlockOutline")
+    private void drawBlockOutlineAddon(PoseStack poseStack, SubmitNodeCollector submitNodeCollector, LevelRenderState levelRenderState, CallbackInfo ci) {
+        RedBoxCallback.EVENT.invoker().drawBoxes(this, poseStack, submitNodeCollector, 0, 0, 0);
     }
 
-    public void drawRedBox(PoseStack matrixStack, VertexConsumer vertexConsumer, BlockPos block, int bitx, int bity, int bitz, int bitx2, int bity2, int bitz2, double worldoffsetx, double worldoffsety, double worldoffsetz) {
+    public void drawRedBox(PoseStack matrixStack, SubmitNodeCollector submitNodeCollector, BlockPos block, int bitx, int bity, int bitz, int bitx2, int bity2, int bitz2, double worldoffsetx, double worldoffsety, double worldoffsetz) {
         double xoffset = block.getX() - worldoffsetx;
         double yoffset = block.getY() - worldoffsety;
         double zoffset = block.getZ() - worldoffsetz;
@@ -35,6 +46,7 @@ public class RedSelectionBoxMixin implements RedBoxCallback.IRedBoxDrawer {
         double y1 = ((double)bity2) * 0.0625d;
         double z1 = ((double)bitz2) * 0.0625d;
 
-        LevelRenderer.renderLineBox(matrixStack, vertexConsumer, x + xoffset, y + yoffset, z + zoffset, x1 + xoffset, y1 + yoffset, z1 + zoffset, 1f, 0f, 0f, 0.4f);
+        final var shape = Shapes.create(x, y, z, x1, y1, z1);
+        submitNodeCollector.submitShapeOutline(matrixStack, shape, RenderTypes.lines(), ARGB.colorFromFloat(1f, 0f, 0f, 0.4f), gameRenderer.gameRenderState().windowRenderState.appropriateLineWidth, true);
     }
 }

@@ -24,19 +24,9 @@ public class BitNbtUtil {
         for (Tag statetag : paletteTag) {
             palette.add(BitNbtUtil.toBlockState((CompoundTag) statetag));
         }
-        ListTag bits = (ListTag) tag.get("bits");
         ByteArrayTag bits2 = (ByteArrayTag) tag.get("bits_v2");
         int index = 0;
-        if (bits != null) {
-            for (int i = 0; i < 16; i++) {
-                for (int j = 0; j < 16; j++) {
-                    for (int k = 0; k < 16; k++) {
-                        out[i][j][k] = palette.get(bits.getShort(index));
-                        index++;
-                    }
-                }
-            }
-        } else if (bits2 != null) {
+        if (bits2 != null) {
             byte[] bitsBytes = bits2.getAsByteArray();
             for (int i = 0; i < 16; i++) {
                 for (int j = 0; j < 16; j++) {
@@ -83,9 +73,9 @@ public class BitNbtUtil {
         if (tag == null) {
             return Blocks.AIR.defaultBlockState();
         } else if (tag.contains(ColoredBlockState.TAG_COLOR)) {
-            return new ColoredBlockState(tag.getInt(ColoredBlockState.TAG_COLOR));
+            return new ColoredBlockState(tag.getInt(ColoredBlockState.TAG_COLOR).get());
         } else {
-            return NbtUtils.readBlockState(BuiltInRegistries.BLOCK.asLookup(), tag);
+            return NbtUtils.readBlockState(BuiltInRegistries.BLOCK, tag);
         }
     }
 

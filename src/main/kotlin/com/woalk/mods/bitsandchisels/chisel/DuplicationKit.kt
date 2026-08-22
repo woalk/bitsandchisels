@@ -17,11 +17,13 @@ import net.minecraft.world.InteractionResult
 import net.minecraft.ChatFormatting
 import net.minecraft.core.component.DataComponents
 import net.minecraft.world.item.component.ItemLore
+import net.minecraft.world.item.component.TooltipDisplay
 import net.minecraft.world.level.Level
+import java.util.function.Consumer
 
 class DuplicationKit(settings: Properties) : Item(settings) {
     override fun useOn(context: UseOnContext): InteractionResult {
-        val blockState = context.level?.getBlockState(context.clickedPos)
+        val blockState = context.level.getBlockState(context.clickedPos)
         val block = blockState?.block
         if (block is BitsBlock) {
             if (context.level.isClientSide) {
@@ -47,7 +49,7 @@ class DuplicationKit(settings: Properties) : Item(settings) {
                 itemStack.set(DataComponents.LORE, ItemLore(lore))
                 println("Duplicated item $itemStack ${itemStack.components}")
                 context.player!!.awardStat(Stats.ITEM_USED.get(this))
-                val newStack = ItemUtils.createFilledResult(context.itemInHand, context.player, itemStack, false)
+                val newStack = ItemUtils.createFilledResult(context.itemInHand, context.player!!, itemStack, false)
                 context.player!!.setItemInHand(context.hand, newStack)
                 return InteractionResult.SUCCESS
             }
@@ -57,15 +59,16 @@ class DuplicationKit(settings: Properties) : Item(settings) {
 
     override fun appendHoverText(
         itemStack: ItemStack,
-        tooltipContext: TooltipContext,
-        list: MutableList<Component?>,
+        context: TooltipContext,
+        display: TooltipDisplay,
+        builder: Consumer<Component>,
         tooltipFlag: TooltipFlag
     ) {
-        super.appendHoverText(itemStack, tooltipContext, list, tooltipFlag)
-        list.add(
+        super.appendHoverText(itemStack, context, display, builder, tooltipFlag)
+        builder.accept(
             Component.translatable("$descriptionId.desc1").withStyle(ChatFormatting.DARK_PURPLE).withStyle(
                 ChatFormatting.ITALIC))
-        list.add(
+        builder.accept(
             Component.translatable("$descriptionId.desc2").withStyle(ChatFormatting.DARK_PURPLE).withStyle(
                 ChatFormatting.ITALIC))
     }

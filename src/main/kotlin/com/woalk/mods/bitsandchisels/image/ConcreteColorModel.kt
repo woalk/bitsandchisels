@@ -47,10 +47,10 @@ class ConcreteColorModel(withSkinColor: Boolean = false) : IndexColorModel(
                 if (transparent) {
                     Blocks.AIR
                 } else {
-                    BuiltInRegistries.BLOCK.get(palette.toIdentifier(WHITE.name.lowercase()))
+                    BuiltInRegistries.BLOCK.get(palette.toIdentifier(WHITE.name.lowercase())).get().value()
                 }
             } else {
-                BuiltInRegistries.BLOCK.get(palette.toIdentifier(name.lowercase()))
+                BuiltInRegistries.BLOCK.get(palette.toIdentifier(name.lowercase())).get().value()
             }
     }
 }

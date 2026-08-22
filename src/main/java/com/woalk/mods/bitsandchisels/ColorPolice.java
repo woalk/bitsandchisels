@@ -5,17 +5,18 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashSet;
 
+import net.minecraft.client.renderer.block.BlockAndTintGetter;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import net.fabricmc.loader.api.FabricLoader;
 import net.fabricmc.loader.api.ModContainer;
+import net.minecraft.client.color.block.BlockTintSource;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
 import net.minecraft.core.BlockPos;
-import net.minecraft.world.level.BlockAndTintGetter;
 
 /**
  * We live in a society
@@ -28,7 +29,11 @@ public class ColorPolice {
 
     public static int getBlockColor(BlockState state, @Nullable BlockAndTintGetter world, @Nullable BlockPos pos, int tintIndex) {
         try {
-            return Minecraft.getInstance().getBlockColors().getColor(state, world, pos, tintIndex);
+            BlockTintSource tintSource = Minecraft.getInstance().getBlockColors().getTintSource(state, tintIndex);
+            if (world instanceof BlockAndTintGetter clientWorld && pos != null) {
+                return tintSource.colorInWorld(state, clientWorld, pos);
+            }
+            return tintSource.color(state);
         } catch (Exception e) {
             String criminal = null;
             ModContainer criminalMod = null;
@@ -72,7 +77,7 @@ public class ColorPolice {
     }
 
     static void stopYouveViolatedTheLaw(String message) {
-        Minecraft.getInstance().gui.getChat().addMessage(Component.literal(message));
+        Minecraft.getInstance().gui.chatListener().handleSystemMessage(Component.literal(message), false);
         LOGGER.error(message);
     }
 }

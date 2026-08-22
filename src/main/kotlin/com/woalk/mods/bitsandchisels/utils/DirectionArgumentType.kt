@@ -6,7 +6,7 @@ import net.fabricmc.fabric.api.command.v2.ArgumentTypeRegistry
 import net.minecraft.commands.arguments.StringRepresentableArgument
 import net.minecraft.commands.synchronization.SingletonArgumentInfo
 import net.minecraft.commands.CommandSourceStack
-import net.minecraft.resources.ResourceLocation
+import net.minecraft.resources.Identifier
 import net.minecraft.util.StringRepresentable
 import net.minecraft.core.Direction
 
@@ -24,7 +24,7 @@ class DirectionArgumentType private constructor() : StringRepresentableArgument<
 
         fun registerDirectionArgumentType() {
             ArgumentTypeRegistry.registerArgumentType(
-                ResourceLocation(BitsAndChisels.MODID, "direction"),
+                Identifier.fromNamespaceAndPath(BitsAndChisels.MODID, "direction"),
                 DirectionArgumentType::class.java, SingletonArgumentInfo.contextFree(Companion::direction)
             )
         }

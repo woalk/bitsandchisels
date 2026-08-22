@@ -6,50 +6,41 @@ import com.woalk.mods.bitsandchisels.BitsBlockEntity;
 import com.woalk.mods.bitsandchisels.api.BitUtils;
 import com.woalk.mods.bitsandchisels.api.client.RedBoxCallback;
 import com.woalk.mods.bitsandchisels.networking.EnderChiselPacket;
-import com.woalk.mods.bitsandchisels.registry.ModItems;
 import com.woalk.mods.bitsandchisels.registry.ModPermissions;
-import io.netty.buffer.Unpooled;
 import me.lucko.fabric.api.permissions.v0.Permissions;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.event.player.AttackBlockCallback;
-import net.fabricmc.fabric.api.networking.v1.PacketSender;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.TieredItem;
-import net.minecraft.world.item.Tiers;
+import net.minecraft.world.item.component.TooltipDisplay;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.client.Minecraft;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.network.FriendlyByteBuf;
-import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.network.ServerGamePacketListenerImpl;
-import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.ChatFormatting;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.level.Level;
-import org.jetbrains.annotations.Nullable;
 
-import java.util.List;
+import java.util.function.Consumer;
 
-public class EnderChisel extends TieredItem implements ServerPlayNetworking.PlayPayloadHandler<EnderChiselPacket> {
+public class EnderChisel extends Item implements ServerPlayNetworking.PlayPayloadHandler<EnderChiselPacket> {
     private long lastBreakTick = 0;
     private boolean fastBreak = false;
 
     public EnderChisel(Properties settings) {
-        super(Tiers.STONE, settings);
+        super(settings);
         ServerPlayNetworking.registerGlobalReceiver(EnderChiselPacket.TYPE, this);
         AttackBlockCallback.EVENT.register((player, world, hand, pos, direction) -> {
             Item i = player.getMainHandItem().getItem();
             if (i instanceof EnderChisel) {
-                if (!world.isClientSide) return InteractionResult.FAIL;
+                if (!world.isClientSide()) return InteractionResult.FAIL;
                 return ((EnderChisel) i).interactBreakBlockClient(player, world, pos);
             }
             return InteractionResult.PASS;
@@ -57,14 +48,14 @@ public class EnderChisel extends TieredItem implements ServerPlayNetworking.Play
     }
 
     @Override
-    public boolean canAttackBlock(BlockState state, Level world, BlockPos pos, Player miner) {
-        return !miner.isCreative();
+    public boolean canDestroyBlock(ItemStack itemStack, BlockState state, Level level, BlockPos pos, LivingEntity user) {
+        return !(user instanceof Player player && player.isCreative());
     }
 
     @Override
-    public void appendHoverText(ItemStack stack, TooltipContext tooltipContext, List<Component> list, TooltipFlag tooltipFlag) {
-        super.appendHoverText(stack, tooltipContext, list, tooltipFlag);
-        list.add(
+    public void appendHoverText(ItemStack itemStack, TooltipContext context, TooltipDisplay display, Consumer<Component> builder, TooltipFlag tooltipFlag) {
+        super.appendHoverText(itemStack, context, display, builder, tooltipFlag);
+        builder.accept(
                 Component.translatable(getDescriptionId() + ".desc")
                         .withStyle(ChatFormatting.DARK_PURPLE)
                         .withStyle(ChatFormatting.ITALIC)

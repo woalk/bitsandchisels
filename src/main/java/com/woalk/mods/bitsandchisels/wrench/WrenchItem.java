@@ -22,7 +22,7 @@ public class WrenchItem extends Item {
 
     @Override
     public InteractionResult useOn(UseOnContext context) {
-        if (!context.getLevel().isClientSide &&
+        if (!context.getLevel().isClientSide() &&
                 context.getLevel().getBlockState(context.getClickedPos()).is(BitsAndChisels.BITS_BLOCK) &&
                 Permissions.check(Objects.requireNonNull(context.getPlayer()),
                         ModPermissions.USE_WRENCH, true)) {

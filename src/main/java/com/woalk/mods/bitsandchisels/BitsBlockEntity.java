@@ -1,27 +1,32 @@
 package com.woalk.mods.bitsandchisels;
 
+import com.google.gson.JsonParser;
+import com.mojang.serialization.Codec;
+import com.mojang.serialization.JsonOps;
 import com.woalk.mods.bitsandchisels.mixin.CubeVoxelShapeFactory;
+import net.fabricmc.fabric.api.blockgetter.v2.RenderDataBlockEntity;
+import net.fabricmc.fabric.api.client.renderer.v1.mesh.Mesh;
 import net.minecraft.core.HolderLookup;
+import net.minecraft.core.UUIDUtil;
+import net.minecraft.core.component.DataComponentGetter;
 import net.minecraft.core.component.DataComponentMap;
 import net.minecraft.core.component.DataComponents;
+import net.minecraft.nbt.*;
+import net.minecraft.network.chat.ComponentSerialization;
 import net.minecraft.world.item.component.ItemLore;
 import net.minecraft.world.level.block.entity.BlockEntityType;
-import net.minecraft.nbt.ListTag;
-import net.minecraft.nbt.StringTag;
-import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.Nameable;
+import net.minecraft.world.level.storage.ValueInput;
+import net.minecraft.world.level.storage.ValueOutput;
 import org.jetbrains.annotations.Nullable;
 
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
-import net.fabricmc.fabric.api.renderer.v1.mesh.Mesh;
-import net.fabricmc.fabric.api.rendering.data.v1.RenderAttachmentBlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.client.Minecraft;
-import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientGamePacketListener;
 import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
@@ -31,12 +36,13 @@ import net.minecraft.util.Mth;
 import net.minecraft.world.phys.shapes.BitSetDiscreteVoxelShape;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import net.minecraft.world.phys.shapes.Shapes;
+import org.jspecify.annotations.NonNull;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
-public class BitsBlockEntity extends BlockEntity implements RenderAttachmentBlockEntity, Nameable {
+public class BitsBlockEntity extends BlockEntity implements RenderDataBlockEntity, Nameable {
     protected BlockState[][][] states;
     @Environment(EnvType.CLIENT)
     protected Mesh mesh;
@@ -87,22 +93,35 @@ public class BitsBlockEntity extends BlockEntity implements RenderAttachmentBloc
     }
 
     @Override
-    protected void saveAdditional(CompoundTag tag, HolderLookup.Provider provider) {
-        super.saveAdditional(tag, provider);
+    protected void saveAdditional(ValueOutput output) {
+        super.saveAdditional(output);
         if (!alive) return;
+        final var tag = new CompoundTag();
         writeBitNbt(tag);
+        for (var entry : tag.entrySet()) {
+            if (entry.getValue().getId() == Tag.TAG_BYTE_ARRAY) {
+                output.putByteArray(entry.getKey(), entry.getValue().asByteArray().get());
+            } else if (entry.getValue().getId() == Tag.TAG_LIST) {
+                output.store(
+                        entry.getKey(),
+                        Codec.list(CompoundTag.CODEC),
+                        entry.getValue()
+                                .asList()
+                                .get()
+                                .stream()
+                                .map(it -> it.asCompound().get())
+                                .toList()
+                );
+            }
+        }
         if (structureId != null) {
-            tag.putUUID("StructureId", structureId);
+            output.store("StructureId", UUIDUtil.CODEC, structureId);
         }
         if (this.name != null) {
-            tag.putString("CustomName", Component.Serializer.toJson(this.name, provider));
+            output.store("CustomName", ComponentSerialization.CODEC, this.name);
         }
         if (this.lore != null) {
-            ListTag loreNbt = new ListTag();
-            for (Component line : this.lore) {
-                loreNbt.add(StringTag.valueOf(Component.Serializer.toJson(line, provider)));
-            }
-            tag.put("Lore", loreNbt);
+            output.store("Lore", ItemLore.CODEC, new ItemLore(lore));
         }
     }
 
@@ -116,39 +135,49 @@ public class BitsBlockEntity extends BlockEntity implements RenderAttachmentBloc
     }
 
     @Override
-    protected void loadAdditional(CompoundTag tag, HolderLookup.Provider provider) {
-        super.loadAdditional(tag, provider);
-        if (tag.contains("CustomName", Tag.TAG_STRING)) {
-            this.name = parseCustomNameSafe(tag.getString("CustomName"), provider);
+    protected void loadAdditional(@NonNull ValueInput input) {
+        super.loadAdditional(input);
+        if (input.contains("CustomName")) {
+            this.name = parseCustomNameSafe(input, "CustomName");
         }
-        if (tag.contains("Lore", Tag.TAG_LIST)) {
-            this.lore = tag.getList("Lore", Tag.TAG_STRING)
-                    .stream()
-                    .map(it -> parseCustomNameSafe(it.getAsString(), provider))
-                    .toList();
+        if (input.contains("Lore")) {
+            this.lore = input.read("Lore", ItemLore.CODEC).get().lines();
+        }
+        final var tag = new CompoundTag();
+        final var bits2 = input.getOptionalByteArray("bits_v2").orElse(null);
+        final var palette = input.read("palette", Codec.list(CompoundTag.CODEC)).orElse(null);
+        if (bits2 != null && palette != null) {
+            tag.putByteArray("bits_v2", bits2);
+            final var listTag = new ListTag();
+            listTag.addAll(palette);
+            tag.put("palette", listTag);
         }
         readBitNbt(tag);
         rebuildShape();
-        if (getLevel() != null && getLevel().isClientSide) {
+        if (getLevel() != null && getLevel().isClientSide()) {
             postFromClientTag();
         }
         rebuildNbtCache();
-        if (tag.contains("display")) {
-            CompoundTag displayNbt = tag.getCompound("display");
+        if (input.contains("display")) {
+            CompoundTag displayNbt = input.read("display", CompoundTag.CODEC).get();
             if (displayNbt.contains("Name")) {
-                this.name = parseCustomNameSafe(displayNbt.getString("Name"), provider);
+                this.name = parseComponent(displayNbt.getStringOr("Name", "''"));
             }
             if (displayNbt.contains("Lore")) {
-                this.lore = displayNbt.getList("Lore", ListTag.TAG_STRING)
+                this.lore = displayNbt.getList("Lore").get()
                         .stream()
-                        .map(it -> parseCustomNameSafe(it.getAsString(), provider))
+                        .map(it -> parseComponent(it.asString().orElse("''")))
                         .toList();
             }
         }
-        if (tag.contains("StructureId")) {
-            structureId = tag.getUUID("StructureId");
+        if (input.contains("StructureId")) {
+            structureId = input.read("StructureId", UUIDUtil.CODEC).get();
         }
         alive = true;
+    }
+
+    private Component parseComponent(String json) {
+        return ComponentSerialization.CODEC.parse(JsonOps.INSTANCE, JsonParser.parseString(json)).getOrThrow();
     }
 
     protected void readBitNbt(CompoundTag tag) {
@@ -206,7 +235,7 @@ public class BitsBlockEntity extends BlockEntity implements RenderAttachmentBloc
             }
         }
         shape = CubeVoxelShapeFactory.getSimpleVoxelShape(set);
-        if (level != null && !level.isClientSide) {
+        if (level != null && !level.isClientSide()) {
             BlockState state = level.getBlockState(worldPosition);
             if (!state.is(BitsAndChisels.BITS_BLOCK)) {
                 // skip rebuilding, we are currently building terrain
@@ -229,7 +258,7 @@ public class BitsBlockEntity extends BlockEntity implements RenderAttachmentBloc
 
     public void postFromClientTag() {
         rebuildMesh();
-        Minecraft.getInstance().levelRenderer.setBlocksDirty(worldPosition.getX(), worldPosition.getY(), worldPosition.getZ(), worldPosition.getX(), worldPosition.getY(), worldPosition.getZ());
+        Minecraft.getInstance().levelExtractor.setBlocksDirty(worldPosition.getX(), worldPosition.getY(), worldPosition.getZ(), worldPosition.getX(), worldPosition.getY(), worldPosition.getZ());
     }
 
     @Override
@@ -250,7 +279,7 @@ public class BitsBlockEntity extends BlockEntity implements RenderAttachmentBloc
 
     @Environment(EnvType.CLIENT)
     @Override
-    public @Nullable Object getRenderAttachmentData() {
+    public @org.jspecify.annotations.Nullable Object getRenderData() {
         return mesh;
     }
 
@@ -278,7 +307,7 @@ public class BitsBlockEntity extends BlockEntity implements RenderAttachmentBloc
     }
 
     @Override
-    protected void applyImplicitComponents(BlockEntity.DataComponentInput input) {
+    protected void applyImplicitComponents(DataComponentGetter input) {
         super.applyImplicitComponents(input);
         this.name = input.get(DataComponents.CUSTOM_NAME);
         ItemLore itemLore = input.get(DataComponents.LORE);
@@ -297,10 +326,10 @@ public class BitsBlockEntity extends BlockEntity implements RenderAttachmentBloc
     }
 
     @Override
-    public void removeComponentsFromTag(CompoundTag tag) {
-        super.removeComponentsFromTag(tag);
-        tag.remove("CustomName");
-        tag.remove("Lore");
+    public void removeComponentsFromTag(ValueOutput output) {
+        super.removeComponentsFromTag(output);
+        output.discard("CustomName");
+        output.discard("Lore");
     }
 
     public UUID getStructureId() {

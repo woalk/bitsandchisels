@@ -1,27 +1,22 @@
 package com.woalk.mods.bitsandchisels.compat
 
-import com.sk89q.jnbt.CompoundTag
-import com.sk89q.jnbt.StringTag
-import com.sk89q.jnbt.Tag
 import net.minecraft.world.level.block.state.BlockState
 import net.minecraft.world.level.block.Blocks
 import net.minecraft.world.level.block.state.StateHolder
 import net.minecraft.world.level.block.state.properties.Property
-import net.minecraft.resources.ResourceLocation
-import net.minecraft.core.Registry
 import net.minecraft.core.registries.BuiltInRegistries
+import net.minecraft.resources.Identifier
 import org.enginehub.linbus.tree.LinCompoundTag
 import org.enginehub.linbus.tree.LinStringTag
 import org.enginehub.linbus.tree.LinTag
 import org.enginehub.linbus.tree.LinTagType
 
-/** @see [net.minecraft.nbt.NbtHelper] */
 object CompoundHelper {
     fun toBlockState(nbt: LinCompoundTag): BlockState {
         if (!nbt.value().containsKey("Name")) {
             return Blocks.AIR.defaultBlockState()
         }
-        val block = BuiltInRegistries.BLOCK[ResourceLocation(nbt.getTag("Name", LinTagType.stringTag()).value())]
+        val block = BuiltInRegistries.BLOCK[Identifier.parse(nbt.getTag("Name", LinTagType.stringTag()).value())].get().value()
         var blockState = block.defaultBlockState()
         if (nbt.value().containsKey("Properties")) {
             val nbtCompound = nbt.getTag("Properties", LinTagType.compoundTag())
@@ -34,7 +29,7 @@ object CompoundHelper {
         return blockState
     }
 
-    private fun <S : StateHolder<*, S>?, T : Comparable<T>?> withProperty(
+    private fun <S : StateHolder<*, S>, T : Comparable<T>> withProperty(
         state: S,
         property: Property<T>,
         key: String,
@@ -53,7 +48,7 @@ object CompoundHelper {
     fun fromBlockState(state: BlockState): LinCompoundTag {
         val nbtCompound = HashMap<String, LinTag<out Any>>()
         nbtCompound["Name"] = LinStringTag.of(BuiltInRegistries.BLOCK.getKey(state.block).toString())
-        val immutableMap = state.values
+        val immutableMap = state.values.map { Pair(it.property, it.value) }.toList().toMap()
         if (!immutableMap.isEmpty()) {
             val nbtCompound2 = HashMap<String, LinTag<out Any>>()
             for ((key, value) in immutableMap) {
@@ -64,7 +59,7 @@ object CompoundHelper {
         return LinCompoundTag.of(nbtCompound)
     }
 
-    private fun <T : Comparable<T>?> nameValue(property: Property<in T>, value: Comparable<T>): String {
+    private fun <T : Comparable<T>> nameValue(property: Property<in T>, value: Comparable<T>): String {
         @Suppress("UNCHECKED_CAST")
         return property.getName(value as T)
     }

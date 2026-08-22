@@ -30,7 +30,7 @@ import net.minecraft.commands.Commands.literal
 import net.minecraft.commands.CommandSourceStack
 import net.minecraft.network.chat.Component
 import net.minecraft.ChatFormatting
-import net.minecraft.resources.ResourceLocation
+import net.minecraft.resources.Identifier
 import net.minecraft.core.BlockPos
 import net.minecraft.core.Direction
 import net.minecraft.core.Vec3i
@@ -46,7 +46,7 @@ object WorldEditCommands : IModRegister {
         onlyFullBlocks: Boolean = true,
         fullBlockHeuristic: Boolean = true
     ): Int = try {
-        val actor = FabricAdapter.adaptPlayer(ctx.source.player)
+        val actor = FabricAdapter.get().fromNativePlayer(ctx.source.player)
         val localSession = WorldEdit.getInstance().sessionManager.get(actor)
         val clipboard = localSession.clipboard.clipboard
 
@@ -72,10 +72,10 @@ object WorldEditCommands : IModRegister {
                     for (i in 0..15) {
                         for (j in 0..15) {
                             for (k in 0..15) {
-                                val block = FabricAdapter.adapt(
+                                val block = FabricAdapter.get().toNativeBlockState(
                                     clipboard.getBlock(blockMinPos.add(BlockVector3.at(i, j, k)))
                                 )
-                                val blockId = block.blockHolder.unwrapKey().get().location()
+                                val blockId = block.block.builtInRegistryHolder().key().identifier()
                                 val fullBlock = findBlock(block, blockId, fullBlockHeuristic)
                                 bitsOut[i][j][k] = if (onlyFullBlocks) if (
                                     fullBlock.renderShape != RenderShape.MODEL ||
@@ -90,7 +90,7 @@ object WorldEditCommands : IModRegister {
                     }
                     newClipboard.setBlock(
                         clipboard.minimumPoint.add(vec),
-                        FabricAdapter.adapt(BitsAndChisels.BITS_BLOCK.defaultBlockState())
+                        FabricAdapter.get().fromNativeBlockState(BitsAndChisels.BITS_BLOCK.defaultBlockState())
                             .toBaseBlock(BitCompoundUtil.write3DBitArray(bitsOut))
                     )
                 }
@@ -98,7 +98,7 @@ object WorldEditCommands : IModRegister {
         }
 
         localSession.clipboard = ClipboardHolder(newClipboard)
-        actor.print("Minified clipboard (new size is ${bitsSize.x}, ${bitsSize.y}, ${bitsSize.z})")
+        actor.print("Minified clipboard (new size is ${bitsSize.x()}, ${bitsSize.y()}, ${bitsSize.z()})")
 
         SINGLE_SUCCESS
     } catch (e: EmptyClipboardException) {
@@ -108,9 +108,9 @@ object WorldEditCommands : IModRegister {
         -2
     }
 
-    private fun findBlock(block: BlockState, id: ResourceLocation, fullBlockHeuristic: Boolean): BlockState {
+    private fun findBlock(block: BlockState, id: Identifier, fullBlockHeuristic: Boolean): BlockState {
         val blockId = if (id.namespace == "minekea") {
-            ResourceLocation.tryBuild(
+            Identifier.tryBuild(
                 if (id.path.startsWith("betterend") || id.path.startsWith("betternether") || id.path.startsWith("byg")) {
                     id.path.split("/").first()
                 } else id.namespace,
@@ -170,13 +170,13 @@ object WorldEditCommands : IModRegister {
             } else block
         } else { block } ?: block
     }
-    private fun findBlock(ns: ResourceLocation, path: String): BlockState? = findBlock(ns.namespace, path)
+    private fun findBlock(ns: Identifier, path: String): BlockState? = findBlock(ns.namespace, path)
     private fun findBlock(ns: String, path: String): BlockState? =
-        BuiltInRegistries.BLOCK.get(ResourceLocation(ns, path)).defaultBlockState().let { if (it.isAir) null else it }
+        BuiltInRegistries.BLOCK.get(Identifier.fromNamespaceAndPath(ns, path)).get().value().defaultBlockState().let { if (it.isAir) null else it }
 
     private fun replace(ctx: CommandContext<CommandSourceStack>, from: BlockState, to: BlockState): Int = try {
-        val actor = FabricAdapter.adaptPlayer(ctx.source.player)
-        val world = FabricAdapter.adapt(ctx.source.level)
+        val actor = FabricAdapter.get().fromNativePlayer(ctx.source.player)
+        val world = FabricAdapter.get().fromNativeWorld(ctx.source.level)
         val localSession = WorldEdit.getInstance().sessionManager.get(actor)
 
         val selection = localSession.getSelection(world)
@@ -227,23 +227,23 @@ object WorldEditCommands : IModRegister {
         amount: Int = 1,
         merge: Boolean = false,
     ): Int = try {
-        val actor = FabricAdapter.adaptPlayer(ctx.source.player)
-        val world = FabricAdapter.adapt(ctx.source.level)
+        val actor = FabricAdapter.get().fromNativePlayer(ctx.source.player)
+        val world = FabricAdapter.get().fromNativeWorld(ctx.source.level)
         val localSession = WorldEdit.getInstance().sessionManager.get(actor)
 
-        val directionVectorInverted = direction.normal.multiply(-1)
-        val translateBy = direction.normal.multiply(amount)
+        val directionVectorInverted = direction.unitVec3i.multiply(-1)
+        val translateBy = direction.unitVec3i.multiply(amount)
         val translateByInverted = translateBy.multiply(-1)
         val selection = localSession.getSelection(world)
         val changes = localSession.createEditSession(actor).use { editSession ->
-            val (from, to) = if (direction.normal.x < 0 || direction.normal.y < 0 || direction.normal.z < 0) {
-                Pair(direction.normal, Vec3i(selection.width, selection.height, selection.length))
-            } else Pair(Vec3i.ZERO, direction.normal.offset(selection.width, selection.height, selection.length))
+            val (from, to) = if (direction.unitVec3i.x < 0 || direction.unitVec3i.y < 0 || direction.unitVec3i.z < 0) {
+                Pair(direction.unitVec3i, Vec3i(selection.width, selection.height, selection.length))
+            } else Pair(Vec3i.ZERO, direction.unitVec3i.offset(selection.width, selection.height, selection.length))
             for (x in from.x until to.x) {
                 for (y in from.y until to.y) {
                     for (z in from.z until to.z) {
                         val vec = selection.minimumPoint.add(BlockVector3.at(x, y, z))
-                        val newBlock = FabricAdapter.adapt(BitsAndChisels.BITS_BLOCK.defaultBlockState()).toBaseBlock()
+                        val newBlock = FabricAdapter.get().fromNativeBlockState(BitsAndChisels.BITS_BLOCK.defaultBlockState()).toBaseBlock()
                         val bits = BitCompoundUtil.Block3D()
                         var hasChanged = false
                         for (i in 0..15) {
@@ -323,8 +323,8 @@ object WorldEditCommands : IModRegister {
         structure: StructDo = StructDo.CREATE,
         allowSingleBlockStructure: Boolean = false,
     ): Int = try {
-        val actor = FabricAdapter.adaptPlayer(ctx.source.player)
-        val world = FabricAdapter.adapt(ctx.source.level)
+        val actor = FabricAdapter.get().fromNativePlayer(ctx.source.player)
+        val world = FabricAdapter.get().fromNativeWorld(ctx.source.level)
         val localSession = WorldEdit.getInstance().sessionManager.get(actor)
 
         val selection = localSession.getSelection(world)

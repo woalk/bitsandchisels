@@ -4,7 +4,7 @@ import com.woalk.mods.bitsandchisels.BitsAndChisels
 import net.minecraft.core.BlockPos
 import net.minecraft.network.RegistryFriendlyByteBuf
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload
-import net.minecraft.resources.ResourceLocation
+import net.minecraft.resources.Identifier
 
 abstract class ChiselPacket(
     val blockPos: BlockPos,
@@ -13,7 +13,7 @@ abstract class ChiselPacket(
     companion object {
         @JvmStatic
         protected fun <T: ChiselPacket> getTypeForPacket(id: String) =
-            CustomPacketPayload.Type<T>(ResourceLocation(BitsAndChisels.MODID, id))
+            CustomPacketPayload.Type<T>(Identifier.fromNamespaceAndPath(BitsAndChisels.MODID, id))
     }
 
     constructor(buf: RegistryFriendlyByteBuf): this(buf.readBlockPos(), buf.readBlockPos())
