@@ -82,7 +82,7 @@ object ModBlocks : ModRegister<Pair<Block, (() -> Item.Properties)?>, Block>(Bui
                 Identifier.fromNamespaceAndPath(getNamespace(id), id),
                 when (id) {
                     "coloured_block" -> ColoredBlockItem(toRegister.first, toRegister.second!!.invoke())
-                    "animated_bits_block" -> BitsBlockItem(toRegister.first, toRegister.second!!.invoke())
+                    "animated_bits_block" -> AnimatedBitsBlockItem(toRegister.first, toRegister.second!!.invoke())
                     else -> BlockItem(toRegister.first, toRegister.second!!.invoke())
                 }
             )

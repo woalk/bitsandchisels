@@ -136,15 +136,7 @@ public class BitsBlockEntity extends BlockEntity implements RenderDataBlockEntit
         }
     }
 
-    @Override
-    protected void loadAdditional(@NonNull ValueInput input) {
-        super.loadAdditional(input);
-        if (input.contains("CustomName")) {
-            this.name = parseCustomNameSafe(input, "CustomName");
-        }
-        if (input.contains("Lore")) {
-            this.lore = input.read("Lore", ItemLore.CODEC).get().lines();
-        }
+    protected CompoundTag extractImportantNbt(@NonNull ValueInput input) {
         final var tag = new CompoundTag();
         final var bits2 = input.getOptionalByteArray("bits_v2").orElse(null);
         final var palette = input.read("palette", Codec.list(CompoundTag.CODEC)).orElse(null);
@@ -154,6 +146,19 @@ public class BitsBlockEntity extends BlockEntity implements RenderDataBlockEntit
             listTag.addAll(palette);
             tag.put("palette", listTag);
         }
+        return tag;
+    }
+
+    @Override
+    protected void loadAdditional(@NonNull ValueInput input) {
+        super.loadAdditional(input);
+        if (input.contains("CustomName")) {
+            this.name = parseCustomNameSafe(input, "CustomName");
+        }
+        if (input.contains("Lore")) {
+            this.lore = input.read("Lore", ItemLore.CODEC).get().lines();
+        }
+        final var tag = extractImportantNbt(input);
         readBitNbt(tag);
         rebuildShape();
         if (getLevel() != null && getLevel().isClientSide()) {

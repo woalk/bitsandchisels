@@ -24,6 +24,7 @@ import net.minecraft.world.level.*;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.RenderShape;
 import net.minecraft.world.level.block.BaseEntityBlock;
+import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.level.block.SimpleWaterloggedBlock;
@@ -103,7 +104,7 @@ public class BitsBlock extends BaseEntityBlock implements SimpleWaterloggedBlock
 
     @Override
     public BlockState playerWillDestroy(Level world, BlockPos pos, BlockState state, Player player) {
-        BitsBlockEntity blockEntity = world.getBlockEntity(pos, BitsAndChisels.BITS_BLOCK_ENTITY).orElse(null);
+        BitsBlockEntity blockEntity = world.getBlockEntity(pos) instanceof BitsBlockEntity be ? be : null;
         if (!world.isClientSide() && blockEntity != null) {
             ItemStack dropStack = getDropItem(world, pos, state, blockEntity, player, true);
             if (dropStack != null) {
@@ -136,8 +137,9 @@ public class BitsBlock extends BaseEntityBlock implements SimpleWaterloggedBlock
             boolean breakBlock
     ) {
         if (blockEntity == null) {
-            blockEntity = world.getBlockEntity(pos, BitsAndChisels.BITS_BLOCK_ENTITY).orElse(null);
-            if (blockEntity == null) {
+            if (world.getBlockEntity(pos) instanceof BitsBlockEntity be) {
+                blockEntity = be;
+            } else {
                 return null;
             }
         }
@@ -160,7 +162,7 @@ public class BitsBlock extends BaseEntityBlock implements SimpleWaterloggedBlock
                     nbt = new CompoundTag();
                 }
                 nbt.putInt(BitStructureItem.NBT_ROTATION, rotation.get3DDataValue());
-                stack.set(DataComponents.BLOCK_ENTITY_DATA, TypedEntityData.of(BitsAndChisels.BITS_BLOCK_ENTITY, nbt));
+                stack.set(DataComponents.BLOCK_ENTITY_DATA, TypedEntityData.of(getBlockEntityType(), nbt));
             }
             return stack;
         }
@@ -248,8 +250,7 @@ public class BitsBlock extends BaseEntityBlock implements SimpleWaterloggedBlock
     @Override
     public void setPlacedBy(Level world, BlockPos pos, BlockState state, @Nullable LivingEntity placer, ItemStack itemStack) {
         super.setPlacedBy(world, pos, state, placer, itemStack);
-        BitsBlockEntity blockEntity = world.getBlockEntity(pos, BitsAndChisels.BITS_BLOCK_ENTITY).orElse(null);
-        if (blockEntity == null) return;
+        if (!(world.getBlockEntity(pos) instanceof BitsBlockEntity blockEntity)) return;
         final var data = itemStack.get(DataComponents.CUSTOM_DATA);
         if (data != null) {
             final var tag = data.copyTag();
@@ -268,13 +269,17 @@ public class BitsBlock extends BaseEntityBlock implements SimpleWaterloggedBlock
         return new BitsBlockEntity(pos, state);
     }
 
+    protected BlockEntityType<? extends BitsBlockEntity> getBlockEntityType() {
+        return BitsAndChisels.BITS_BLOCK_ENTITY;
+    }
+
     @Override
     protected @NonNull ItemStack getCloneItemStack(LevelReader world, @NonNull BlockPos pos, @NonNull BlockState state, boolean includeData) {
         if (world.isClientSide()) {
             final var bitStack = pickBitClient(world, pos, state);
             if (bitStack != null) return bitStack;
         }
-        final var blockEntity = world.getBlockEntity(pos, BitsAndChisels.BITS_BLOCK_ENTITY).orElse(null);
+        final var blockEntity = world.getBlockEntity(pos) instanceof BitsBlockEntity be ? be : null;
         if (blockEntity != null) {
             return ItemHelpers.blockToItem(this, state, blockEntity);
         } else {
@@ -299,7 +304,7 @@ public class BitsBlock extends BaseEntityBlock implements SimpleWaterloggedBlock
                 }
             }
         } else if (world instanceof Level) {
-            final var blockEntity = world.getBlockEntity(pos, BitsAndChisels.BITS_BLOCK_ENTITY).orElse(null);
+            final var blockEntity = world.getBlockEntity(pos) instanceof BitsBlockEntity be ? be : null;
             if (blockEntity != null) {
                 if (blockEntity.getStructureId() != null && (player == null || !player.isShiftKeyDown())) {
                     return tryGetStructure((Level) world, pos, blockEntity, player, false);
@@ -315,7 +320,7 @@ public class BitsBlock extends BaseEntityBlock implements SimpleWaterloggedBlock
                             nbt = new CompoundTag();
                         }
                         nbt.putInt(BitStructureItem.NBT_ROTATION, rotation.get3DDataValue());
-                        stack.set(DataComponents.BLOCK_ENTITY_DATA, TypedEntityData.of(BitsAndChisels.BITS_BLOCK_ENTITY, nbt));
+                        stack.set(DataComponents.BLOCK_ENTITY_DATA, TypedEntityData.of(getBlockEntityType(), nbt));
                     }
                     return stack;
                 }
@@ -338,7 +343,7 @@ public class BitsBlock extends BaseEntityBlock implements SimpleWaterloggedBlock
                 }
             }
         } else {
-            final var blockEntity = world.getBlockEntity(pos, BitsAndChisels.BITS_BLOCK_ENTITY).orElse(null);
+            final var blockEntity = world.getBlockEntity(pos) instanceof BitsBlockEntity be ? be : null;
             if (blockEntity != null) {
                 if (blockEntity.getStructureId() != null) {
                     final var structureStack = tryGetStructure(world, pos, blockEntity, player, false);
@@ -357,7 +362,7 @@ public class BitsBlock extends BaseEntityBlock implements SimpleWaterloggedBlock
                         nbt = new CompoundTag();
                     }
                     nbt.putInt(BitStructureItem.NBT_ROTATION, rotation.get3DDataValue());
-                    stack.set(DataComponents.BLOCK_ENTITY_DATA, TypedEntityData.of(BitsAndChisels.BITS_BLOCK_ENTITY, nbt));
+                    stack.set(DataComponents.BLOCK_ENTITY_DATA, TypedEntityData.of(getBlockEntityType(), nbt));
                     return stack;
                 }
             }
@@ -367,9 +372,8 @@ public class BitsBlock extends BaseEntityBlock implements SimpleWaterloggedBlock
     
     @Override
     public VoxelShape getShape(BlockState state, BlockGetter world, BlockPos pos, CollisionContext context) {
-        final var be = world.getBlockEntity(pos, BitsAndChisels.BITS_BLOCK_ENTITY);
-        if (be.isPresent()) {
-            return be.get().shape;
+        if (world.getBlockEntity(pos) instanceof BitsBlockEntity be) {
+            return be.shape;
         }
         return Shapes.empty();
     }

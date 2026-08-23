@@ -92,9 +92,8 @@ public class BitUtils {
 
     public static @Nullable BlockState getBit(Level world, BlockPos block, int x, int y, int z) {
         BlockState state = world.getBlockState(block);
-        var e = world.getBlockEntity(block, BitsAndChisels.BITS_BLOCK_ENTITY);
-        if (e.isPresent()) {
-            return e.get().getState(x, y, z);
+        if (world.getBlockEntity(block) instanceof BitsBlockEntity e) {
+            return e.getState(x, y, z);
         } else if (!state.is(BitsAndChisels.BITS_BLOCK) && canBeChiseled(state, world, block) && state.isCollisionShapeFullBlock(world, block)) {
             return state;
         }

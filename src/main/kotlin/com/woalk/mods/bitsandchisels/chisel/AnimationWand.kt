@@ -17,23 +17,25 @@ import net.minecraft.network.chat.Component
 import net.minecraft.world.InteractionResult
 import net.minecraft.ChatFormatting
 import net.minecraft.core.component.DataComponents
+import net.minecraft.util.ProblemReporter
 import net.minecraft.world.item.Item
 import net.minecraft.world.item.component.TooltipDisplay
+import net.minecraft.world.level.storage.TagValueInput
 import java.util.function.Consumer
 
 class AnimationWand(settings: Properties) : Item(settings) {
     override fun useOn(context: UseOnContext): InteractionResult {
         if (context.player == null ||
+            context.level.isClientSide ||
             !Permissions.check(context.player!!, ModPermissions.USE_ANIMATION_WAND, true) ||
             !context.level.mayInteract(context.player!!, context.clickedPos)) {
             return InteractionResult.PASS
         }
-        val be = context.level?.getBlockEntity(
+        val be = context.level.getBlockEntity(
             context.clickedPos
         ) ?: return InteractionResult.PASS
 
         if (be is AnimatedBitsBlockEntity) {
-            if (context.level.isClientSide) return InteractionResult.SUCCESS
             if (context.player!!.isShiftKeyDown) {
                 be.frametime = (be.frametime - 1).coerceAtLeast(1)
             } else be.frametime++
@@ -55,12 +57,12 @@ class AnimationWand(settings: Properties) : Item(settings) {
                 error = true
                 break
             } else {
-                val tag = stack.components.get(DataComponents.BLOCK_ENTITY_DATA)?.copyTagWithoutId()
+                val tag = stack.get(DataComponents.BLOCK_ENTITY_DATA)?.copyTagWithoutId()
                 frames.add(tag ?: continue)
             }
         }
 
-        return if (error || frames.isEmpty()) {
+        return if (error || frames.isEmpty) {
             context.player?.sendSystemMessage(Component.literal("This chest contains items that are not bit blocks."))
             InteractionResult.FAIL
         } else {
@@ -70,7 +72,7 @@ class AnimationWand(settings: Properties) : Item(settings) {
             val be = context.level.getBlockEntity(context.clickedPos, ModBlockEntities.animatedBitsBlockEntity)
             if (be.isPresent) be.get().load(CompoundTag().apply {
                 put(AnimatedBitsBlockEntity.FRAMES_KEY, frames)
-            })
+            }, context.level.registryAccess())
             InteractionResult.SUCCESS
         }
     }

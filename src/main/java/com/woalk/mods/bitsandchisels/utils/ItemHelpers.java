@@ -26,7 +26,7 @@ public class ItemHelpers {
             stack.applyComponents(blockEntity.collectComponents());
             CompoundTag compoundTag = new CompoundTag();
             bitsBlockEntity.writeBitNbt(compoundTag);
-            stack.set(DataComponents.BLOCK_ENTITY_DATA, TypedEntityData.of(BitsAndChisels.BITS_BLOCK_ENTITY, compoundTag));
+            stack.set(DataComponents.BLOCK_ENTITY_DATA, TypedEntityData.of(blockEntity.getType(), compoundTag));
         }
         return stack;
     }

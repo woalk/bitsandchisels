@@ -1,15 +1,22 @@
 package com.woalk.mods.bitsandchisels.blocks
 
-import com.woalk.mods.bitsandchisels.render.BitMeshes
-import com.woalk.mods.bitsandchisels.utils.BitNbtUtil
+import com.mojang.serialization.Codec
 import com.woalk.mods.bitsandchisels.BitsAndChisels
 import com.woalk.mods.bitsandchisels.registry.ModBlockEntities
+import com.woalk.mods.bitsandchisels.render.BitMeshes
+import com.woalk.mods.bitsandchisels.utils.BitNbtUtil
 import net.fabricmc.fabric.api.client.renderer.v1.mesh.Mesh
-import net.minecraft.world.level.block.state.BlockState
-import net.minecraft.world.level.block.Blocks
+import net.minecraft.core.BlockPos
+import net.minecraft.core.HolderLookup
 import net.minecraft.nbt.CompoundTag
 import net.minecraft.nbt.ListTag
-import net.minecraft.core.BlockPos
+import net.minecraft.network.protocol.Packet
+import net.minecraft.network.protocol.game.ClientGamePacketListener
+import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket
+import net.minecraft.util.ProblemReporter
+import net.minecraft.world.level.block.Blocks
+import net.minecraft.world.level.block.state.BlockState
+import net.minecraft.world.level.storage.TagValueInput
 import net.minecraft.world.level.storage.ValueInput
 import net.minecraft.world.level.storage.ValueOutput
 import java.util.*
@@ -57,13 +64,24 @@ class AnimatedBitsBlockEntity(pos: BlockPos, val state: BlockState) : BitsBlockE
         tag.put(FRAMES_KEY, list)
     }
 
+    fun load(tag: CompoundTag, provider: HolderLookup.Provider) {
+        loadAdditional(TagValueInput.create(ProblemReporter.DISCARDING, provider, tag))
+    }
+
     override fun loadAdditional(input: ValueInput) {
         super.loadAdditional(input)
         frametime = input.getIntOr(FRAME_TIME_KEY, 1).coerceAtLeast(1)
     }
 
-    fun load(tag: CompoundTag) {
-        frametime = tag.getIntOr(FRAME_TIME_KEY, 1).coerceAtLeast(1)
+    override fun extractImportantNbt(input: ValueInput): CompoundTag? {
+        val tag = super.extractImportantNbt(input)
+        val frames = input.read(FRAMES_KEY, Codec.list(CompoundTag.CODEC)).orElse(null)
+        if (frames != null) {
+            val listTag = ListTag()
+            listTag.addAll(frames)
+            tag.put(FRAMES_KEY, listTag)
+        }
+        return tag
     }
 
     override fun readBitNbt(tag: CompoundTag) {
@@ -78,7 +96,7 @@ class AnimatedBitsBlockEntity(pos: BlockPos, val state: BlockState) : BitsBlockE
                 frames.add(states)
             }
         }
-        frames.firstOrNull()?.let { states = it }
+        frames.firstOrNull()?.let { setStates(it) }
     }
 
     override fun rebuildMesh() {
@@ -97,4 +115,6 @@ class AnimatedBitsBlockEntity(pos: BlockPos, val state: BlockState) : BitsBlockE
     }
 
     override fun getRenderData() = Pair(frameCounter / frametime, meshes)
+
+    override fun getUpdatePacket() = ClientboundBlockEntityDataPacket.create(this)
 }

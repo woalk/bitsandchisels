@@ -18,10 +18,11 @@ import net.minecraft.world.InteractionResult
 import net.minecraft.ChatFormatting
 import net.minecraft.core.Direction
 import net.minecraft.core.component.DataComponents
+import net.minecraft.world.level.block.entity.BlockEntityType
 import kotlin.math.roundToInt
 import java.util.function.Consumer
 
-class BitsBlockItem(block: Block, settings: Properties) : BlockItem(block, settings) {
+open class BitsBlockItem(block: Block, settings: Properties) : BlockItem(block, settings) {
     override fun place(context: BlockPlaceContext): InteractionResult {
         val stack = context.itemInHand
         val blockEntityData = stack.get(DataComponents.BLOCK_ENTITY_DATA)
@@ -39,13 +40,15 @@ class BitsBlockItem(block: Block, settings: Properties) : BlockItem(block, setti
         }
         val newContext = if (nbt != null) {
             val newStack = stack.copy()
-            newStack.set(DataComponents.BLOCK_ENTITY_DATA, TypedEntityData.of(BitsAndChisels.BITS_BLOCK_ENTITY, nbt))
+            newStack.set(DataComponents.BLOCK_ENTITY_DATA, TypedEntityData.of(getBlockEntityType(), nbt))
             BlockPlaceContext(context.level, context.player, context.hand, newStack, context.hitResult)
         } else {
             context
         }
         return super.place(newContext)
     }
+
+    protected open fun getBlockEntityType(): BlockEntityType<out BitsBlockEntity> = BitsAndChisels.BITS_BLOCK_ENTITY!!
 
     override fun appendHoverText(
         itemStack: ItemStack,
@@ -64,19 +67,11 @@ class BitsBlockItem(block: Block, settings: Properties) : BlockItem(block, setti
                         .withStyle(ChatFormatting.GOLD, ChatFormatting.ITALIC)
                 ).withStyle(ChatFormatting.GRAY))
             }
-            val blockEntityData = itemStack.components.get(DataComponents.BLOCK_ENTITY_DATA)?.getUnsafe()
+            val blockEntityData = itemStack.components.get(DataComponents.BLOCK_ENTITY_DATA)?.copyTagWithoutId()
             blockEntityData?.getList("palette")?.orElse(null)?.let {
                 if (it.isNotEmpty()) {
                     builder.accept(
                         Component.translatable("gui.bitsandchisels.palette.tooltip", it.size)
-                            .withStyle(ChatFormatting.GRAY)
-                    )
-                }
-            }
-            blockEntityData?.getList("frames")?.orElse(null)?.let {
-                if (it.isNotEmpty()) {
-                    builder.accept(
-                        Component.translatable("gui.bitsandchisels.frames.tooltip", it.size)
                             .withStyle(ChatFormatting.GRAY)
                     )
                 }

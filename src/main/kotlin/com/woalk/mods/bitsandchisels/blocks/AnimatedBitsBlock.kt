@@ -16,10 +16,12 @@ import net.minecraft.world.level.LevelReader
 class AnimatedBitsBlock(settings: Properties?) : BitsBlock(settings) {
     override fun newBlockEntity(pos: BlockPos, state: BlockState): BlockEntity = AnimatedBitsBlockEntity(pos, state)
 
+    override fun getBlockEntityType() = ModBlockEntities.animatedBitsBlockEntity
+
     override fun getRenderShape(state: BlockState): RenderShape = RenderShape.INVISIBLE
 
     override fun playerWillDestroy(world: Level, pos: BlockPos, state: BlockState, player: Player): BlockState {
-        val blockEntity = world.getBlockEntity(pos, ModBlockEntities.animatedBitsBlockEntity).orElse(null)
+        val blockEntity = world.getBlockEntity(pos, blockEntityType).orElse(null)
         popResource(world, pos, ItemHelpers.blockToItem(this, state, blockEntity))
         return playerWillDestroyBlock(world, pos, state, player)
     }
@@ -30,7 +32,7 @@ class AnimatedBitsBlock(settings: Properties?) : BitsBlock(settings) {
         state: BlockState,
         includeData: Boolean
     ): ItemStack {
-        val blockEntity = world.getBlockEntity(pos, ModBlockEntities.animatedBitsBlockEntity).orElse(null)
+        val blockEntity = world.getBlockEntity(pos, blockEntityType).orElse(null)
         return if (blockEntity != null) {
             ItemHelpers.blockToItem(this, state, blockEntity)
         } else {
@@ -46,7 +48,7 @@ class AnimatedBitsBlock(settings: Properties?) : BitsBlock(settings) {
         if (!world.isClientSide) {
             return null
         }
-        return createTickerHelper(type, ModBlockEntities.animatedBitsBlockEntity) { _, _, _, be ->
+        return createTickerHelper(type, blockEntityType) { _, _, _, be ->
             be.tick()
         }
     }
