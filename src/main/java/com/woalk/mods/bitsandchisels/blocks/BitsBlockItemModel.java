@@ -10,6 +10,7 @@ import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.renderer.item.ItemModel;
 import net.minecraft.client.renderer.item.ItemModelResolver;
 import net.minecraft.client.renderer.item.ItemStackRenderState;
+import net.minecraft.client.resources.model.cuboid.ItemTransforms;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.entity.ItemOwner;
@@ -22,8 +23,16 @@ public class BitsBlockItemModel implements ItemModel {
 
     private static final LRUCache<CompoundTag, Mesh> cache = new LRUCache<>(200);
 
+    private final ItemTransforms transforms;
+
+    public BitsBlockItemModel(ItemTransforms transforms) {
+        this.transforms = transforms;
+    }
+
     @Override
     public void update(ItemStackRenderState renderState, ItemStack stack, ItemModelResolver resolver, ItemDisplayContext displayContext, @Nullable ClientLevel level, @Nullable ItemOwner owner, int seed) {
+        renderState.appendModelIdentityElement(this);
+
         final var data = stack.getComponents().get(DataComponents.BLOCK_ENTITY_DATA);
         CompoundTag beTag = data != null ? data.copyTagWithoutId() : null;
         Mesh mesh = cache.computeIfAbsent(beTag, discard -> {
@@ -41,8 +50,11 @@ public class BitsBlockItemModel implements ItemModel {
         });
 
         if (mesh != null) {
+            renderState.appendModelIdentityElement(mesh);
+
             ItemStackRenderState.LayerRenderState layer = renderState.newLayer();
             layer.setUsesBlockLight(true);
+            layer.setItemTransform(transforms.getTransform(displayContext));
             QuadEmitter emitter = ((FabricLayerRenderState) layer).emitter();
             mesh.outputTo(emitter);
         }

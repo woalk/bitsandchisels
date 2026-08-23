@@ -30,6 +30,7 @@ public class ColorPolice {
     public static int getBlockColor(BlockState state, @Nullable BlockAndTintGetter world, @Nullable BlockPos pos, int tintIndex) {
         try {
             BlockTintSource tintSource = Minecraft.getInstance().getBlockColors().getTintSource(state, tintIndex);
+            if (tintSource == null) return -1;
             if (world instanceof BlockAndTintGetter clientWorld && pos != null) {
                 return tintSource.colorInWorld(state, clientWorld, pos);
             }

@@ -12,6 +12,7 @@ import net.minecraft.client.multiplayer.ClientLevel
 import net.minecraft.client.renderer.item.ItemModel
 import net.minecraft.client.renderer.item.ItemModelResolver
 import net.minecraft.client.renderer.item.ItemStackRenderState
+import net.minecraft.client.resources.model.cuboid.ItemTransforms
 import net.minecraft.core.component.DataComponents
 import net.minecraft.world.level.block.state.BlockState
 import net.minecraft.world.item.ItemStack
@@ -21,7 +22,7 @@ import net.minecraft.nbt.CompoundTag
 import org.joml.Vector3f
 import kotlin.math.max
 
-class BitStructureItemModel: ItemModel {
+class BitStructureItemModel(private val transforms: ItemTransforms): ItemModel {
     companion object {
         private val cache = LRUCache<CompoundTag, Pair<Mesh, Int>>(100)
     }
@@ -35,6 +36,8 @@ class BitStructureItemModel: ItemModel {
         owner: ItemOwner?,
         seed: Int
     ) {
+        renderState.appendModelIdentityElement(this)
+
         val fullTag = stack.components.get(DataComponents.CUSTOM_DATA)?.copyTag() ?: return
         val mesh = cache.computeIfAbsent(fullTag) { _ ->
             val builder = Renderer.get()!!.mutableMesh()
@@ -61,12 +64,16 @@ class BitStructureItemModel: ItemModel {
         }
 
         if (mesh != null) {
+            renderState.appendModelIdentityElement(mesh)
+
             val layer = renderState.newLayer()
             layer.setUsesBlockLight(true)
+            layer.setItemTransform(transforms.getTransform(displayContext))
             val layerEmitter = (layer as FabricLayerRenderState).emitter()
 
-            // Scale transform: output each quad vertex position scaled by 0.75/mesh.second
-            val scaleFactor = 0.75f / mesh.second
+            // Scale transform: fit the whole structure into 0.75 of a block.
+            // mesh.second is the largest block offset, so the structure is one block wider than that.
+            val scaleFactor = 0.75f / (mesh.second + 1)
             val pos = Vector3f()
             mesh.first.forEach { quad ->
                 layerEmitter.copyFrom(quad)
