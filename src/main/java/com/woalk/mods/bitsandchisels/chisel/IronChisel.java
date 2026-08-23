@@ -4,6 +4,7 @@ import com.woalk.mods.bitsandchisels.api.BitUtils;
 import com.woalk.mods.bitsandchisels.api.client.RedBoxCallback;
 import com.woalk.mods.bitsandchisels.networking.IronChiselPacket;
 import com.woalk.mods.bitsandchisels.registry.ModPermissions;
+import com.woalk.mods.bitsandchisels.render.RedBoxPipeline;
 import me.lucko.fabric.api.permissions.v0.Permissions;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.event.player.AttackBlockCallback;
@@ -18,6 +19,7 @@ import net.minecraft.world.phys.HitResult;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.phys.shapes.Shapes;
 
 public class IronChisel extends Item implements ServerPlayNetworking.PlayPayloadHandler<IronChiselPacket> {
     private long lastBreakTick = 0;
@@ -52,19 +54,20 @@ public class IronChisel extends Item implements ServerPlayNetworking.PlayPayload
     }
 
     public void initClient() {
-        RedBoxCallback.EVENT.register((redBoxDrawer, matrixStack, vertexConsumer, worldoffsetx, worldoffsety, worldoffsetz) -> {
+        RedBoxPipeline.registerExtraction((_, hit) -> {
             Minecraft client = Minecraft.getInstance();
-            if (client.player.getMainHandItem().getItem() == this) {
-                HitResult hit = client.hitResult;
+            if (client.player != null && client.player.getMainHandItem().is(this) && hit != null) {
                 if (hit.getType() == HitResult.Type.BLOCK) {
                     Direction direction = ((BlockHitResult)hit).getDirection();
                     BlockPos pos = ((BlockHitResult)hit).getBlockPos();
                     int x = (int) Math.floor(Math.floor(((hit.getLocation().x() - pos.getX()) * 16) + (direction.getStepX() * -0.5d)) / 4) * 4;
                     int y = (int) Math.floor(Math.floor(((hit.getLocation().y() - pos.getY()) * 16) + (direction.getStepY() * -0.5d)) / 4) * 4;
                     int z = (int) Math.floor(Math.floor(((hit.getLocation().z() - pos.getZ()) * 16) + (direction.getStepZ() * -0.5d)) / 4) * 4;
-                    redBoxDrawer.drawRedBox(matrixStack, vertexConsumer, pos, x, y, z, x + 4, y + 4, z + 4, worldoffsetx, worldoffsety, worldoffsetz);
+
+                    return new RedBoxPipeline.State(((BlockHitResult) hit).getBlockPos(), Shapes.box(x, y, z, x + 4, y + 4, z + 4));
                 }
             }
+            return null;
         });
     }
 
@@ -73,7 +76,7 @@ public class IronChisel extends Item implements ServerPlayNetworking.PlayPayload
         Minecraft client = Minecraft.getInstance();
         HitResult hit = client.hitResult;
 
-        if (hit.getType() == HitResult.Type.BLOCK) {
+        if (hit != null && hit.getType() == HitResult.Type.BLOCK) {
             Direction direction = ((BlockHitResult)hit).getDirection();
             int x = (int) Math.floor(Math.floor(((hit.getLocation().x() - pos.getX()) * 16) + (direction.getStepX() * -0.5d)) / 4) * 4;
             int y = (int) Math.floor(Math.floor(((hit.getLocation().y() - pos.getY()) * 16) + (direction.getStepY() * -0.5d)) / 4) * 4;

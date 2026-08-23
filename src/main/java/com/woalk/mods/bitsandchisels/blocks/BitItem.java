@@ -1,5 +1,6 @@
 package com.woalk.mods.bitsandchisels.blocks;
 
+import com.woalk.mods.bitsandchisels.render.RedBoxPipeline;
 import com.woalk.mods.bitsandchisels.utils.BitNbtUtil;
 import com.woalk.mods.bitsandchisels.api.BitUtils;
 import com.woalk.mods.bitsandchisels.api.client.RedBoxCallback;
@@ -118,61 +119,16 @@ public class BitItem extends Item implements ServerPlayNetworking.PlayPayloadHan
     }
 
     public void initClient() {
-        RedBoxCallback.EVENT.register((redBoxDrawer, matrixStack, vertexConsumer, worldoffsetx, worldoffsety, worldoffsetz) -> {
+        RedBoxPipeline.registerExtraction((_, hit) -> {
             Minecraft client = Minecraft.getInstance();
-            if (client.player.getMainHandItem().getItem() == this) {
-                HitResult hit = client.hitResult;
-                if (hit.getType() == HitResult.Type.BLOCK) {
-                    Direction direction = ((BlockHitResult)hit).getDirection();
-                    BlockPos pos = ((BlockHitResult)hit).getBlockPos();
-                    int x = ((int) Math.floor(((hit.getLocation().x() - pos.getX()) * 16) + (direction.getStepX() * -0.5d))) + direction.getStepX();
-                    int y = ((int) Math.floor(((hit.getLocation().y() - pos.getY()) * 16) + (direction.getStepY() * -0.5d))) + direction.getStepY();
-                    int z = ((int) Math.floor(((hit.getLocation().z() - pos.getZ()) * 16) + (direction.getStepZ() * -0.5d))) + direction.getStepZ();
-
-                    if (x > 15) {
-                        pos = pos.offset(1, 0, 0);
-                        x -= 16;
-                    }
-                    if (y > 15) {
-                        pos = pos.offset(0, 1, 0);
-                        y -= 16;
-                    }
-                    if (z > 15) {
-                        pos = pos.offset(0, 0, 1);
-                        z -= 16;
-                    }
-                    if (x < 0) {
-                        pos = pos.offset(-1, 0, 0);
-                        x += 16;
-                    }
-                    if (y < 0) {
-                        pos = pos.offset(0, -1, 0);
-                        y += 16;
-                    }
-                    if (z < 0) {
-                        pos = pos.offset(0, 0, -1);
-                        z += 16;
-                    }
-
-                    if (haspos1) {
-                        int blockXOffset = pos.getX() - block.getX();
-                        int blockYOffset = pos.getY() - block.getY();
-                        int blockZOffset = pos.getZ() - block.getZ();
-
-                        int minx = Math.min(bitx, blockXOffset * 16 + x);
-                        int miny = Math.min(bity, blockYOffset * 16 + y);
-                        int minz = Math.min(bitz, blockZOffset * 16 + z);
-
-                        int maxx = Math.max(bitx, blockXOffset * 16 + x);
-                        int maxy = Math.max(bity, blockYOffset * 16 + y);
-                        int maxz = Math.max(bitz, blockZOffset * 16 + z);
-                        
-                        redBoxDrawer.drawRedBox(matrixStack, vertexConsumer, block, minx, miny, minz, maxx + 1, maxy + 1, maxz + 1, worldoffsetx, worldoffsety, worldoffsetz);
-                    } else {
-                        redBoxDrawer.drawRedBox(matrixStack, vertexConsumer, pos, x, y, z, x + 1, y + 1, z + 1, worldoffsetx, worldoffsety, worldoffsetz);
-                    }
+            if (client.player != null && client.player.getMainHandItem().is(this) && hit != null) {
+                final var pos1 = haspos1 ? new RedBoxPipeline.Shape.BitSelection(block, bitx, bity, bitz) : null;
+                final var shape = RedBoxPipeline.Shape.multiBit(hit, pos1, true);
+                if (shape != null) {
+                    return new RedBoxPipeline.State(shape);
                 }
             }
+            return null;
         });
     }
 

@@ -5,11 +5,13 @@ import com.woalk.mods.bitsandchisels.api.client.AirSwingItem;
 import com.woalk.mods.bitsandchisels.api.client.RedBoxCallback;
 import com.woalk.mods.bitsandchisels.networking.SmartChiselPacket;
 import com.woalk.mods.bitsandchisels.registry.ModPermissions;
+import com.woalk.mods.bitsandchisels.render.RedBoxPipeline;
 import io.netty.buffer.Unpooled;
 import me.lucko.fabric.api.permissions.v0.Permissions;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
+import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderEvents;
 import net.fabricmc.fabric.api.event.player.AttackBlockCallback;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.client.Minecraft;
@@ -24,6 +26,7 @@ import net.minecraft.world.phys.HitResult;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.phys.Vec3;
 
 public class SmartChisel extends Item implements ServerPlayNetworking.PlayPayloadHandler<SmartChiselPacket>, AirSwingItem {
     BlockPos block = null;
@@ -50,45 +53,16 @@ public class SmartChisel extends Item implements ServerPlayNetworking.PlayPayloa
     }
 
     public void initClient() {
-        RedBoxCallback.EVENT.register((redBoxDrawer, matrixStack, vertexConsumer, worldoffsetx, worldoffsety, worldoffsetz) -> {
+        RedBoxPipeline.registerExtraction((_, hit) -> {
             Minecraft client = Minecraft.getInstance();
-            if (client.player.getMainHandItem().getItem() == this) {
-                if (haspos1) {
-                    HitResult hit = client.hitResult;
-                    if (hit.getType() == HitResult.Type.BLOCK) {
-                        Direction direction = ((BlockHitResult)hit).getDirection();
-                        BlockPos pos = ((BlockHitResult)hit).getBlockPos();
-                        if (pos.distSqr(block) > 9) return;
-                        int x = (int) Math.floor(((hit.getLocation().x() - pos.getX()) * 16) + (direction.getStepX() * -0.5d));
-                        int y = (int) Math.floor(((hit.getLocation().y() - pos.getY()) * 16) + (direction.getStepY() * -0.5d));
-                        int z = (int) Math.floor(((hit.getLocation().z() - pos.getZ()) * 16) + (direction.getStepZ() * -0.5d));
-                        
-                        int blockXOffset = pos.getX() - block.getX();
-                        int blockYOffset = pos.getY() - block.getY();
-                        int blockZOffset = pos.getZ() - block.getZ();
-
-                        int minx = Math.min(bitx, blockXOffset * 16 + x);
-                        int miny = Math.min(bity, blockYOffset * 16 + y);
-                        int minz = Math.min(bitz, blockZOffset * 16 + z);
-
-                        int maxx = Math.max(bitx, blockXOffset * 16 + x);
-                        int maxy = Math.max(bity, blockYOffset * 16 + y);
-                        int maxz = Math.max(bitz, blockZOffset * 16 + z);
-                        
-                        redBoxDrawer.drawRedBox(matrixStack, vertexConsumer, block, minx, miny, minz, maxx + 1, maxy + 1, maxz + 1, worldoffsetx, worldoffsety, worldoffsetz);
-                    }
-                } else {
-                    HitResult hit = client.hitResult;
-                    if (hit.getType() == HitResult.Type.BLOCK) {
-                        Direction direction = ((BlockHitResult)hit).getDirection();
-                        BlockPos pos = ((BlockHitResult)hit).getBlockPos();
-                        int x = (int) Math.floor(((hit.getLocation().x() - pos.getX()) * 16) + (direction.getStepX() * -0.5d));
-                        int y = (int) Math.floor(((hit.getLocation().y() - pos.getY()) * 16) + (direction.getStepY() * -0.5d));
-                        int z = (int) Math.floor(((hit.getLocation().z() - pos.getZ()) * 16) + (direction.getStepZ() * -0.5d));
-                        redBoxDrawer.drawRedBox(matrixStack, vertexConsumer, pos, x, y, z, x + 1, y + 1, z + 1, worldoffsetx, worldoffsety, worldoffsetz);
-                    }
+            if (client.player != null && client.player.getMainHandItem().is(this) && hit != null) {
+                final var pos1 = haspos1 ? new RedBoxPipeline.Shape.BitSelection(block, bitx, bity, bitz) : null;
+                final var shape = RedBoxPipeline.Shape.multiBit(hit, pos1);
+                if (shape != null) {
+                    return new RedBoxPipeline.State(shape);
                 }
             }
+            return null;
         });
     }
 
@@ -133,8 +107,6 @@ public class SmartChisel extends Item implements ServerPlayNetworking.PlayPayloa
                     bitz = z;
                     haspos1 = true;
                 } else {
-                    FriendlyByteBuf passedData = new FriendlyByteBuf(Unpooled.buffer());
-
                     int blockXOffset = pos.getX() - block.getX();
                     int blockYOffset = pos.getY() - block.getY();
                     int blockZOffset = pos.getZ() - block.getZ();

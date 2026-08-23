@@ -1,12 +1,13 @@
 package com.woalk.mods.bitsandchisels.chisel;
 
-import com.woalk.mods.bitsandchisels.BitItem;
+import com.woalk.mods.bitsandchisels.blocks.BitItem;
 import com.woalk.mods.bitsandchisels.BitsAndChisels;
-import com.woalk.mods.bitsandchisels.BitsBlockEntity;
+import com.woalk.mods.bitsandchisels.blocks.BitsBlockEntity;
 import com.woalk.mods.bitsandchisels.api.BitUtils;
 import com.woalk.mods.bitsandchisels.api.client.RedBoxCallback;
 import com.woalk.mods.bitsandchisels.networking.EnderChiselPacket;
 import com.woalk.mods.bitsandchisels.registry.ModPermissions;
+import com.woalk.mods.bitsandchisels.render.RedBoxPipeline;
 import me.lucko.fabric.api.permissions.v0.Permissions;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.event.player.AttackBlockCallback;
@@ -98,19 +99,15 @@ public class EnderChisel extends Item implements ServerPlayNetworking.PlayPayloa
     }
 
     public void initClient() {
-        RedBoxCallback.EVENT.register((redBoxDrawer, matrixStack, vertexConsumer, worldoffsetx, worldoffsety, worldoffsetz) -> {
+        RedBoxPipeline.registerExtraction((_, hit) -> {
             Minecraft client = Minecraft.getInstance();
-            if (client.player.getMainHandItem().getItem() == this) {
-                HitResult hit = client.hitResult;
-                if (hit.getType() == HitResult.Type.BLOCK) {
-                    Direction direction = ((BlockHitResult) hit).getDirection();
-                    BlockPos pos = ((BlockHitResult) hit).getBlockPos();
-                    int x = (int) Math.floor(((hit.getLocation().x() - pos.getX()) * 16) + (direction.getStepX() * -0.5d));
-                    int y = (int) Math.floor(((hit.getLocation().y() - pos.getY()) * 16) + (direction.getStepY() * -0.5d));
-                    int z = (int) Math.floor(((hit.getLocation().z() - pos.getZ()) * 16) + (direction.getStepZ() * -0.5d));
-                    redBoxDrawer.drawRedBox(matrixStack, vertexConsumer, pos, x, y, z, x + 1, y + 1, z + 1, worldoffsetx, worldoffsety, worldoffsetz);
+            if (client.player != null && client.player.getMainHandItem().is(this) && hit != null) {
+                final var shape = RedBoxPipeline.Shape.singleBit(hit);
+                if (shape != null) {
+                    return new RedBoxPipeline.State(shape);
                 }
             }
+            return null;
         });
     }
 

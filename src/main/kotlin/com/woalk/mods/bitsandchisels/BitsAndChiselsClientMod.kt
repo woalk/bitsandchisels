@@ -3,6 +3,7 @@ package com.woalk.mods.bitsandchisels
 import com.woalk.mods.bitsandchisels.registry.ModBlockEntityRenderers
 import com.woalk.mods.bitsandchisels.registry.ModBlocks
 import com.woalk.mods.bitsandchisels.registry.ModCommands
+import com.woalk.mods.bitsandchisels.render.RedBoxPipeline
 import net.fabricmc.api.ClientModInitializer
 
 object BitsAndChiselsClientMod: ClientModInitializer {
@@ -10,5 +11,6 @@ object BitsAndChiselsClientMod: ClientModInitializer {
         ModBlocks.registerAllClient()
         ModCommands.registerAllClient()
         ModBlockEntityRenderers.registerAll()
+        RedBoxPipeline.registerClient()
     }
 }
