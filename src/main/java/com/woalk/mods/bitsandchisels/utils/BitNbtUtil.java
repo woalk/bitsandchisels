@@ -1,9 +1,14 @@
 package com.woalk.mods.bitsandchisels.utils;
 
 import java.util.ArrayList;
+import java.util.Optional;
 
 import com.woalk.mods.bitsandchisels.blocks.ColoredBlockState;
+import net.minecraft.core.Holder;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.world.level.block.Block;
 import org.jetbrains.annotations.Nullable;
 
 import net.minecraft.world.level.block.state.BlockState;
@@ -75,6 +80,11 @@ public class BitNbtUtil {
         } else if (tag.contains(ColoredBlockState.TAG_COLOR)) {
             return new ColoredBlockState(tag.getInt(ColoredBlockState.TAG_COLOR).get());
         } else {
+            Optional<? extends Holder<Block>> blockHolder = tag.read("Name", ResourceKey.codec(Registries.BLOCK)).flatMap(BuiltInRegistries.BLOCK::get);
+            if (blockHolder.isEmpty()) {
+                tag = new CompoundTag();
+                tag.putString("Name", "wdf:unknown");
+            }
             return NbtUtils.readBlockState(BuiltInRegistries.BLOCK, tag);
         }
     }
