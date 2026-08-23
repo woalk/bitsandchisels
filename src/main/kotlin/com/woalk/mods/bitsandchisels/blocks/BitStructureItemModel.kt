@@ -21,6 +21,7 @@ import net.minecraft.world.entity.ItemOwner
 import net.minecraft.nbt.CompoundTag
 import org.joml.Vector3f
 import kotlin.math.max
+import kotlin.math.min
 
 class BitStructureItemModel(private val transforms: ItemTransforms): ItemModel {
     companion object {
@@ -40,7 +41,7 @@ class BitStructureItemModel(private val transforms: ItemTransforms): ItemModel {
 
         val fullTag = stack.components.get(DataComponents.CUSTOM_DATA)?.copyTag() ?: return
         val mesh = cache.computeIfAbsent(fullTag) { _ ->
-            val builder = Renderer.get()!!.mutableMesh()
+            val builder = Renderer.get().mutableMesh()
             builder.clear()
             val emitter = builder.emitter()
             val tmp = Vector3f()
@@ -72,8 +73,7 @@ class BitStructureItemModel(private val transforms: ItemTransforms): ItemModel {
             val layerEmitter = (layer as FabricLayerRenderState).emitter()
 
             // Scale transform: fit the whole structure into 0.75 of a block.
-            // mesh.second is the largest block offset, so the structure is one block wider than that.
-            val scaleFactor = 0.75f / (mesh.second + 1)
+            val scaleFactor = 0.75f / max(mesh.second, 1)
             val pos = Vector3f()
             mesh.first.forEach { quad ->
                 layerEmitter.copyFrom(quad)
