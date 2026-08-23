@@ -1,5 +1,7 @@
 package com.woalk.mods.bitsandchisels;
 
+import com.woalk.mods.bitsandchisels.blocks.BitsBlock;
+import com.woalk.mods.bitsandchisels.blocks.BitsBlockEntity;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.references.BlockItemId;
 import net.minecraft.world.level.block.state.BlockBehaviour;

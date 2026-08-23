@@ -1,10 +1,9 @@
-package com.woalk.mods.bitsandchisels.wrench;
+package com.woalk.mods.bitsandchisels.chisel;
 
 import com.woalk.mods.bitsandchisels.BitsAndChisels;
-import com.woalk.mods.bitsandchisels.BitsBlockEntity;
+import com.woalk.mods.bitsandchisels.blocks.BitsBlockEntity;
 import com.woalk.mods.bitsandchisels.registry.ModPermissions;
 import me.lucko.fabric.api.permissions.v0.Permissions;
-import net.minecraft.world.item.Item.Properties;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.item.Item;

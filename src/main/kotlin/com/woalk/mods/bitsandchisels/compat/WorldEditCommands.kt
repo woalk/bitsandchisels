@@ -15,7 +15,7 @@ import com.sk89q.worldedit.regions.CuboidRegion
 import com.sk89q.worldedit.session.ClipboardHolder
 import com.woalk.mods.bitsandchisels.registry.IModRegister
 import com.woalk.mods.bitsandchisels.BitsAndChisels
-import com.woalk.mods.bitsandchisels.BitsBlockEntity
+import com.woalk.mods.bitsandchisels.blocks.BitsBlockEntity
 import com.woalk.mods.bitsandchisels.api.BitUtils
 import com.woalk.mods.bitsandchisels.blocks.BitStructureItem
 import com.woalk.mods.bitsandchisels.registry.ModPermissions
@@ -34,7 +34,6 @@ import net.minecraft.resources.Identifier
 import net.minecraft.core.BlockPos
 import net.minecraft.core.Direction
 import net.minecraft.core.Vec3i
-import net.minecraft.core.Registry
 import net.minecraft.core.registries.BuiltInRegistries
 import java.util.*
 import kotlin.math.ceil

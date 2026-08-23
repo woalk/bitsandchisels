@@ -1,10 +1,11 @@
-package com.woalk.mods.bitsandchisels;
+package com.woalk.mods.bitsandchisels.blocks;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import com.woalk.mods.bitsandchisels.blocks.ColoredBlockState;
-import com.woalk.mods.bitsandchisels.duck.CubeRenderStuff;
+import com.woalk.mods.bitsandchisels.utils.BitNbtUtil;
+import com.woalk.mods.bitsandchisels.utils.ColorPolice;
+import com.woalk.mods.bitsandchisels.render.LRUCache;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.renderer.block.BlockStateModelSet;
@@ -14,7 +15,6 @@ import net.minecraft.client.renderer.item.ItemModel;
 import net.minecraft.client.renderer.item.ItemModelResolver;
 import net.minecraft.client.renderer.item.ItemStackRenderState;
 import net.minecraft.client.resources.model.geometry.BakedQuad;
-import net.minecraft.client.resources.model.sprite.Material;
 import net.minecraft.core.Direction;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.nbt.CompoundTag;

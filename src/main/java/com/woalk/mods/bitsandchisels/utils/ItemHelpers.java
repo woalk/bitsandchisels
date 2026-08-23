@@ -1,7 +1,9 @@
-package com.woalk.mods.bitsandchisels;
+package com.woalk.mods.bitsandchisels.utils;
 
+import com.woalk.mods.bitsandchisels.BitsAndChisels;
+import com.woalk.mods.bitsandchisels.blocks.BitsBlock;
+import com.woalk.mods.bitsandchisels.blocks.BitsBlockEntity;
 import net.minecraft.core.component.DataComponents;
-import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.component.BlockItemStateProperties;
 import net.minecraft.world.item.component.TypedEntityData;
 import net.minecraft.world.level.block.Block;

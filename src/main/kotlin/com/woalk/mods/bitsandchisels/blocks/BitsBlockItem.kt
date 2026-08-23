@@ -1,7 +1,6 @@
 package com.woalk.mods.bitsandchisels.blocks
 
 import com.woalk.mods.bitsandchisels.BitsAndChisels
-import com.woalk.mods.bitsandchisels.BitsBlock
 import com.woalk.mods.bitsandchisels.blocks.BitStructureItem.Companion.NBT_ROTATION
 import com.woalk.mods.bitsandchisels.utils.toYaw
 import net.minecraft.world.level.block.Block

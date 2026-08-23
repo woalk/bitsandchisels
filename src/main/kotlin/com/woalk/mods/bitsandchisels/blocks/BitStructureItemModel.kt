@@ -1,14 +1,12 @@
 package com.woalk.mods.bitsandchisels.blocks
 
-import com.woalk.mods.bitsandchisels.BitMeshes
-import com.woalk.mods.bitsandchisels.BitNbtUtil
-import com.woalk.mods.bitsandchisels.LRUCache
+import com.woalk.mods.bitsandchisels.render.BitMeshes
+import com.woalk.mods.bitsandchisels.utils.BitNbtUtil
+import com.woalk.mods.bitsandchisels.render.LRUCache
 import com.woalk.mods.bitsandchisels.blocks.BitStructureItem.Companion.NBT_BIT_BLOCK_TAGS
 import com.woalk.mods.bitsandchisels.blocks.BitStructureItem.Companion.OFFSETS
 import net.fabricmc.fabric.api.client.renderer.v1.Renderer
 import net.fabricmc.fabric.api.client.renderer.v1.mesh.Mesh
-import net.fabricmc.fabric.api.client.renderer.v1.mesh.MutableMesh
-import net.fabricmc.fabric.api.client.renderer.v1.mesh.QuadEmitter
 import net.fabricmc.fabric.api.client.renderer.v1.render.FabricLayerRenderState
 import net.minecraft.client.multiplayer.ClientLevel
 import net.minecraft.client.renderer.item.ItemModel
@@ -20,7 +18,6 @@ import net.minecraft.world.item.ItemStack
 import net.minecraft.world.item.ItemDisplayContext
 import net.minecraft.world.entity.ItemOwner
 import net.minecraft.nbt.CompoundTag
-import net.minecraft.nbt.Tag
 import org.joml.Vector3f
 import kotlin.math.max
 

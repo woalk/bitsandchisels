@@ -3,7 +3,7 @@ package com.woalk.mods.bitsandchisels.mixin;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.woalk.mods.bitsandchisels.duck.CubeRenderStuff;
+import com.woalk.mods.bitsandchisels.utils.CubeRenderStuff;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
 

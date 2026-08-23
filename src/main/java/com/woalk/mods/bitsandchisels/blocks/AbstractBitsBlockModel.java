@@ -1,12 +1,10 @@
-package com.woalk.mods.bitsandchisels;
+package com.woalk.mods.bitsandchisels.blocks;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.function.Predicate;
 
-import com.woalk.mods.bitsandchisels.blocks.AnimatedBitsBlockEntity;
+import com.woalk.mods.bitsandchisels.render.LRUCache;
 import net.fabricmc.fabric.api.client.renderer.v1.mesh.Mesh;
-import net.fabricmc.fabric.api.client.renderer.v1.mesh.MeshView;
 import net.fabricmc.fabric.api.client.renderer.v1.mesh.QuadAtlas;
 import net.fabricmc.fabric.api.client.renderer.v1.mesh.QuadEmitter;
 import net.fabricmc.fabric.api.client.renderer.v1.model.FabricBlockStateModel;
@@ -14,11 +12,11 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.block.BlockAndTintGetter;
 import net.minecraft.client.renderer.block.dispatch.BlockStateModel;
 import net.minecraft.client.renderer.block.dispatch.BlockStateModelPart;
-import net.minecraft.client.renderer.texture.TextureAtlas;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.client.resources.model.sprite.Material;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.Identifier;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.block.entity.BlockEntity;
@@ -27,7 +25,7 @@ import net.minecraft.world.level.block.state.BlockState;
 public abstract class AbstractBitsBlockModel implements BlockStateModel, FabricBlockStateModel {
     private static final Identifier SPRITE_ID = Identifier.fromNamespaceAndPath("bitsandchisels", "block/null");
 
-    protected static final LRUCache<net.minecraft.nbt.CompoundTag, Mesh> cache = new LRUCache<>(200);
+    protected static final LRUCache<CompoundTag, Mesh> cache = new LRUCache<>(200);
 
     @Override
     public void emitQuads(QuadEmitter emitter, BlockAndTintGetter blockView, BlockPos pos, BlockState state, RandomSource random, Predicate<Direction> cullTest) {

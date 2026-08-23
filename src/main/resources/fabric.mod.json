@@ -24,7 +24,7 @@
       }
     ],
     "client": [
-      "com.woalk.mods.bitsandchisels.BitsBlockClient",
+      "com.woalk.mods.bitsandchisels.blocks.BitsBlockClient",
       {
         "adapter": "kotlin",
         "value": "com.woalk.mods.bitsandchisels.BitsAndChiselsClientMod"

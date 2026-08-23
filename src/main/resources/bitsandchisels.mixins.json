@@ -7,7 +7,6 @@
     "CubeVoxelShapeFactory"
   ],
   "client": [
-    "RedSelectionBoxMixin",
     "BakedQuadAccessor",
     "BlockStateMixin",
     "MinecraftMixin",

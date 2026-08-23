@@ -1,8 +1,6 @@
 package com.woalk.mods.bitsandchisels.blocks
 
 import com.woalk.mods.bitsandchisels.BitsAndChisels
-import com.woalk.mods.bitsandchisels.BitsBlock
-import com.woalk.mods.bitsandchisels.registry.ModBlockEntities
 import com.woalk.mods.bitsandchisels.utils.rotate
 import com.woalk.mods.bitsandchisels.utils.toYaw
 import net.minecraft.advancements.triggers.CriteriaTriggers
@@ -15,7 +13,6 @@ import net.minecraft.world.item.context.BlockPlaceContext
 import net.minecraft.world.item.ItemStack
 import net.minecraft.world.item.context.UseOnContext
 import net.minecraft.nbt.CompoundTag
-import net.minecraft.nbt.Tag
 import net.minecraft.server.level.ServerPlayer
 import net.minecraft.sounds.SoundSource
 import net.minecraft.world.level.block.state.properties.BlockStateProperties
@@ -27,9 +24,7 @@ import net.minecraft.core.UUIDUtil
 import net.minecraft.core.Vec3i
 import net.minecraft.core.component.DataComponents
 import net.minecraft.util.ProblemReporter
-import net.minecraft.world.item.component.ItemLore
 import net.minecraft.world.item.component.TooltipDisplay
-import net.minecraft.world.level.Level
 import net.minecraft.world.level.gameevent.GameEvent
 import net.minecraft.world.level.storage.TagValueInput
 import java.util.*

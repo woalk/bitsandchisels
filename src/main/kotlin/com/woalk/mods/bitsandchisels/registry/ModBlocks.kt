@@ -1,7 +1,7 @@
 package com.woalk.mods.bitsandchisels.registry
 
 import com.woalk.mods.bitsandchisels.BitsAndChisels
-import com.woalk.mods.bitsandchisels.BitsBlock
+import com.woalk.mods.bitsandchisels.blocks.BitsBlock
 import com.woalk.mods.bitsandchisels.WoalkItemsMod
 import com.woalk.mods.bitsandchisels.blocks.*
 import net.fabricmc.api.EnvType

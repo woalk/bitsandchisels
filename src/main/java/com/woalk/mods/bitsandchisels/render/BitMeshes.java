@@ -1,8 +1,9 @@
-package com.woalk.mods.bitsandchisels;
+package com.woalk.mods.bitsandchisels.render;
 
 import java.util.Arrays;
 import java.util.Objects;
 
+import com.woalk.mods.bitsandchisels.utils.ColorPolice;
 import com.woalk.mods.bitsandchisels.blocks.ColoredBlockState;
 import net.fabricmc.fabric.api.client.renderer.v1.mesh.Mesh;
 import net.fabricmc.fabric.api.client.renderer.v1.mesh.MutableQuadView;
@@ -10,17 +11,14 @@ import net.fabricmc.fabric.api.client.renderer.v1.mesh.QuadEmitter;
 import net.fabricmc.fabric.api.client.renderer.v1.mesh.MutableMesh;
 import net.fabricmc.fabric.api.client.renderer.v1.mesh.QuadAtlas;
 import net.fabricmc.fabric.api.client.renderer.v1.Renderer;
-import net.fabricmc.fabric.api.client.renderer.v1.sprite.FabricPreparations;
-import net.fabricmc.fabric.api.client.renderer.v1.sprite.FabricTextureAtlas;
 import net.fabricmc.fabric.api.client.renderer.v1.sprite.SpriteFinder;
-import net.fabricmc.fabric.api.client.renderer.v1.sprite.SpriteFinderGetter;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.resources.model.geometry.BakedQuad;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.core.Vec3i;
 import org.jetbrains.annotations.Nullable;
 
-import com.woalk.mods.bitsandchisels.duck.CubeRenderStuff;
+import com.woalk.mods.bitsandchisels.utils.CubeRenderStuff;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;

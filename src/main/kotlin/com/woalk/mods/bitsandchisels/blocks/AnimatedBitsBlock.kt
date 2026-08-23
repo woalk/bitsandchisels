@@ -1,7 +1,6 @@
 package com.woalk.mods.bitsandchisels.blocks
 
-import com.woalk.mods.bitsandchisels.BitsBlock
-import com.woalk.mods.bitsandchisels.ItemHelpers
+import com.woalk.mods.bitsandchisels.utils.ItemHelpers
 import com.woalk.mods.bitsandchisels.registry.ModBlockEntities
 import net.minecraft.world.level.block.RenderShape
 import net.minecraft.world.level.block.state.BlockState

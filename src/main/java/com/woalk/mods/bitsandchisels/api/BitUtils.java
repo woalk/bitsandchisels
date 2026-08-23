@@ -10,9 +10,9 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.item.component.CustomData;
 import org.jetbrains.annotations.Nullable;
 
-import com.woalk.mods.bitsandchisels.BitNbtUtil;
+import com.woalk.mods.bitsandchisels.utils.BitNbtUtil;
 import com.woalk.mods.bitsandchisels.BitsAndChisels;
-import com.woalk.mods.bitsandchisels.BitsBlockEntity;
+import com.woalk.mods.bitsandchisels.blocks.BitsBlockEntity;
 import it.unimi.dsi.fastutil.objects.Object2IntArrayMap;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import net.minecraft.world.level.block.state.BlockState;

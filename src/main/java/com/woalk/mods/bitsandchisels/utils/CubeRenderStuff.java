@@ -1,4 +1,4 @@
-package com.woalk.mods.bitsandchisels.duck;
+package com.woalk.mods.bitsandchisels.utils;
 
 import net.minecraft.client.resources.model.geometry.BakedQuad;
 import net.minecraft.world.level.block.state.BlockState;

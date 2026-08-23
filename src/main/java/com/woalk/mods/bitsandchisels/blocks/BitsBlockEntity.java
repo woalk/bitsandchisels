@@ -1,9 +1,12 @@
-package com.woalk.mods.bitsandchisels;
+package com.woalk.mods.bitsandchisels.blocks;
 
 import com.google.gson.JsonParser;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.JsonOps;
+import com.woalk.mods.bitsandchisels.utils.BitNbtUtil;
+import com.woalk.mods.bitsandchisels.BitsAndChisels;
 import com.woalk.mods.bitsandchisels.mixin.CubeVoxelShapeFactory;
+import com.woalk.mods.bitsandchisels.render.BitMeshes;
 import net.fabricmc.fabric.api.blockgetter.v2.RenderDataBlockEntity;
 import net.fabricmc.fabric.api.client.renderer.v1.mesh.Mesh;
 import net.minecraft.core.HolderLookup;
@@ -40,7 +43,6 @@ import org.jspecify.annotations.NonNull;
 
 import java.util.List;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 public class BitsBlockEntity extends BlockEntity implements RenderDataBlockEntity, Nameable {
     protected BlockState[][][] states;

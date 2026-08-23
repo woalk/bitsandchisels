@@ -1,7 +1,7 @@
 package com.woalk.mods.bitsandchisels.image
 
 import com.woalk.mods.bitsandchisels.BitsAndChisels
-import com.woalk.mods.bitsandchisels.BitsBlock
+import com.woalk.mods.bitsandchisels.blocks.BitsBlock
 import net.minecraft.world.level.block.state.BlockState
 import net.minecraft.resources.Identifier
 import java.lang.IllegalArgumentException

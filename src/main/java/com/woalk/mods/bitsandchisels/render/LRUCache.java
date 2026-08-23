@@ -1,4 +1,4 @@
-package com.woalk.mods.bitsandchisels;
+package com.woalk.mods.bitsandchisels.render;
 
 import java.util.LinkedHashMap;
 import java.util.Map.Entry;

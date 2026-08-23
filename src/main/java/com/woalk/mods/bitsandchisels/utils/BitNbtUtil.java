@@ -1,4 +1,4 @@
-package com.woalk.mods.bitsandchisels;
+package com.woalk.mods.bitsandchisels.utils;
 
 import java.util.ArrayList;
 

@@ -1,15 +1,13 @@
 package com.woalk.mods.bitsandchisels.blocks
 
-import com.woalk.mods.bitsandchisels.BitMeshes
-import com.woalk.mods.bitsandchisels.BitNbtUtil
+import com.woalk.mods.bitsandchisels.render.BitMeshes
+import com.woalk.mods.bitsandchisels.utils.BitNbtUtil
 import com.woalk.mods.bitsandchisels.BitsAndChisels
-import com.woalk.mods.bitsandchisels.BitsBlockEntity
 import com.woalk.mods.bitsandchisels.registry.ModBlockEntities
 import net.fabricmc.fabric.api.client.renderer.v1.mesh.Mesh
 import net.minecraft.world.level.block.state.BlockState
 import net.minecraft.world.level.block.Blocks
 import net.minecraft.nbt.CompoundTag
-import net.minecraft.nbt.Tag
 import net.minecraft.nbt.ListTag
 import net.minecraft.core.BlockPos
 import net.minecraft.world.level.storage.ValueInput

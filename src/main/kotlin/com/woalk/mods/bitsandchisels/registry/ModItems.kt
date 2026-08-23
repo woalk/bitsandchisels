@@ -1,11 +1,11 @@
 package com.woalk.mods.bitsandchisels.registry
 
-import com.woalk.mods.bitsandchisels.BitItem
+import com.woalk.mods.bitsandchisels.blocks.BitItem
 import com.woalk.mods.bitsandchisels.BitsAndChisels
 import com.woalk.mods.bitsandchisels.blocks.BitStructureItem
 import com.woalk.mods.bitsandchisels.blocks.BitsBlockItem
 import com.woalk.mods.bitsandchisels.chisel.*
-import com.woalk.mods.bitsandchisels.wrench.WrenchItem
+import com.woalk.mods.bitsandchisels.chisel.WrenchItem
 import net.minecraft.core.registries.BuiltInRegistries
 import net.minecraft.core.registries.Registries
 import net.minecraft.resources.Identifier

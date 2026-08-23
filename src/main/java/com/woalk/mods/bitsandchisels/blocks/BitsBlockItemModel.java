@@ -1,6 +1,8 @@
-package com.woalk.mods.bitsandchisels;
+package com.woalk.mods.bitsandchisels.blocks;
 
-import com.woalk.mods.bitsandchisels.blocks.AnimatedBitsBlockEntity;
+import com.woalk.mods.bitsandchisels.utils.BitNbtUtil;
+import com.woalk.mods.bitsandchisels.render.BitMeshes;
+import com.woalk.mods.bitsandchisels.render.LRUCache;
 import net.fabricmc.fabric.api.client.renderer.v1.mesh.Mesh;
 import net.fabricmc.fabric.api.client.renderer.v1.mesh.QuadEmitter;
 import net.fabricmc.fabric.api.client.renderer.v1.render.FabricLayerRenderState;
@@ -10,7 +12,6 @@ import net.minecraft.client.renderer.item.ItemModelResolver;
 import net.minecraft.client.renderer.item.ItemStackRenderState;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.Tag;
 import net.minecraft.world.entity.ItemOwner;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;

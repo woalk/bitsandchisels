@@ -1,5 +1,6 @@
-package com.woalk.mods.bitsandchisels;
+package com.woalk.mods.bitsandchisels.blocks;
 
+import com.woalk.mods.bitsandchisels.utils.BitNbtUtil;
 import com.woalk.mods.bitsandchisels.api.BitUtils;
 import com.woalk.mods.bitsandchisels.api.client.RedBoxCallback;
 import com.woalk.mods.bitsandchisels.networking.BitPacket;
@@ -7,10 +8,8 @@ import com.woalk.mods.bitsandchisels.registry.ModPermissions;
 import io.netty.buffer.Unpooled;
 import me.lucko.fabric.api.permissions.v0.Permissions;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
-import net.fabricmc.fabric.api.networking.v1.PacketSender;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.core.component.DataComponents;
-import net.minecraft.world.item.Item.Properties;
 import net.minecraft.world.item.component.TooltipDisplay;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.Blocks;
@@ -21,22 +20,16 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.network.ServerGamePacketListenerImpl;
-import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.ChatFormatting;
 import net.minecraft.world.InteractionHand;
-import net.minecraft.resources.Identifier;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.level.Level;
-import org.jetbrains.annotations.Nullable;
 
-import java.util.List;
 import java.util.function.Consumer;
 
 public class BitItem extends Item implements ServerPlayNetworking.PlayPayloadHandler<BitPacket> {

@@ -1,4 +1,4 @@
-package com.woalk.mods.bitsandchisels;
+package com.woalk.mods.bitsandchisels.utils;
 
 import java.net.URI;
 import java.nio.file.Path;

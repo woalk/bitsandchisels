@@ -1,7 +1,7 @@
 package com.woalk.mods.bitsandchisels.image
 
-import com.woalk.mods.bitsandchisels.BitsBlock
-import com.woalk.mods.bitsandchisels.BitsBlockEntity
+import com.woalk.mods.bitsandchisels.blocks.BitsBlock
+import com.woalk.mods.bitsandchisels.blocks.BitsBlockEntity
 import com.woalk.mods.bitsandchisels.api.BitUtils
 import net.minecraft.world.entity.player.Player
 import net.minecraft.network.chat.Component

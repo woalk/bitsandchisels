@@ -1,6 +1,6 @@
 package com.woalk.mods.bitsandchisels.chisel
 
-import com.woalk.mods.bitsandchisels.BitsBlock
+import com.woalk.mods.bitsandchisels.blocks.BitsBlock
 import com.woalk.mods.bitsandchisels.registry.ModPermissions
 import me.lucko.fabric.api.permissions.v0.Permissions
 import net.minecraft.world.item.TooltipFlag
@@ -8,8 +8,6 @@ import net.minecraft.world.item.Item
 import net.minecraft.world.item.ItemStack
 import net.minecraft.world.item.ItemUtils
 import net.minecraft.world.item.context.UseOnContext
-import net.minecraft.nbt.Tag
-import net.minecraft.nbt.StringTag
 import net.minecraft.sounds.SoundEvents
 import net.minecraft.stats.Stats
 import net.minecraft.network.chat.Component
@@ -18,7 +16,6 @@ import net.minecraft.ChatFormatting
 import net.minecraft.core.component.DataComponents
 import net.minecraft.world.item.component.ItemLore
 import net.minecraft.world.item.component.TooltipDisplay
-import net.minecraft.world.level.Level
 import java.util.function.Consumer
 
 class DuplicationKit(settings: Properties) : Item(settings) {

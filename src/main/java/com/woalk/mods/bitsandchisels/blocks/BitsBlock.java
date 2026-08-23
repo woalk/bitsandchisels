@@ -1,8 +1,9 @@
-package com.woalk.mods.bitsandchisels;
+package com.woalk.mods.bitsandchisels.blocks;
 
 import com.mojang.serialization.MapCodec;
+import com.woalk.mods.bitsandchisels.BitsAndChisels;
+import com.woalk.mods.bitsandchisels.utils.ItemHelpers;
 import com.woalk.mods.bitsandchisels.api.BitUtils;
-import com.woalk.mods.bitsandchisels.blocks.BitStructureItem;
 import com.woalk.mods.bitsandchisels.registry.ModItems;
 import com.woalk.mods.bitsandchisels.utils.DirectionUtilsKt;
 import net.fabricmc.api.EnvType;
