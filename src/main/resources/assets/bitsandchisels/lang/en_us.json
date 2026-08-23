@@ -1,5 +1,6 @@
 {
-    "tab.bitsandchisels": "Bits And Chisels",
+    "tab.bitsandchisels": "Bits & Chisels - Chisels",
+    "tab.bitsandchisels.bits": "Bits & Chisels - Bits",
     "item.bitsandchisels.bit_item": "%s Bit",
     "item.bitsandchisels.diamond_chisel": "Simple Diamond Chisel",
     "item.bitsandchisels.ender_chisel": "Ender Chisel",
