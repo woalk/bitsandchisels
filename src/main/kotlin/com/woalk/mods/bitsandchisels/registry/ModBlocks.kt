@@ -15,11 +15,12 @@ import net.minecraft.core.BlockPos
 import net.minecraft.core.Registry
 import net.minecraft.core.registries.BuiltInRegistries
 import net.minecraft.references.BlockItemId
-import net.minecraft.world.item.DyeColor
 import net.minecraft.world.item.Item
 import net.minecraft.world.level.BlockGetter
 import net.minecraft.world.level.block.state.BlockBehaviour
 import net.minecraft.world.level.block.state.BlockState
+import net.minecraft.world.level.material.MapColor
+import net.minecraft.world.level.material.PushReaction
 
 @Suppress("unused")
 object ModBlocks : ModRegister<Pair<Block, (() -> Item.Properties)?>, Block>(BuiltInRegistries.BLOCK) {
@@ -36,8 +37,14 @@ object ModBlocks : ModRegister<Pair<Block, (() -> Item.Properties)?>, Block>(Bui
         BlockBehaviour.Properties.ofFullCopy(Blocks.CONCRETE.white)
     )
     val barrierBlock = register("barrier",
-        { TransparentBlock(it) },
-        BlockBehaviour.Properties.ofFullCopy(Blocks.BARRIER).mapColor(DyeColor.GRAY)
+        { OcclusionBlock(it) },
+		BlockBehaviour.Properties.of()
+			.strength(-1.0F, 3600000.8F)
+			.mapColor(MapColor.NONE)
+			.noLootTable()
+            .dynamicShape()
+			.isValidSpawn(Blocks::never)
+			.pushReaction(PushReaction.BLOCK)
     ) { Item.Properties() }
     //endregion
 
