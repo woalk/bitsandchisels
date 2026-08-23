@@ -3,6 +3,7 @@ package com.woalk.mods.bitsandchisels;
 import com.woalk.mods.bitsandchisels.blocks.BitsBlock;
 import com.woalk.mods.bitsandchisels.blocks.BitsBlockEntity;
 import net.minecraft.core.registries.BuiltInRegistries;
+import com.woalk.mods.bitsandchisels.mixin.V99Accessor;
 import net.minecraft.references.BlockItemId;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import org.slf4j.Logger;
@@ -32,6 +33,11 @@ public class BitsAndChisels implements ModInitializer {
 		// Proceed with mild caution.
 		Registry.register(BuiltInRegistries.BLOCK, BITS_BLOCK_ID, BITS_BLOCK);
 		BITS_BLOCK_ENTITY = Registry.register(BuiltInRegistries.BLOCK_ENTITY_TYPE, Identifier.fromNamespaceAndPath(MODID, "bits_block_entity"), FabricBlockEntityTypeBuilder.create(BitsBlockEntity::new, BITS_BLOCK).build(null));
+
+		// Register item-to-block-entity mappings for the data fixer so that
+		// old worlds without an "id" in block_entity_data can be upgraded.
+		V99Accessor.getItemToBlockEntity().put(MODID + ":bits_block", MODID + ":bits_block_entity");
+		V99Accessor.getItemToBlockEntity().put(MODID + ":animated_bits_block", MODID + ":animated_bits_block");
 
 		BITS_BLOCK.initServer();
 	}
