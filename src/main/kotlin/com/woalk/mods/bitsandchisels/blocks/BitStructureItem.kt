@@ -1,6 +1,9 @@
 package com.woalk.mods.bitsandchisels.blocks
 
+import com.sk89q.worldedit.coremc.internal.NBTConverter
+import com.sk89q.worldedit.math.transform.AffineTransform
 import com.woalk.mods.bitsandchisels.BitsAndChisels
+import com.woalk.mods.bitsandchisels.compat.ChiselExtent
 import com.woalk.mods.bitsandchisels.utils.rotate
 import com.woalk.mods.bitsandchisels.utils.toYaw
 import net.minecraft.advancements.triggers.CriteriaTriggers
@@ -87,8 +90,12 @@ class BitStructureItem(settings: Properties) : Item(settings) {
                 val nbtCompound2: CompoundTag = blockEntity.saveWithoutMetadata(context.level.registryAccess())
                 val nbtCompound3 = nbtCompound2.copy()
                 nbtCompound2.merge(tag)
-                // TODO: WorldEdit rotation support needs updating for 26.2
-                // ChiselExtent rotation was removed as NBTConverter API changed
+                val nbtCompound4 = NBTConverter.fromNative(nbtCompound2)
+                val nbtCompound5 = NBTConverter.toNative(
+                    ChiselExtent.apply(AffineTransform().rotateY(rotation.toDouble()), nbtCompound4)
+                )
+                nbtCompound2.put("bits_v2", nbtCompound5.get("bits_v2")!!)
+                nbtCompound2.put("palette", nbtCompound5.get("palette")!!)
                 nbtCompound2.store("StructureId", UUIDUtil.CODEC, structureId)
                 val name = itemStack.components.get(DataComponents.CUSTOM_NAME)
                 blockEntity.customName = name

@@ -1,7 +1,10 @@
 package com.woalk.mods.bitsandchisels.blocks
 
+import com.sk89q.worldedit.coremc.internal.NBTConverter
+import com.sk89q.worldedit.math.transform.AffineTransform
 import com.woalk.mods.bitsandchisels.BitsAndChisels
 import com.woalk.mods.bitsandchisels.blocks.BitStructureItem.Companion.NBT_ROTATION
+import com.woalk.mods.bitsandchisels.compat.ChiselExtent
 import com.woalk.mods.bitsandchisels.utils.toYaw
 import net.minecraft.world.level.block.Block
 import net.minecraft.world.item.TooltipFlag
@@ -15,7 +18,6 @@ import net.minecraft.world.InteractionResult
 import net.minecraft.ChatFormatting
 import net.minecraft.core.Direction
 import net.minecraft.core.component.DataComponents
-import net.minecraft.nbt.CompoundTag
 import kotlin.math.roundToInt
 import java.util.function.Consumer
 
@@ -23,12 +25,17 @@ class BitsBlockItem(block: Block, settings: Properties) : BlockItem(block, setti
     override fun place(context: BlockPlaceContext): InteractionResult {
         val stack = context.itemInHand
         val blockEntityData = stack.get(DataComponents.BLOCK_ENTITY_DATA)
-        val nbt: CompoundTag? = blockEntityData?.getUnsafe()?.copy()
-        if (nbt != null && !context.level.isClientSide && nbt.contains(NBT_ROTATION)) {
-            val rotation =
-                ((Direction.from3DDataValue(nbt.getIntOr(NBT_ROTATION, 0)).getUnitVec3i().toYaw() - context.rotation) / 90).roundToInt()
-            // TODO: WorldEdit rotation support needs updating for 26.2
-            // ChiselExtent rotation was removed as NBTConverter API changed
+        val nbt = blockEntityData?.copyTagWithoutId()?.apply {
+            if (!context.level.isClientSide && this.contains(NBT_ROTATION)) {
+                val rotation =
+                    ((Direction.from3DDataValue(this.getIntOr(NBT_ROTATION, 0)).unitVec3i.toYaw() - context.rotation) / 90).roundToInt()
+                val weConvertedNbt = NBTConverter.fromNative(this)
+                val rotatedNbt = NBTConverter.toNative(
+                    ChiselExtent.apply(AffineTransform().rotateY(rotation * 90.0), weConvertedNbt)
+                )
+                this.put("bits_v2", rotatedNbt.get("bits_v2")!!)
+                this.put("palette", rotatedNbt.get("palette")!!)
+            }
         }
         val newContext = if (nbt != null) {
             val newStack = stack.copy()

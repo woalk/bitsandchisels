@@ -142,8 +142,12 @@ public class BitsBlock extends BaseEntityBlock implements SimpleWaterloggedBlock
             }
         }
         if (blockEntity.getStructureId() != null && (player == null || !player.isShiftKeyDown())) {
-            return tryGetStructure(world, pos, blockEntity, player, breakBlock);
-        } else {
+            final var structureStack = tryGetStructure(world, pos, blockEntity, player, breakBlock);
+            if (structureStack != null) {
+                return structureStack;
+            } // else
+        } // else ^+
+        {
             // no structure ID, or drop not successful
             final var stack = ItemHelpers.blockToItem(this, state, blockEntity);
             if (player != null) {
@@ -337,8 +341,12 @@ public class BitsBlock extends BaseEntityBlock implements SimpleWaterloggedBlock
             final var blockEntity = world.getBlockEntity(pos, BitsAndChisels.BITS_BLOCK_ENTITY).orElse(null);
             if (blockEntity != null) {
                 if (blockEntity.getStructureId() != null) {
-                    return tryGetStructure(world, pos, blockEntity, player, false);
-                } else {
+                    final var structureStack = tryGetStructure(world, pos, blockEntity, player, false);
+                    if (structureStack != null) {
+                        return structureStack;
+                    } // else
+                } // else ^+
+                {
                     final var stack = ItemHelpers.blockToItem(this, state, blockEntity);
                     final var rotation = DirectionUtilsKt.getNearestDirectionForVector(pos.subtract(player.blockPosition()));
                     final var data = stack.get(DataComponents.BLOCK_ENTITY_DATA);
