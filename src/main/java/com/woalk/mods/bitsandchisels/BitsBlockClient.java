@@ -1,6 +1,9 @@
-package com.woalk.mods.bitsandchisels.blocks;
+package com.woalk.mods.bitsandchisels;
 
-import com.woalk.mods.bitsandchisels.BitsAndChisels;
+import com.woalk.mods.bitsandchisels.blocks.BitItemModel;
+import com.woalk.mods.bitsandchisels.blocks.BitStructureItemModel;
+import com.woalk.mods.bitsandchisels.blocks.BitsBlockItemModel;
+import com.woalk.mods.bitsandchisels.blocks.BitsBlockModel;
 import com.woalk.mods.bitsandchisels.registry.ModBlocks;
 import com.woalk.mods.bitsandchisels.registry.ModItems;
 

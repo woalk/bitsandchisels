@@ -32,6 +32,8 @@ public class BitsAndChisels implements ModInitializer {
 		// Proceed with mild caution.
 		Registry.register(BuiltInRegistries.BLOCK, BITS_BLOCK_ID, BITS_BLOCK);
 		BITS_BLOCK_ENTITY = Registry.register(BuiltInRegistries.BLOCK_ENTITY_TYPE, Identifier.fromNamespaceAndPath(MODID, "bits_block_entity"), FabricBlockEntityTypeBuilder.create(BitsBlockEntity::new, BITS_BLOCK).build(null));
+
+		BITS_BLOCK.initServer();
 	}
 	
 }

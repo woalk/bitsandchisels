@@ -2,16 +2,20 @@ package com.woalk.mods.bitsandchisels.blocks;
 
 import com.mojang.serialization.MapCodec;
 import com.woalk.mods.bitsandchisels.BitsAndChisels;
+import com.woalk.mods.bitsandchisels.registry.ModTagKeys;
+import com.woalk.mods.bitsandchisels.render.RedBoxPipeline;
 import com.woalk.mods.bitsandchisels.utils.ItemHelpers;
 import com.woalk.mods.bitsandchisels.api.BitUtils;
 import com.woalk.mods.bitsandchisels.registry.ModItems;
 import com.woalk.mods.bitsandchisels.utils.DirectionUtilsKt;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
+import net.fabricmc.fabric.api.event.player.PlayerPickItemEvents;
 import net.minecraft.core.UUIDUtil;
 import net.minecraft.core.component.DataComponentPatch;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.Registries;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.item.component.CustomData;
 import net.minecraft.world.item.component.ItemLore;
@@ -48,7 +52,8 @@ import net.minecraft.core.Vec3i;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import net.minecraft.world.phys.shapes.Shapes;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 
@@ -110,6 +115,15 @@ public class BitsBlock extends BaseEntityBlock implements SimpleWaterloggedBlock
 
     protected BlockState playerWillDestroyBlock(Level world, BlockPos pos, BlockState state, Player player) {
         return super.playerWillDestroy(world, pos, state, player);
+    }
+
+    public void initServer() {
+        PlayerPickItemEvents.BLOCK.register((player, pos, state, _) -> {
+            if (state.is(this)) {
+                return pickBitServer(player, pos, state);
+            }
+            return null;
+        });
     }
 
     @Nullable
@@ -251,8 +265,8 @@ public class BitsBlock extends BaseEntityBlock implements SimpleWaterloggedBlock
     }
 
     @Override
-    protected ItemStack getCloneItemStack(LevelReader world, BlockPos pos, BlockState state, boolean includeData) {
-        if (!(world instanceof ServerLevel)) {
+    protected @NonNull ItemStack getCloneItemStack(LevelReader world, @NonNull BlockPos pos, @NonNull BlockState state, boolean includeData) {
+        if (world.isClientSide()) {
             final var bitStack = pickBitClient(world, pos, state);
             if (bitStack != null) return bitStack;
         }
@@ -264,19 +278,17 @@ public class BitsBlock extends BaseEntityBlock implements SimpleWaterloggedBlock
         }
     }
 
+    @Deprecated
     @Environment(EnvType.CLIENT)
     private ItemStack pickBitClient(BlockGetter world, BlockPos pos, BlockState state) {
         Minecraft client = Minecraft.getInstance();
         Player player = client.player;
-        if (player != null && Minecraft.getInstance().hasShiftDown()) {
+        if (player != null && client.hasShiftDown()) {
             if (player.getMainHandItem().is(TagKey.create(Registries.ITEM, Identifier.fromNamespaceAndPath(BitsAndChisels.MODID, "chisel")))) {
                 HitResult hit = client.hitResult;
                 if (hit != null && hit.getType() == HitResult.Type.BLOCK && world instanceof Level) {
-                    Direction direction = ((BlockHitResult) hit).getDirection();
-                    int x = (int) Math.floor(((hit.getLocation().x() - pos.getX()) * 16) + (direction.getStepX() * -0.5d));
-                    int y = (int) Math.floor(((hit.getLocation().y() - pos.getY()) * 16) + (direction.getStepY() * -0.5d));
-                    int z = (int) Math.floor(((hit.getLocation().z() - pos.getZ()) * 16) + (direction.getStepZ() * -0.5d));
-                    BlockState bit = BitUtils.getBit((Level) world, pos, x, y, z);
+                    final var bitPos = RedBoxPipeline.Shape.bitPosition((BlockHitResult) hit);
+                    BlockState bit = BitUtils.getBit((Level) world, pos, bitPos.getX(), bitPos.getY(), bitPos.getZ());
                     if (BitUtils.exists(bit)) {
                         return BitUtils.getBitItemStack(bit);
                     }
@@ -301,6 +313,43 @@ public class BitsBlock extends BaseEntityBlock implements SimpleWaterloggedBlock
                         nbt.putInt(BitStructureItem.NBT_ROTATION, rotation.get3DDataValue());
                         stack.set(DataComponents.BLOCK_ENTITY_DATA, TypedEntityData.of(BitsAndChisels.BITS_BLOCK_ENTITY, nbt));
                     }
+                    return stack;
+                }
+            }
+        }
+        return null;
+    }
+
+    private @Nullable ItemStack pickBitServer(@NonNull ServerPlayer player, @NonNull BlockPos pos, @NonNull BlockState state) {
+        final ServerLevel world = player.level();
+        if (player.isShiftKeyDown()) {
+            if (player.getMainHandItem().is(ModTagKeys.INSTANCE.getChisel())) {
+                HitResult hit = player.pick(player.blockInteractionRange(), 0.0f, false);
+                if (hit.getType() == HitResult.Type.BLOCK) {
+                    final var bitPos = RedBoxPipeline.Shape.bitPosition((BlockHitResult) hit);
+                    BlockState bit = BitUtils.getBit(world, pos, bitPos.getX(), bitPos.getY(), bitPos.getZ());
+                    if (BitUtils.exists(bit)) {
+                        return BitUtils.getBitItemStack(bit);
+                    }
+                }
+            }
+        } else {
+            final var blockEntity = world.getBlockEntity(pos, BitsAndChisels.BITS_BLOCK_ENTITY).orElse(null);
+            if (blockEntity != null) {
+                if (blockEntity.getStructureId() != null) {
+                    return tryGetStructure(world, pos, blockEntity, player, false);
+                } else {
+                    final var stack = ItemHelpers.blockToItem(this, state, blockEntity);
+                    final var rotation = DirectionUtilsKt.getNearestDirectionForVector(pos.subtract(player.blockPosition()));
+                    final var data = stack.get(DataComponents.BLOCK_ENTITY_DATA);
+                    CompoundTag nbt;
+                    if (data != null) {
+                        nbt = data.copyTagWithoutId();
+                    } else {
+                        nbt = new CompoundTag();
+                    }
+                    nbt.putInt(BitStructureItem.NBT_ROTATION, rotation.get3DDataValue());
+                    stack.set(DataComponents.BLOCK_ENTITY_DATA, TypedEntityData.of(BitsAndChisels.BITS_BLOCK_ENTITY, nbt));
                     return stack;
                 }
             }
