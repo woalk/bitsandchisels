@@ -371,8 +371,8 @@ public class BitsBlock extends BaseEntityBlock implements SimpleWaterloggedBlock
     }
     
     @Override
-    public VoxelShape getShape(BlockState state, BlockGetter world, BlockPos pos, CollisionContext context) {
-        if (world.getBlockEntity(pos) instanceof BitsBlockEntity be) {
+    public @NonNull VoxelShape getShape(@NonNull BlockState state, @Nullable BlockGetter world, @NonNull BlockPos pos, @NonNull CollisionContext context) {
+        if (world != null && world.getBlockEntity(pos) instanceof BitsBlockEntity be) {
             return be.shape;
         }
         return Shapes.empty();
