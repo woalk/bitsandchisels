@@ -1,5 +1,5 @@
 {
-    "itemGroup.bitsandchisels.bitsandchisels": "Bits And Chisels",
+    "tab.bitsandchisels": "Bits And Chisels",
     "item.bitsandchisels.bit_item": "%s Bit",
     "item.bitsandchisels.diamond_chisel": "Simple Diamond Chisel",
     "item.bitsandchisels.ender_chisel": "Ender Chisel",
@@ -21,6 +21,7 @@
     "item.bitsandchisels.bit_structure.desc": "Contains %d blocks",
     "block.woalk.coloured_block": "Custom-Colored Block",
     "block.woalk.barrier": "Fake Barrier",
+    "item.woalk.barrier": "Fake Barrier",
     "gui.bitsandchisels.shader_types": "Available shader_type values:",
     "gui.bitsandchisels.shader_type.explain": "\n%s: %s",
     "gui.bitsandchisels.shader_type.tooltip": "Shader Type: %s",
