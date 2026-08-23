@@ -15,6 +15,7 @@ import net.minecraft.core.BlockPos
 import net.minecraft.core.Registry
 import net.minecraft.core.registries.BuiltInRegistries
 import net.minecraft.references.BlockItemId
+import net.minecraft.world.item.DyeColor
 import net.minecraft.world.item.Item
 import net.minecraft.world.level.BlockGetter
 import net.minecraft.world.level.block.state.BlockBehaviour
@@ -35,10 +36,8 @@ object ModBlocks : ModRegister<Pair<Block, (() -> Item.Properties)?>, Block>(Bui
         BlockBehaviour.Properties.ofFullCopy(Blocks.CONCRETE.white)
     )
     val barrierBlock = register("barrier",
-        { Block(it) },
-        BlockBehaviour.Properties.of()
-            .noOcclusion()
-            .destroyTime(0.3f)
+        { TransparentBlock(it) },
+        BlockBehaviour.Properties.ofFullCopy(Blocks.BARRIER).mapColor(DyeColor.GRAY)
     ) { Item.Properties() }
     //endregion
 
