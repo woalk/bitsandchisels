@@ -1,14 +1,13 @@
 package com.woalk.mods.bitsandchisels.registry
 
-import com.woalk.mods.bitsandchisels.blocks.BitItem
 import com.woalk.mods.bitsandchisels.BitsAndChisels
 import com.woalk.mods.bitsandchisels.api.BitUtils
+import com.woalk.mods.bitsandchisels.blocks.BitItem
 import com.woalk.mods.bitsandchisels.blocks.BitStructureItem
 import com.woalk.mods.bitsandchisels.blocks.BitsBlockItem
 import com.woalk.mods.bitsandchisels.chisel.*
-import com.woalk.mods.bitsandchisels.chisel.WrenchItem
+import com.woalk.mods.bitsandchisels.utils.Heuristic
 import net.fabricmc.fabric.api.creativetab.v1.FabricCreativeModeTab
-import net.minecraft.core.BlockPos
 import net.minecraft.core.Registry
 import net.minecraft.core.registries.BuiltInRegistries
 import net.minecraft.core.registries.Registries
@@ -17,8 +16,6 @@ import net.minecraft.resources.Identifier
 import net.minecraft.resources.ResourceKey
 import net.minecraft.world.item.Item
 import net.minecraft.world.item.ItemStack
-import net.minecraft.world.level.EmptyBlockGetter
-import net.minecraft.world.level.block.Block
 import net.minecraft.world.level.block.Blocks
 
 @Suppress("unused")
@@ -79,9 +76,7 @@ object ModItems: ModRegister<Item, Item>(BuiltInRegistries.ITEM) {
         .title(Component.translatable("tab.bitsandchisels.bits"))
         .displayItems { parameters, output ->
             for (block in BuiltInRegistries.BLOCK) {
-                if (Block.isShapeFullBlock(block.defaultBlockState().getShape(EmptyBlockGetter.INSTANCE, BlockPos.ZERO))
-                    && block.defaultBlockState().isCollisionShapeFullBlock(EmptyBlockGetter.INSTANCE, BlockPos.ZERO)
-                    && !block.hasDynamicShape()) {
+                if (Heuristic.isFullBlock(block.defaultBlockState())) {
                     output.accept(BitUtils.getBitItemStack(block.defaultBlockState()))
                 }
             }

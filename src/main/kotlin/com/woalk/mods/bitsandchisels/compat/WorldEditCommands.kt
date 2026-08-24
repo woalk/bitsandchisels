@@ -20,6 +20,7 @@ import com.woalk.mods.bitsandchisels.api.BitUtils
 import com.woalk.mods.bitsandchisels.blocks.BitStructureItem
 import com.woalk.mods.bitsandchisels.registry.ModPermissions
 import com.woalk.mods.bitsandchisels.utils.DirectionArgumentType
+import com.woalk.mods.bitsandchisels.utils.Heuristic
 import me.lucko.fabric.api.permissions.v0.Permissions
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback
 import net.minecraft.world.level.block.*
@@ -76,14 +77,9 @@ object WorldEditCommands : IModRegister {
                                 )
                                 val blockId = block.block.builtInRegistryHolder().key().identifier()
                                 val fullBlock = findBlock(block, blockId, fullBlockHeuristic)
-                                bitsOut[i][j][k] = if (onlyFullBlocks) if (
-                                    fullBlock.renderShape != RenderShape.MODEL ||
-                                    fullBlock.block.hasDynamicShape() ||
-                                    fullBlock.useShapeForLightOcclusion() ||
-                                    fullBlock.block is FaceAttachedHorizontalDirectionalBlock ||
-                                    fullBlock.block is LeavesBlock ||
-                                    !fullBlock.isCollisionShapeFullBlock(ctx.source.level, ctx.source.player!!.blockPosition())
-                                ) Blocks.AIR.defaultBlockState() else fullBlock else block
+                                bitsOut[i][j][k] = if (onlyFullBlocks) if (!Heuristic.isFullBlock(
+                                        fullBlock, ctx.source.level, ctx.source.player!!.blockPosition()
+                                )) Blocks.AIR.defaultBlockState() else fullBlock else block
                             }
                         }
                     }
