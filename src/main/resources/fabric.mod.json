@@ -41,6 +41,7 @@
     "fabric-api": "*"
   },
   "recommends": {
-    "worldedit": "*"
+    "worldedit": "*",
+    "woalk-datafixer": ">=1.1.0"
   }
 }

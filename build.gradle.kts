@@ -1,3 +1,5 @@
+import java.net.URI
+
 plugins {
     id("net.fabricmc.fabric-loom") version "1.17.18"
     val kotlinVersion = "2.4.10"
@@ -14,6 +16,17 @@ group = mavenGroup
 repositories {
     maven("https://jitpack.io")
     maven("https://maven.enginehub.org/repo/")
+    exclusiveContent {
+        forRepository {
+            maven {
+                name = "Modrinth"
+                url = URI("https://api.modrinth.com/maven")
+            }
+        }
+        filter {
+            includeGroup("maven.modrinth")
+        }
+    }
 }
 dependencies {
     val minecraftVersion = providers.gradleProperty("minecraftVersion").get()
@@ -30,6 +43,9 @@ dependencies {
 
     val worldEditVersion = providers.gradleProperty("worldEditVersion").get()
     implementation("com.sk89q.worldedit:worldedit-fabric-mc${minecraftVersion}:$worldEditVersion")
+
+    // Woalk Datafixer
+    compileOnly("maven.modrinth:eolKiaOU:vJlO1MKg")
 }
 tasks {
     val javaVersion = JavaVersion.VERSION_25

@@ -4,6 +4,8 @@ import java.util.ArrayList;
 import java.util.Optional;
 
 import com.woalk.mods.bitsandchisels.blocks.ColoredBlockState;
+import com.woalk.mods.bitsandchisels.compat.WoalkDatafixerCompat;
+import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
@@ -80,10 +82,13 @@ public class BitNbtUtil {
         } else if (tag.contains(ColoredBlockState.TAG_COLOR)) {
             return new ColoredBlockState(tag.getInt(ColoredBlockState.TAG_COLOR).get());
         } else {
-            Optional<? extends Holder<Block>> blockHolder = tag.read("Name", ResourceKey.codec(Registries.BLOCK)).flatMap(BuiltInRegistries.BLOCK::get);
-            if (blockHolder.isEmpty()) {
-                tag = new CompoundTag();
-                tag.putString("Name", "wdf:unknown");
+            if (WoalkDatafixerCompat.isLoaded()) {
+                tag = WoalkDatafixerCompat.replaceBlockState(tag);
+                Optional<? extends Holder<Block>> blockHolder = tag.read("Name", ResourceKey.codec(Registries.BLOCK)).flatMap(BuiltInRegistries.BLOCK::get);
+                if (blockHolder.isEmpty()) {
+                    tag = new CompoundTag();
+                    tag.putString("Name", "wdf:unknown");
+                }
             }
             return NbtUtils.readBlockState(BuiltInRegistries.BLOCK, tag);
         }
