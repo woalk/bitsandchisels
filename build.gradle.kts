@@ -45,7 +45,7 @@ dependencies {
     implementation("com.sk89q.worldedit:worldedit-fabric-mc${minecraftVersion}:$worldEditVersion")
 
     // Woalk Datafixer
-    compileOnly("maven.modrinth:eolKiaOU:vJlO1MKg")
+    compileOnly("maven.modrinth:eolKiaOU:5VW2kQLR")
 }
 tasks {
     val javaVersion = JavaVersion.VERSION_25

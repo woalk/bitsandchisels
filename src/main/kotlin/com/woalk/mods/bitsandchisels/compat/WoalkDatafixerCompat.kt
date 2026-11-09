@@ -1,6 +1,6 @@
 package com.woalk.mods.bitsandchisels.compat
 
-import com.woalk.mods.datafixer.ConfigReader
+import com.woalk.mods.datafixer.Config
 import net.fabricmc.loader.api.FabricLoader
 import net.minecraft.nbt.CompoundTag
 
@@ -11,7 +11,7 @@ object WoalkDatafixerCompat {
     }
 
     private val blockMapping by lazy {
-        ConfigReader.blockMapping()
+        Config.instance.blockMapping()
     }
 
     @JvmStatic
