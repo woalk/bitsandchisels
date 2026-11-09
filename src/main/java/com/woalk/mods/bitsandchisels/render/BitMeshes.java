@@ -26,6 +26,7 @@ import net.minecraft.client.resources.model.sprite.Material;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.level.Level;
+import net.minecraft.util.ARGB;
 import org.joml.Vector3f;
 
 public class BitMeshes {
@@ -39,17 +40,29 @@ public class BitMeshes {
     private BitMeshes() { }
 
     public static Mesh createMesh(BlockState[][][] states, @Nullable Level world, @Nullable BlockPos pos, @Nullable Vec3i offset) {
+        return createMesh(states, world, pos, offset, false);
+    }
+
+    public static Mesh createAnimatedMesh(BlockState[][][] states, @Nullable Level world, @Nullable BlockPos pos, @Nullable Vec3i offset) {
+        return createMesh(states, world, pos, offset, true);
+    }
+
+    private static Mesh createMesh(BlockState[][][] states, @Nullable Level world, @Nullable BlockPos pos, @Nullable Vec3i offset, boolean shadeFaces) {
         if (builder == null) {
             builder = Objects.requireNonNull(Renderer.get()).mutableMesh();
         }
         builder.clear();
         QuadEmitter emitter = builder.emitter();
         Vector3f tmp = new Vector3f();
-        prepareMesh(states, world, pos, emitter, tmp, offset);
+        prepareMesh(states, world, pos, emitter, tmp, offset, shadeFaces);
         return builder.immutableCopy();
     }
 
     public static void prepareMesh(BlockState[][][] states, @Nullable Level world, @Nullable BlockPos pos, QuadEmitter emitter, Vector3f tmp, @Nullable Vec3i offset) {
+        prepareMesh(states, world, pos, emitter, tmp, offset, false);
+    }
+
+    private static void prepareMesh(BlockState[][][] states, @Nullable Level world, @Nullable BlockPos pos, QuadEmitter emitter, Vector3f tmp, @Nullable Vec3i offset, boolean shadeFaces) {
         boolean[][] used = new boolean[16][16];
         //X
         for (Direction d : X_DIRECTIONS) {
@@ -84,7 +97,7 @@ public class BitMeshes {
                             }
                         }
 
-                        doQuad(world, pos, emitter, tmp, d, state, cx, cy, cz, cx, cy2, cz2, offset);
+                        doQuad(world, pos, emitter, tmp, d, state, cx, cy, cz, cx, cy2, cz2, offset, shadeFaces);
                     }
                 }
             }
@@ -123,7 +136,7 @@ public class BitMeshes {
                             }
                         }
 
-                        doQuad(world, pos, emitter, tmp, d, state, cx, cy, cz, cx2, cy, cz2, offset);
+                        doQuad(world, pos, emitter, tmp, d, state, cx, cy, cz, cx2, cy, cz2, offset, shadeFaces);
                     }
                 }
             }
@@ -162,14 +175,14 @@ public class BitMeshes {
                             }
                         }
 
-                        doQuad(world, pos, emitter, tmp, d, state, cx, cy, cz, cx2, cy2, cz, offset);
+                        doQuad(world, pos, emitter, tmp, d, state, cx, cy, cz, cx2, cy2, cz, offset, shadeFaces);
                     }
                 }
             }
         }
     }
 
-    private static void doQuad(@Nullable Level world, @Nullable BlockPos pos, QuadEmitter emitter, Vector3f tmp, Direction d, BlockState state, int minx, int miny, int minz, int maxx, int maxy, int maxz, @Nullable Vec3i offset) {
+    private static void doQuad(@Nullable Level world, @Nullable BlockPos pos, QuadEmitter emitter, Vector3f tmp, Direction d, BlockState state, int minx, int miny, int minz, int maxx, int maxy, int maxz, @Nullable Vec3i offset, boolean shadeFaces) {
         boolean isColoredBlock = state instanceof ColoredBlockState;
         CubeRenderStuff cubeRenderStuff = CubeRenderStuff.of(
                 isColoredBlock ? ((ColoredBlockState) state).getWrapped() : state
@@ -186,6 +199,16 @@ public class BitMeshes {
             } else if (vanillaQuad.materialInfo().isTinted()) {
                 int color = 0xFF000000 | ColorPolice.getBlockColor(state, (ClientLevel) world, pos, vanillaQuad.materialInfo().tintIndex());
                 quad.color(color, color, color, color);
+            }
+            if (shadeFaces && world != null) {
+                Direction shadeDirection = vanillaQuad.materialInfo().shadeDirectionOverride();
+                if (shadeDirection == null) {
+                    shadeDirection = vanillaQuad.direction();
+                }
+                float brightness = world.dimensionType().cardinalLightType().get().byFace(shadeDirection);
+                for (int i = 0; i < 4; i++) {
+                    quad.color(i, ARGB.scaleRGB(quad.color(i), brightness));
+                }
             }
             quad.cullFace(null);
             quad.nominalFace(d);

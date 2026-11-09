@@ -102,7 +102,7 @@ class AnimatedBitsBlockEntity(pos: BlockPos, val state: BlockState) : BitsBlockE
     override fun rebuildMesh() {
         meshes.clear()
         for (states in frames) {
-            meshes.add(BitMeshes.createMesh(states, level, worldPosition, null))
+            meshes.add(BitMeshes.createAnimatedMesh(states, level, worldPosition, null))
         }
         mesh = meshes.firstOrNull()
     }
