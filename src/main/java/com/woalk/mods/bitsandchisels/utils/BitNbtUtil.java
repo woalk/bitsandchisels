@@ -82,12 +82,18 @@ public class BitNbtUtil {
         } else if (tag.contains(ColoredBlockState.TAG_COLOR)) {
             return new ColoredBlockState(tag.getInt(ColoredBlockState.TAG_COLOR).get());
         } else {
+            if (tag.contains("Name")) {
+                tag.put("id", tag.get("Name"));
+            }
+            if (tag.contains("Properties")) {
+                tag.put("properties", tag.get("Properties"));
+            }
             if (WoalkDatafixerCompat.isLoaded()) {
                 tag = WoalkDatafixerCompat.replaceBlockState(tag);
-                Optional<? extends Holder<Block>> blockHolder = tag.read("Name", ResourceKey.codec(Registries.BLOCK)).flatMap(BuiltInRegistries.BLOCK::get);
+                Optional<? extends Holder<Block>> blockHolder = tag.read("id", ResourceKey.codec(Registries.BLOCK)).flatMap(BuiltInRegistries.BLOCK::get);
                 if (blockHolder.isEmpty()) {
                     tag = new CompoundTag();
-                    tag.putString("Name", "wdf:unknown");
+                    tag.putString("id", "wdf:unknown");
                 }
             }
             return NbtUtils.readBlockState(BuiltInRegistries.BLOCK, tag);

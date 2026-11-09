@@ -1,6 +1,8 @@
 package com.woalk.mods.bitsandchisels.blocks;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.LinkedList;
 import java.util.List;
 
 import com.woalk.mods.bitsandchisels.utils.BitNbtUtil;
@@ -16,6 +18,7 @@ import net.minecraft.client.renderer.item.ItemModelResolver;
 import net.minecraft.client.renderer.item.ItemStackRenderState;
 import net.minecraft.client.resources.model.cuboid.ItemTransforms;
 import net.minecraft.client.resources.model.geometry.BakedQuad;
+import net.minecraft.client.resources.model.geometry.ItemQuads;
 import net.minecraft.core.Direction;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.nbt.CompoundTag;
@@ -70,7 +73,7 @@ public class BitItemModel implements ItemModel {
         model.collectParts(new LegacyRandomSource(seed), parts);
 
         ItemStackRenderState.LayerRenderState layer = renderState.newLayer();
-        List<BakedQuad> quadList = layer.prepareQuadList();
+        List<BakedQuad> quadList = new LinkedList<>();
 
         for (BlockStateModelPart part : parts) {
             for (Direction d : Direction.values()) {
@@ -94,6 +97,7 @@ public class BitItemModel implements ItemModel {
                 quadList.addAll(nullQuads);
             }
         }
+        layer.setQuads(new ItemQuads(quadList, Collections.emptyList(), quadList));
 
         // Apply color tinting via tint layers
         if (blockState instanceof ColoredBlockState cbs) {

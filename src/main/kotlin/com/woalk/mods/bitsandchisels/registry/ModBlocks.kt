@@ -44,7 +44,7 @@ object ModBlocks : ModRegister<Pair<Block, (() -> Item.Properties)?>, Block>(Bui
 			.noLootTable()
             .dynamicShape()
 			.isValidSpawn(Blocks::never)
-			.pushReaction(PushReaction.BLOCK)
+			.pushReaction(PushReaction.IMMOVEABLE)
     ) { Item.Properties() }
     //endregion
 

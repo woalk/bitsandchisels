@@ -7,11 +7,7 @@ import net.minecraft.core.BlockPos
 import net.minecraft.core.component.DataComponents
 import net.minecraft.world.level.LevelReader
 
-private val MY_CODEC = BaseEntityBlock.simpleCodec(::ColoredBlock)!!
-
 class ColoredBlock(settings: Properties) : BaseEntityBlock(settings) {
-    override fun codec() = MY_CODEC
-
     override fun newBlockEntity(pos: BlockPos, state: BlockState) = ColoredBlockEntity(pos, state)
 
     @Suppress("DeprecatedCallableAddReplaceWith")

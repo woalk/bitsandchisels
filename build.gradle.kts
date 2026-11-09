@@ -1,8 +1,8 @@
 import java.net.URI
 
 plugins {
-    id("net.fabricmc.fabric-loom") version "1.17.18"
-    val kotlinVersion = "2.4.10"
+    id("net.fabricmc.fabric-loom") version "1.17.21"
+    val kotlinVersion = "2.4.21"
     kotlin("jvm").version(kotlinVersion)
 }
 base {
@@ -45,7 +45,7 @@ dependencies {
     implementation("com.sk89q.worldedit:worldedit-fabric-mc${minecraftVersion}:$worldEditVersion")
 
     // Woalk Datafixer
-    compileOnly("maven.modrinth:eolKiaOU:5VW2kQLR")
+    compileOnly("maven.modrinth:eolKiaOU:HvHFQ4Rq")
 }
 tasks {
     val javaVersion = JavaVersion.VERSION_25
@@ -54,10 +54,6 @@ tasks {
         options.release.set(javaVersion.toString().toInt())
     }
     jar { from("LICENSE") { rename { "${it}_${base.archivesName}" } } }
-    processResources {
-        inputs.property("version", project.version)
-        filesMatching("fabric.mod.json") { expand(mutableMapOf("version" to project.version)) }
-    }
     java {
         toolchain { languageVersion.set(JavaLanguageVersion.of(javaVersion.toString())) }
         sourceCompatibility = javaVersion
@@ -65,6 +61,23 @@ tasks {
         withSourcesJar()
     }
 }
+
+tasks.processResources {
+    inputs.property("modVersion", project.version)
+    inputs.property("minecraftVersion", project.property("minecraftVersion")!!)
+    inputs.property("loaderVersion", project.property("loaderVersion")!!)
+    filteringCharset = "UTF-8"
+
+    filesMatching("fabric.mod.json") {
+        expand(
+            "version" to project.version,
+            "minecraftVersion" to project.property("minecraftVersion")!!,
+            "loaderVersion" to project.property("loaderVersion")!!,
+            "fabricKotlinVersion" to project.property("fabricKotlinVersion")!!
+        )
+    }
+}
+
 loom {
     accessWidenerPath.set(file("src/main/resources/bitsandchisels.accesswidener"))
 }

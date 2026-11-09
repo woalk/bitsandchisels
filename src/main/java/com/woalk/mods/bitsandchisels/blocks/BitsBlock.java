@@ -59,8 +59,6 @@ import org.jspecify.annotations.Nullable;
 import java.util.ArrayList;
 
 public class BitsBlock extends BaseEntityBlock implements SimpleWaterloggedBlock {
-    private static final MapCodec<BitsBlock> CODEC = simpleCodec(BitsBlock::new);
-
     public static final IntegerProperty LIGHT_LEVEL = IntegerProperty.create("light_level", 0, 16);
     public static final IntegerProperty SHADER_TYPE = IntegerProperty.create("shader_type", 0, 16);
 
@@ -72,11 +70,6 @@ public class BitsBlock extends BaseEntityBlock implements SimpleWaterloggedBlock
     public BitsBlock(Properties settings) {
         super(settings);
         this.registerDefaultState(stateDefinition.any().setValue(LIGHT_LEVEL, 0).setValue(BlockStateProperties.WATERLOGGED, false).setValue(SHADER_TYPE, 0));
-    }
-
-    @Override
-    protected MapCodec<? extends BaseEntityBlock> codec() {
-        return CODEC;
     }
 
     @Override

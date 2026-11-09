@@ -7,6 +7,7 @@ import com.woalk.mods.bitsandchisels.registry.ModPermissions;
 import me.lucko.fabric.api.permissions.v0.Permissions;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.util.Prediction;
 import net.minecraft.world.item.component.CustomData;
 import org.jetbrains.annotations.Nullable;
 
@@ -143,7 +144,7 @@ public class BitUtils {
             if (BitUtils.exists(oldstate) && BitUtils.setBit(world, pos, x, y, z, Blocks.AIR.defaultBlockState())) {
                 BitUtils.update(world, pos);
                 if (!player.isCreative()) {
-                    player.getInventory().placeItemBackInInventory(BitUtils.getBitItemStack(oldstate));
+                    player.getInventory().placeItemBackInInventory(BitUtils.getBitItemStack(oldstate), Prediction.SERVER_ONLY);
                 }
             }
         }
@@ -187,7 +188,7 @@ public class BitUtils {
             for (Object2IntMap.Entry<BlockState> e : drops.object2IntEntrySet()) {
                 ItemStack stack = BitUtils.getBitItemStack(e.getKey());
                 stack.setCount(e.getIntValue());
-                player.getInventory().placeItemBackInInventory(stack);
+                player.getInventory().placeItemBackInInventory(stack, Prediction.SERVER_ONLY);
             }
         }
     }

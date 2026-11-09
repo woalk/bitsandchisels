@@ -187,7 +187,7 @@ public class BitMeshes {
                 int color = 0xFF000000 | ColorPolice.getBlockColor(state, (ClientLevel) world, pos, vanillaQuad.materialInfo().tintIndex());
                 quad.color(color, color, color, color);
             }
-            if (!canCull(d, minx, miny, minz)) quad.cullFace(null);
+            quad.cullFace(null);
             if (offset != null) {
                 for (int i = 0; i < 4; i++) {
                     quad.copyPos(i, tmp);
@@ -231,24 +231,6 @@ public class BitMeshes {
         for(int i = 0; i < a.length; i++) {
             Arrays.fill(a[i], false);
         }
-    }
-
-    private static boolean canCull(Direction d, int x, int y, int z) {
-        switch (d) {
-            case UP:
-                return y == 15;
-            case DOWN:
-                return y == 0;
-            case SOUTH:
-                return z == 15;
-            case NORTH:
-                return z == 0;
-            case EAST:
-                return x == 15;
-            case WEST:
-                return x == 0;
-        }
-        return false;
     }
 
     private static void transform(MutableQuadView quad, Direction direction, int minx, int miny, int minz, int maxx, int maxy, int maxz, Vector3f tmp) {

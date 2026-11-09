@@ -21,6 +21,7 @@ import com.woalk.mods.bitsandchisels.blocks.BitStructureItem
 import com.woalk.mods.bitsandchisels.registry.ModPermissions
 import com.woalk.mods.bitsandchisels.utils.DirectionArgumentType
 import com.woalk.mods.bitsandchisels.utils.Heuristic
+import com.woalk.mods.bitsandchisels.utils.blockPosOf
 import me.lucko.fabric.api.permissions.v0.Permissions
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback
 import net.minecraft.world.level.block.*
@@ -252,8 +253,8 @@ object WorldEditCommands : IModRegister {
                                         val neighborPos = directionVectorInverted.offset(vec.x(), vec.y(), vec.z())
                                         if (!merge && !selection.contains(BlockVector3.at(neighborPos.x, neighborPos.y, neighborPos.z))) {
                                             null
-                                        } else if (ctx.source.level.getBlockState(BlockPos(neighborPos)).block == BitsAndChisels.BITS_BLOCK) {
-                                            val entity = ctx.source.level.getBlockEntity(BlockPos(neighborPos)) as? BitsBlockEntity
+                                        } else if (ctx.source.level.getBlockState(blockPosOf(neighborPos)).block == BitsAndChisels.BITS_BLOCK) {
+                                            val entity = ctx.source.level.getBlockEntity(blockPosOf(neighborPos)) as? BitsBlockEntity
                                             val oldBits = entity?.states
                                             val oldBitPos = BlockPos(sourceBitPos.x.mod(16), sourceBitPos.y.mod(16), sourceBitPos.z.mod(16))
                                             val oldBit = oldBits?.get(oldBitPos.x)?.get(oldBitPos.y)?.get(oldBitPos.z)
