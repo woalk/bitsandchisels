@@ -13,13 +13,21 @@ import org.enginehub.linbus.tree.LinTagType
 
 object CompoundHelper {
     fun toBlockState(nbt: LinCompoundTag): BlockState {
-        if (!nbt.value().containsKey("Name")) {
+        if (nbt.value().containsKey("Name")) {
+            // compat for 26.2 and older: convert id key
+            nbt.value()["id"] = nbt.value()["Name"]
+        }
+        if (!nbt.value().containsKey("id")) {
             return Blocks.AIR.defaultBlockState()
         }
-        val block = BuiltInRegistries.BLOCK[Identifier.parse(nbt.getTag("Name", LinTagType.stringTag()).value())].get().value()
+        val block = BuiltInRegistries.BLOCK[Identifier.parse(nbt.getTag("id", LinTagType.stringTag()).value())].get().value()
         var blockState = block.defaultBlockState()
         if (nbt.value().containsKey("Properties")) {
-            val nbtCompound = nbt.getTag("Properties", LinTagType.compoundTag())
+            // compat for 26.2 and older: convert properties key
+            nbt.value()["properties"] = nbt.value()["Properties"]
+        }
+        if (nbt.value().containsKey("properties")) {
+            val nbtCompound = nbt.getTag("properties", LinTagType.compoundTag())
             val stateManager = block.stateDefinition
             for (string in nbtCompound.value().keys) {
                 val property = stateManager.getProperty(string) ?: continue
@@ -47,14 +55,14 @@ object CompoundHelper {
 
     fun fromBlockState(state: BlockState): LinCompoundTag {
         val nbtCompound = HashMap<String, LinTag<out Any>>()
-        nbtCompound["Name"] = LinStringTag.of(BuiltInRegistries.BLOCK.getKey(state.block).toString())
+        nbtCompound["id"] = LinStringTag.of(BuiltInRegistries.BLOCK.getKey(state.block).toString())
         val immutableMap = state.values.map { Pair(it.property, it.value) }.toList().toMap()
         if (!immutableMap.isEmpty()) {
             val nbtCompound2 = HashMap<String, LinTag<out Any>>()
             for ((key, value) in immutableMap) {
                 nbtCompound2[key.name] = LinStringTag.of(nameValue(key, value))
             }
-            nbtCompound["Properties"] = LinCompoundTag.of(nbtCompound2)
+            nbtCompound["properties"] = LinCompoundTag.of(nbtCompound2)
         }
         return LinCompoundTag.of(nbtCompound)
     }

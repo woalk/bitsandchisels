@@ -13,7 +13,7 @@ import org.enginehub.linbus.tree.LinCompoundTag
 
 class ChiselExtent(extent: Extent, private val transform: Transform) : AbstractDelegateExtent(extent) {
     override fun <T : BlockStateHolder<T>> setBlock(location: BlockVector3, block: T): Boolean {
-        if (block.blockType.id == "${BitsAndChisels.MODID}:bits_block") {
+        if (block.blockType.id() == "${BitsAndChisels.MODID}:bits_block") {
             if (transform is AffineTransform) {
                 val baseBlock = block.toBaseBlock()
                 val nbt = baseBlock.nbt
