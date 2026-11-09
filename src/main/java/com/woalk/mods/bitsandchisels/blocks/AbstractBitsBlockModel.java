@@ -22,10 +22,14 @@ import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 
+import org.joml.Vector3f;
+
 public abstract class AbstractBitsBlockModel implements BlockStateModel, FabricBlockStateModel {
     private static final Identifier SPRITE_ID = Identifier.fromNamespaceAndPath("bitsandchisels", "block/null");
 
     protected static final LRUCache<CompoundTag, Mesh> cache = new LRUCache<>(200);
+
+    private static final ThreadLocal<Vector3f> TMP_POS = ThreadLocal.withInitial(Vector3f::new);
 
     @Override
     public void emitQuads(QuadEmitter emitter, BlockAndTintGetter blockView, BlockPos pos, BlockState state, RandomSource random, Predicate<Direction> cullTest) {
@@ -33,15 +37,32 @@ public abstract class AbstractBitsBlockModel implements BlockStateModel, FabricB
         if (be instanceof BitsBlockEntity bitsEntity) {
             Object renderData = bitsEntity.getRenderData();
             if (renderData instanceof Mesh mesh) {
-                mesh.outputTo(emitter);
+                emitMesh(mesh, emitter);
             } else if (renderData instanceof kotlin.Pair) {
                 //noinspection unchecked
                 kotlin.Pair<Integer, List<Mesh>> pair = (kotlin.Pair<Integer, List<Mesh>>) renderData;
                 if (pair.component2().size() > pair.component1()) {
-                    pair.component2().get(pair.component1()).outputTo(emitter);
+                    emitMesh(pair.component2().get(pair.component1()), emitter);
                 }
             }
         }
+    }
+
+    /**
+     * Emits mesh quads with cleared cull faces and a microscopic vertex offset
+     * to prevent optimization mods like Sodium from aggressively culling partial
+     * block faces or causing pipeline crashes when block face culling is enabled.
+     */
+    private void emitMesh(Mesh mesh, QuadEmitter emitter) {
+        Vector3f tmp = TMP_POS.get();
+        mesh.forEach(quad -> {
+            emitter.copyFrom(quad);
+            emitter.cullFace(null);
+            quad.copyPos(0, tmp);
+            tmp.add(0.0001f, 0.0001f, 0.0001f);
+            emitter.pos(0, tmp);
+            emitter.emit();
+        });
     }
 
     @Override

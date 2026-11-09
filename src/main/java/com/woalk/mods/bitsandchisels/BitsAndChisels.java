@@ -23,7 +23,16 @@ public class BitsAndChisels implements ModInitializer {
 
 	private static final Identifier BITS_BLOCK_ID = Identifier.fromNamespaceAndPath(MODID, "bits_block");
 	public static final BlockItemId BITS_BLOCK_ITEM_ID = BlockItemId.create(BITS_BLOCK_ID, BITS_BLOCK_ID);
-	public static final BitsBlock BITS_BLOCK = new BitsBlock(BlockBehaviour.Properties.of().setId(BITS_BLOCK_ITEM_ID.block()).noOcclusion().dynamicShape().destroyTime(4.0f).lightLevel(s -> s.getValue(BitsBlock.LIGHT_LEVEL)));
+	public static final BitsBlock BITS_BLOCK = new BitsBlock(
+			BlockBehaviour.Properties.of()
+					.setId(BITS_BLOCK_ITEM_ID.block())
+					.noOcclusion()
+					.isSuffocating((BlockBehaviour.StatePredicate) (state, level, pos) -> false)
+					.isRedstoneConductor((BlockBehaviour.StatePredicate) (state, level, pos) -> false)
+					.dynamicShape()
+					.destroyTime(4.0f)
+					.lightLevel(s -> s.getValue(BitsBlock.LIGHT_LEVEL))
+	);
 	public static BlockEntityType<BitsBlockEntity> BITS_BLOCK_ENTITY;
 
 	@Override

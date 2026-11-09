@@ -188,6 +188,7 @@ public class BitMeshes {
                 quad.color(color, color, color, color);
             }
             quad.cullFace(null);
+            quad.nominalFace(d);
             if (offset != null) {
                 for (int i = 0; i < 4; i++) {
                     quad.copyPos(i, tmp);

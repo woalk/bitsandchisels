@@ -287,7 +287,10 @@ public class BitsBlockEntity extends BlockEntity implements RenderDataBlockEntit
     @Environment(EnvType.CLIENT)
     @Override
     public @org.jspecify.annotations.Nullable Object getRenderData() {
-        return mesh;
+        if (this.mesh == null && this.states != null && this.level != null) {
+            rebuildMesh();
+        }
+        return this.mesh;
     }
 
     @Override
