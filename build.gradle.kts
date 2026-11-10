@@ -4,6 +4,7 @@ plugins {
     id("net.fabricmc.fabric-loom") version "1.17.21"
     val kotlinVersion = "2.4.21"
     kotlin("jvm").version(kotlinVersion)
+    id("com.modrinth.minotaur") version "2.+"
 }
 base {
     val archivesBaseName = providers.gradleProperty("archivesBaseName").get()
@@ -80,4 +81,25 @@ tasks.processResources {
 
 loom {
     accessWidenerPath.set(file("src/main/resources/bitsandchisels.accesswidener"))
+}
+
+tasks.jar {
+    from("LICENSE") {
+        rename { "${it}_${project.base.archivesName.get()}" }
+    }
+}
+
+modrinth {
+    token.set(System.getenv("MODRINTH_TOKEN"))
+    projectId.set("bitsandchisels")
+    versionType.set("beta")
+    uploadFile.set(tasks.jar)
+    dependencies {
+        required.project("fabric-api")
+        required.project("fabric-language-kotlin")
+        optional.project("worldedit")
+        optional.project("luckperms")
+        optional.project("woalk-datafixer")
+        embedded.project("fabric-permissions-api")
+    }
 }
