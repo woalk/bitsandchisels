@@ -11,6 +11,7 @@ import me.lucko.fabric.api.permissions.v0.Permissions;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.core.component.DataComponents;
+import net.minecraft.nbt.Tag;
 import net.minecraft.world.item.component.TooltipDisplay;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.Blocks;
@@ -226,7 +227,13 @@ public class BitItem extends Item implements ServerPlayNetworking.PlayPayloadHan
             final var data = itemStack.getComponents().get(DataComponents.CUSTOM_DATA);
             final CompoundTag blockState = data != null ? data.copyTag().getCompound("bit").orElse(null) : null;
             if (blockState != null) {
-                builder.accept(Component.literal(blockState.getString("Name").get()).withStyle(ChatFormatting.DARK_PURPLE));
+                if (blockState.contains("Name")) {
+                    Tag name = blockState.get("Name");
+                    if (name != null) {
+                        blockState.put("id", name);
+                    }
+                }
+                builder.accept(Component.literal(blockState.getString("id").get()).withStyle(ChatFormatting.DARK_PURPLE));
                 final CompoundTag remainder = blockState.copy();
                 remainder.remove("Name");
                 if (!remainder.isEmpty()) {
