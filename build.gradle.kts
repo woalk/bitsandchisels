@@ -91,7 +91,7 @@ tasks.jar {
 
 modrinth {
     token.set(System.getenv("MODRINTH_TOKEN"))
-    projectId.set("bitsandchisels")
+    projectId.set("bits-chisels")
     versionType.set("beta")
     uploadFile.set(tasks.jar)
     dependencies {
